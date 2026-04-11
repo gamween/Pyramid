@@ -1,0 +1,22 @@
+# Install the wasm32v1-none target
+setup:
+    rustup target add wasm32v1-none
+
+# Build the zkVM guest program (via build.rs)
+build-guest:
+    cargo build -p trigger-proof-builder
+
+# Build the escrow Wasm smart contract
+build-escrow:
+    cargo build -p escrow --release --target wasm32v1-none
+
+# Build everything (guest + escrow)
+build: build-guest build-escrow
+
+# Run the CLI prover
+prove *args:
+    cargo run -p cli -- {{ args }}
+
+# Clean all build artifacts
+clean:
+    cargo clean

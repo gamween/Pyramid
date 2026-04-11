@@ -1,0 +1,13 @@
+[package]
+name = "escrow"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+bytemuck = { workspace = true }
+risc0-verifier-xrpl-wasm = { workspace = true }
+xrpl-wasm-stdlib = { workspace = true }
+trigger-proof-builder = { path = "../zkvm/trigger-proof" }
