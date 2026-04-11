@@ -41,5 +41,5 @@ export const NETWORKS = {
   },
 };
 
-// Devnet is primary for Tellement-French (lending protocol + DEX)
+// Devnet is primary for Pyramid (lending protocol + DEX)
 export const DEFAULT_NETWORK = NETWORKS.DEVNET;

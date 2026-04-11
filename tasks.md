@@ -1,6 +1,6 @@
-# Tellement-French — Tasks for 3 Devs
+# Pyramid — Tasks for 3 Devs
 
-> **READ FIRST:** `CLAUDE.md` for naming conventions, `docs/specs/2026-04-11-tellement-french-design.md` for full spec.
+> **READ FIRST:** `CLAUDE.md` for naming conventions, `docs/specs/2026-04-11-pyramid-design.md` for full spec.
 >
 > **Branch:** `sofiane` only. Never touch `main`.
 > **Commits:** `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:` prefix. One logical unit per commit.
@@ -237,7 +237,7 @@ export const ADDRESSES = {
 
 **File:** `apps/web/components/Header.js`
 
-- Change title to "Tellement-French"
+- Change title to "Pyramid"
 - Add subtitle "DeFi on XRPL"
 - Add live price display using `usePrice()` hook: `XRP/RLUSD $2.34`
 - Keep wallet connector as-is
@@ -394,7 +394,7 @@ Wrap with LendingProvider + OrderProvider (inside existing WalletProvider).
 **File:** `apps/watcher/package.json`
 ```json
 {
-  "name": "tellement-french-watcher",
+  "name": "pyramid-watcher",
   "private": true,
   "type": "module",
   "scripts": { "dev": "node src/index.js" },

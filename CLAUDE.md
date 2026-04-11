@@ -1,4 +1,4 @@
-# Tellement-French — Lending-First DeFi Protocol for XRPL
+# Pyramid — Lending-First DeFi Protocol for XRPL
 
 ## Project Overview
 
@@ -46,4 +46,4 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 ## Design Spec
 
-`docs/specs/2026-04-11-tellement-french-design.md`
+`docs/specs/2026-04-11-pyramid-design.md`

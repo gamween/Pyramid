@@ -1,4 +1,4 @@
-# Tellement-French — Design Spec
+# Pyramid — Design Spec
 
 **Date:** 2026-04-11
 **Hackathon:** Hack the Block 2026 (PBW)
@@ -6,7 +6,7 @@
 
 ## Overview
 
-Tellement-French is the first DeFi protocol built on XRPL's new native lending protocol (XLS-65/66). It composes Vaults, Loans, and the native DEX into a lending + trading platform. No smart contracts, no Hooks — pure native XRPL primitives.
+Pyramid is the first DeFi protocol built on XRPL's new native lending protocol (XLS-65/66). It composes Vaults, Loans, and the native DEX into a lending + trading platform. No smart contracts, no Hooks — pure native XRPL primitives.
 
 ### What the app does
 
@@ -35,10 +35,10 @@ Uses native XLS-65 (Vaults) + XLS-66 (Lending Protocol) on devnet.
 
 ### Vault (XLS-65)
 
-Tellement-French creates and manages a single-asset Vault.
+Pyramid creates and manages a single-asset Vault.
 
 **Transactions used:**
-- `VaultCreate` — create the Vault (one-time setup by Tellement-French)
+- `VaultCreate` — create the Vault (one-time setup by Pyramid)
 - `VaultDeposit` — user deposits assets, receives share MPTokens
 - `VaultWithdraw` — user redeems shares for assets
 
@@ -49,7 +49,7 @@ Tellement-French creates and manages a single-asset Vault.
 
 ### Loan Broker (XLS-66)
 
-Tellement-French acts as the Loan Broker — manages the lending protocol.
+Pyramid acts as the Loan Broker — manages the lending protocol.
 
 **Setup transactions:**
 - `LoanBrokerSet` — create LoanBroker linked to the Vault
@@ -60,7 +60,7 @@ Tellement-French acts as the Loan Broker — manages the lending protocol.
 ### Loans (XLS-66)
 
 **Loan creation:**
-- `LoanSet` — cosigned by broker (Tellement-French) + borrower
+- `LoanSet` — cosigned by broker (Pyramid) + borrower
   - `PrincipalRequested`: loan amount
   - `InterestRate`: annualized, 1/10th basis points (e.g., 500 = 0.5%)
   - `PaymentTotal`: number of payments
@@ -185,7 +185,7 @@ Private orders on Groth5 devnet. Trigger prices hidden via RISC0 ZK proofs.
    - User creates `EscrowCreate` on Groth5:
      - Amount: order funds
      - Destination: watcher account
-     - Condition: requires RISC0 proof with Tellement-French IMAGE_ID
+     - Condition: requires RISC0 proof with Pyramid IMAGE_ID
      - Data: commitment hash
    - trigger_price + nonce shared with watcher (encrypted)
 

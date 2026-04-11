@@ -32,7 +32,7 @@ export default function Home() {
           <div className="container py-6">
             <div className="mb-8">
               <h1 className="text-2xl font-semibold tracking-tight text-white">
-                Tellement-French
+                Pyramid
               </h1>
               <p className="text-white/50">DeFi on XRPL</p>
             </div>
@@ -66,7 +66,7 @@ export default function Home() {
 
         <footer className="border-t border-white/10 py-6">
           <div className="container text-center text-sm text-white/30">
-            Built with Tellement-French
+            Built with Pyramid
           </div>
         </footer>
       </div>
