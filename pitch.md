@@ -2,77 +2,67 @@
 
 ## One-liner
 
-**Tellement-French is the first DeFi protocol built on XRPL's new native lending protocol — combining Vaults, Loans, and the native DEX into a complete trading and yield platform.**
+**First DeFi protocol built on XRPL's new native lending — Vaults, Loans, advanced trading, ZK privacy. No smart contracts. Pure chain-native.**
 
 ## The Problem
 
-XRPL just shipped a native lending protocol (XLS-65/66) — Vaults, Loans, the full stack. It entered validator voting in January 2026. But nobody has built on it yet. Meanwhile, the XRPL DEX still only supports limit orders, and there's no liquidity flywheel to attract capital.
+XRPL shipped a native lending protocol (XLS-65/66) in January 2026. Nobody has built on it yet. The DEX only supports limit orders. There's no liquidity flywheel.
 
-## Why It Doesn't Exist Yet
+## What We Built
 
-Because the lending amendment is brand new. It's only available on devnet. We're the first team to compose it with the DEX into a real product.
+### Lending (flagship)
+- **Vaults** — deposit, earn yield from loan interest
+- **Loans** — borrow from Vault liquidity, fixed term + rate
+- Native XLS-65/66: VaultCreate, VaultDeposit, LoanSet, LoanPay
 
-## What Tellement-French Does
+### Trading (complementary)
+- **Stop-Loss / Take-Profit / Trailing / OCO** — Escrow locks funds, watcher monitors DEX prices, executes OfferCreate when triggered
+- **DCA / TWAP** — pre-sign N orders with Tickets, watcher submits at intervals
 
-### Flagship: Lending & Borrowing
-- **Vaults** — Deposit XRP or RLUSD, earn yield from loan interest
-- **Loans** — Borrow against Vault liquidity for trading
-- **Loan Broker** — Tellement-French acts as the broker, managing risk with first-loss capital
-- Uses native XLS-65/66 tx types: VaultCreate, VaultDeposit, LoanSet, LoanPay
-
-### Complementary: Advanced Trading
-- **Stop-Loss / Take-Profit** — auto-trade when price hits a target
-- **Trailing Stop** — follows price up, sells on X% drop
-- **OCO** — take-profit + stop-loss linked
-- **DCA / TWAP** — recurring buys, split large orders
-- All on native XRPL DEX using Escrow + OfferCreate
-
-### Bonus: Private Orders (Boundless)
-- Trigger prices hidden via ZK proofs
-- Computation offloaded to Boundless prover network, verified on-chain
+### Privacy (Boundless bounty)
+- Trigger prices hidden via ZK proofs, verified on Groth5
 
 ## The Flywheel
 
 ```
-Depositors → Vaults (earn yield from loan interest)
+Depositors → Vaults (earn yield)
     ↓
-Borrowers → take loans → trade on DEX with advanced orders
+Borrowers → loans → trade with advanced orders
     ↓
-Trading → generates volume + fees → attracts more depositors
-    ↓
-More deposits → deeper liquidity → better execution → more traders
+Trading → volume → more depositors → deeper liquidity
 ```
+
+## Why It's Native
+
+No SC. No Hooks. 8+ native XRPL transaction types:
+
+VaultCreate, VaultDeposit, LoanBrokerSet, LoanSet, LoanPay,
+EscrowCreate, EscrowFinish, OfferCreate, TicketCreate, Payment
+
+We didn't add a layer — we composed the chain's own primitives.
 
 ## Architecture
 
-| Layer | Network | What it does |
+| What | Network | How |
 |---|---|---|
-| **Lending** | Devnet | Native XLS-65/66 Vaults + Loans |
-| **Trading** | Devnet | Native DEX + Escrow + OfferCreate |
-| **Privacy** | Groth5 | RISC0 ZK proofs (Boundless) |
-| **Automation** | Xahau | Hooks for DCA/TWAP |
-
-## Tracks
-
-- **Make Waves** — institutional DeFi, first on new lending protocol
-- **Boundless** — ZK proofs for private orders
+| Lending + Trading + DCA | Devnet | Native XLS-65/66 + Escrow + DEX + Tickets |
+| ZK Privacy | Groth5 | RISC0 proofs via Boundless |
 
 ## Roadmap
 
-| Phase | What | When |
-|---|---|---|
-| **Now** | Devnet: lending + trading + ZK | Hackathon |
-| **Q2 2026** | Lending hits mainnet → go live | Amendment passes |
-| **Q3 2026** | SC integration (XLS-101) | Post-amendment |
-| **Future** | Margin, liquidation, dynamic rates | As amendments ship |
+| Now | Hackathon — devnet demo |
+|---|---|
+| Q2 2026 | Lending hits mainnet → go live |
+| Q3 2026 | SC integration (XLS-101) → order engine on-chain |
+| Future | Margin, liquidation, collateral, dynamic rates |
 
-## Demo Flow
+## Demo
 
-1. Deposit into Vault → VaultDeposit tx on devnet
-2. Borrow against it → LoanSet tx
-3. Create stop-loss → Escrow locks, watcher monitors
-4. Price triggers → OfferCreate on DEX
-5. Private order → ZK proof hides trigger (Boundless)
-6. DCA → Xahau Hook auto-executes
+1. Deposit into Vault → VaultDeposit tx
+2. Borrow → cosigned LoanSet tx
+3. Stop-loss → EscrowCreate locks funds, watcher monitors
+4. Price triggers → EscrowFinish + OfferCreate on DEX
+5. DCA → TicketCreate + pre-signed orders, auto-executed
+6. Private order → ZK proof hides trigger (Boundless)
 
-**"We built on the features that shipped THIS YEAR. Native lending, native DEX, zero-knowledge proofs. This is DeFi built WITH the chain, not on top of it."**
+**"We built on the features that shipped THIS YEAR. This is DeFi built WITH the chain, not on top of it."**

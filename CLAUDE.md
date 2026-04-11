@@ -2,46 +2,48 @@
 
 ## Project Overview
 
-Tellement-French is the first DeFi protocol built on XRPL's new native lending protocol (XLS-65/66). It combines Vaults, Loans, and the native DEX into a complete trading and yield platform. Lending is the flagship product; advanced trading tools (SL, TP, trailing, OCO, DCA, TWAP) are complementary. ZK private orders via Boundless add privacy.
-
-Developed for the PBW 2026 Hackathon ("Hack the Block").
+First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Composes Vaults, Loans, and the native DEX into a complete trading + yield platform. No smart contracts, no Hooks — pure native XRPL primitives.
 
 ## Branch Strategy
 
-- **`sofiane`** is the working branch. All feature work goes here.
+- **`sofiane`** is the working branch.
 - **`main`** must never be touched.
+- Commit messages: `chore:`, `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
 
 ## Architecture
 
-| Layer | Network | What it does |
+| Layer | Network | Primitives |
 |---|---|---|
-| **Lending** | Devnet | Native XLS-65/66 Vaults + Loans (flagship) |
-| **Trading** | Devnet | Native DEX + Escrow + OfferCreate for advanced orders |
-| **Privacy** | Groth5 devnet | RISC0 ZK proofs for private orders (Boundless bounty) |
-| **Automation** | Xahau testnet | Hooks for DCA/TWAP autonomous execution |
-
-### Key Principle
-
-Build WITH the chain, not on top of it. Use native XRPL primitives (Escrow, DEX, AMM, Vaults, Loans). No smart contract overlay for the core product.
-
-### Price Source
-
-Native XRPL DEX/AMM queries (`book_offers`, `amm_info`). No oracle.
+| **Lending** | Devnet | VaultCreate/Deposit/Withdraw, LoanBrokerSet, LoanSet/Pay/Manage |
+| **Trading** | Devnet | EscrowCreate/Finish/Cancel, OfferCreate (ImmediateOrCancel) |
+| **DCA/TWAP** | Devnet | TicketCreate + pre-signed OfferCreate |
+| **Privacy** | Groth5 | RISC0 ZK escrows (Boundless bounty) |
+| **Prices** | Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
 
 ## Tech Stack
 
 - **Frontend:** Next.js 14 / React 18 / Tailwind CSS / shadcn/ui
-- **Lending:** Native XLS-65/66 (VaultCreate, VaultDeposit, LoanSet, LoanPay)
-- **Trading:** Native XRPL primitives (Escrow, OfferCreate)
-- **ZK Proofs:** RISC0 zkVM (Groth16) on Groth5 devnet (Boundless)
-- **Automation:** Xahau Hooks for DCA/TWAP
 - **Watcher Bot:** Node.js + xrpl.js v3
-- **XRPL Integration:** xrpl.js v3, xrpl-connect
+- **ZK Proofs:** RISC0 zkVM (Groth16) + Boundless Market
+- **Wallet:** xrpl-connect (Xaman, Crossmark, GemWallet)
 - **Monorepo:** pnpm workspaces + Turborepo
 
-## Conventions
+## Key Directories
 
-- TypeScript/JavaScript throughout
-- Follow existing scaffold patterns (WalletProvider, hooks, shadcn)
-- Lending is the flagship product, trading is complementary
-- No oracle — prices from native DEX/AMM
+- `apps/web/` — Next.js frontend
+- `apps/watcher/` — Node.js watcher bot
+- `packages/zkp/` — RISC0 guest program + CLI prover
+
+## Naming Conventions
+
+- **Branch:** `sofiane` (working), `main` (untouched)
+- **Components:** PascalCase (`VaultDeposit.js`, `OrderCard.js`)
+- **Hooks:** camelCase with `use` prefix (`usePrice.js`, `useVault.js`)
+- **Utils/lib:** camelCase (`constants.js`, `networks.js`)
+- **Watcher modules:** kebab-case (`devnet-loop.js`, `zk-prover.js`)
+- **Variables:** camelCase (`triggerPrice`, `vaultId`, `loanBrokerId`)
+- **Constants:** UPPER_SNAKE_CASE (`ORDER_STATUS`, `SIDES`)
+
+## Design Spec
+
+`docs/specs/2026-04-11-tellement-french-design.md`
