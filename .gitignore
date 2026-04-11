@@ -41,6 +41,10 @@ pnpm-debug.log*
 .turbo
 
 
+# Devnet secrets
+apps/web/scripts/devnet-addresses.json
+apps/watcher/.env
+
 # Rust/Bedrock
 target/
 Cargo.lock

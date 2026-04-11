@@ -36,10 +36,10 @@ export const LOAN_MANAGE_FLAGS = {
   tfLoanUnimpair: 0x00040000,
 }
 
-export const WATCHER_ACCOUNT = "" // filled after watcher setup
+export const WATCHER_ACCOUNT = "rLhmy6UQj6neeCZVB9j9anpX8dcjDbeGJi"
 
 export const ADDRESSES = {
   VAULT_ID: "",
   LOAN_BROKER_ID: "",
-  RLUSD_ISSUER: "",
+  RLUSD_ISSUER: "rH5SLrgSgho8yPTpc1EQB22yZ4zXysm1QT",
 }
