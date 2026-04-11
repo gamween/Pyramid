@@ -6,8 +6,9 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 ## Branch Strategy
 
-- **`sofiane`** is the working branch.
+- **`develop`** is the integration branch. All work merges here.
 - **`main`** must never be touched.
+- **Workflow:** create `feat/<name>` or `fix/<name>` from `develop` → work → merge to `develop` → delete branch.
 - Commit messages: `chore:`, `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
 
 ## Architecture
