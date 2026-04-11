@@ -40,8 +40,6 @@ pnpm-debug.log*
 # Turbo
 .turbo
 
-# Superpowers (brainstorm mockups)
-.superpowers/
 
 # Rust/Bedrock
 target/
