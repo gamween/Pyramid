@@ -49,11 +49,11 @@ export function useVault() {
     })
     const vault = response.result.vault
     return {
-      totalAssets: vault.Asset,
-      totalShares: vault.MPTokenIssuanceID ? vault.ShareCount : "0",
-      sharePrice: vault.SharePrice || "1",
+      totalAssets: vault.AssetsTotal,
+      assetsAvailable: vault.AssetsAvailable,
+      lossUnrealized: vault.LossUnrealized,
       owner: vault.Owner,
-      mptIssuanceId: vault.MPTokenIssuanceID,
+      mptIssuanceId: vault.ShareMPTID,
     }
   }, [])
 
@@ -65,7 +65,7 @@ export function useVault() {
     const response = await client.request({
       command: "ledger_entry",
       mptoken: {
-        mpt_issuance_id: vaultInfo.mptIssuanceId,
+        mpt_issuance_id: vaultInfo.mptIssuanceId, // ShareMPTID from vault
         account: account,
       },
     })
