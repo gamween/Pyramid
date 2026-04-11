@@ -16,14 +16,14 @@ export default function LEDPyramid() {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 3.2, 9.0);
-    camera.lookAt(0, 0.8, 0);
+    camera.position.set(0, 2.5, 6.5); // Zoomez pour la rendre plus grande
+    camera.lookAt(0, 0.7, 0);
 
     // Separate scene for background gradient (no pixel effect)
     const bgScene = new THREE.Scene();
     const bgCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     bgCamera.position.copy(camera.position);
-    bgCamera.lookAt(0, 0.8, 0);
+    bgCamera.lookAt(0, 0.7, 0);
 
     // Lights - maximum intensity for very bright pyramid
     scene.add(new THREE.AmbientLight(0x8899bb, 3.0));

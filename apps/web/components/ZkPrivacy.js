@@ -59,7 +59,7 @@ export function ZkPrivacy() {
   };
 
   return (
-    <Card className="border-none bg-transparent rounded-none h-full flex flex-col">
+    <Card className="border-none bg-black/60 backdrop-blur-md rounded-none h-full flex flex-col">
       <CardContent className="p-0 flex-1 flex flex-col justify-center">
         {!proofResult && !isProving ? (
           <form onSubmit={handleGenerateProof} className="space-y-4 text-left">
