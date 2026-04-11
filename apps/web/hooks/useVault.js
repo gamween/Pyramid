@@ -44,10 +44,10 @@ export function useVault() {
   const getVaultInfo = useCallback(async (vaultId) => {
     const client = await getClient()
     const response = await client.request({
-      command: "vault_info",
-      vault_id: vaultId,
+      command: "ledger_entry",
+      vault: vaultId,
     })
-    const vault = response.result.vault
+    const vault = response.result.node
     return {
       totalAssets: vault.AssetsTotal,
       assetsAvailable: vault.AssetsAvailable,
