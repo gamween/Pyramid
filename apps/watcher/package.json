@@ -1,0 +1,20 @@
+{
+  "name": "watcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.1",
+    "expr": "^0.0.0",
+    "ws": "^8.20.0",
+    "xrpl": "3.0.0",
+    "xrpl-smartescrow": "npm:xrpl@4.5.0-smartescrow.4"
+  }
+}

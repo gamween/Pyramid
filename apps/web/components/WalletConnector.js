@@ -6,35 +6,27 @@ import { useWalletConnector } from "../hooks/useWalletConnector";
 
 const THEMES = {
   dark: {
-    "--xc-background-color": "#1a202c",
-    "--xc-background-secondary": "#2d3748",
-    "--xc-background-tertiary": "#4a5568",
-    "--xc-text-color": "#F5F4E7",
-    "--xc-text-muted-color": "rgba(245, 244, 231, 0.6)",
-    "--xc-primary-color": "#3b99fc",
+    "--xc-background-color": "#000000",
+    "--xc-background-secondary": "#111111",
+    "--xc-background-tertiary": "#222222",
+    "--xc-text-color": "#ffffff",
+    "--xc-text-muted-color": "rgba(255, 255, 255, 0.5)",
+    "--xc-primary-color": "#ffffff",
   },
-  light: {
-    "--xc-background-color": "#ffffff",
-    "--xc-background-secondary": "#f5f5f5",
-    "--xc-background-tertiary": "#eeeeee",
-    "--xc-text-color": "#111111",
-    "--xc-text-muted-color": "rgba(17, 17, 17, 0.6)",
-    "--xc-primary-color": "#2563eb",
-  },
-  purple: {
-    "--xc-background-color": "#1e1b4b",
-    "--xc-background-secondary": "#2d2659",
-    "--xc-background-tertiary": "#3d3261",
-    "--xc-text-color": "#f3e8ff",
-    "--xc-text-muted-color": "rgba(243, 232, 255, 0.6)",
-    "--xc-primary-color": "#a78bfa",
+  sleek: {
+    "--xc-background-color": "rgba(0, 0, 0, 0.8)",
+    "--xc-background-secondary": "rgba(20, 20, 20, 0.8)",
+    "--xc-background-tertiary": "rgba(40, 40, 40, 0.8)",
+    "--xc-text-color": "#ffffff",
+    "--xc-text-muted-color": "rgba(255, 255, 255, 0.6)",
+    "--xc-primary-color": "#e5e5e5",
   },
 };
 
 export function WalletConnector() {
   const { walletManager } = useWallet();
   const walletConnectorRef = useWalletConnector(walletManager);
-  const [currentTheme] = useState("dark");
+  const [currentTheme] = useState("sleek");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -67,9 +59,9 @@ export function WalletConnector() {
       id="wallet-connector"
       style={{
         ...THEMES[currentTheme],
-        "--xc-font-family": "inherit",
-        "--xc-border-radius": "12px",
-        "--xc-modal-box-shadow": "0 10px 40px rgba(0, 0, 0, 0.3)",
+        "--xc-font-family": "'Courier New', Courier, monospace",
+        "--xc-border-radius": "0px",
+        "--xc-modal-box-shadow": "8px 8px 0 rgba(255, 255, 255, 0.2)",
       }}
       primary-wallet="xaman"
     />

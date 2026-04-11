@@ -1,13 +1,9 @@
-// Order types — WASM path (price-triggered, devnet)
-export const WASM_ORDER_TYPES = {
+// Order types (Devnet)
+export const ORDER_TYPES = {
   STOP_LOSS: "STOP_LOSS",
   TAKE_PROFIT: "TAKE_PROFIT",
   TRAILING_STOP: "TRAILING_STOP",
   OCO: "OCO",
-};
-
-// Order types — Hooks path (time-based, Xahau)
-export const HOOK_ORDER_TYPES = {
   DCA: "DCA",
   TWAP: "TWAP",
 };
@@ -28,22 +24,17 @@ export const SIDES = {
 
 // Lending protocol constants (XLS-65/66)
 export const LENDING = {
-  MANAGEMENT_FEE_RATE: 1000, // 1% in 1/10th basis points
-  DEFAULT_PAYMENT_INTERVAL: 2592000, // 30 days in seconds
-  DEFAULT_GRACE_PERIOD: 604800, // 7 days in seconds
+  MANAGEMENT_FEE_RATE: 1000,           // 1%
+  DEFAULT_INTEREST_RATE: 500,          // 0.5% annualized
+  DEFAULT_PAYMENT_INTERVAL: 2592000,   // 30 days in seconds
+  DEFAULT_GRACE_PERIOD: 604800,        // 7 days in seconds
 };
 
-// Hook memo types for DCA/TWAP on Xahau
-export const HOOK_MEMO_TYPES = {
-  DCA_SETUP: "tf/dca",
-  TWAP_SETUP: "tf/twap",
-  EXECUTE: "tf/execute",
-  CANCEL: "tf/cancel",
-};
-
-// Contract/account addresses (filled after deployment)
+// Watcher and Protocol addresses (Filled after setup)
 export const ADDRESSES = {
   VAULT_ID: "",
   LOAN_BROKER_ID: "",
-  HOOK_ACCOUNT: "",
+  RLUSD_ISSUER: "", // DevNet RLUSD Gateway
 };
+
+export const WATCHER_ACCOUNT = ""; // Watcher bot's DevNet address

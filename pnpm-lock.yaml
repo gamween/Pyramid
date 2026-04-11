@@ -27,6 +27,24 @@ importers:
         specifier: ^2.7.3
         version: 2.8.13
 
+  apps/watcher:
+    dependencies:
+      dotenv:
+        specifier: ^17.4.1
+        version: 17.4.1
+      expr:
+        specifier: ^0.0.0
+        version: 0.0.0
+      ws:
+        specifier: ^8.20.0
+        version: 8.20.0
+      xrpl:
+        specifier: 3.0.0
+        version: 3.0.0
+      xrpl-smartescrow:
+        specifier: npm:xrpl@4.5.0-smartescrow.4
+        version: /xrpl@4.5.0-smartescrow.4
+
   apps/web:
     dependencies:
       '@react-three/drei':
@@ -79,10 +97,13 @@ importers:
         version: 0.183.2
       xrpl:
         specifier: ^3.0.0
-        version: 3.1.0
+        version: 3.0.0
       xrpl-connect:
         specifier: ^0.7.1
         version: 0.7.1
+      xrpl-smartescrow:
+        specifier: npm:xrpl@4.5.0-smartescrow.4
+        version: /xrpl@4.5.0-smartescrow.4
     devDependencies:
       autoprefixer:
         specifier: ^10.4.16
@@ -3623,8 +3644,8 @@ packages:
     dependencies:
       '@mapbox/node-pre-gyp': 2.0.3
       '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
-      acorn: 8.15.0
-      acorn-import-attributes: 1.9.5(acorn@8.15.0)
+      acorn: 8.16.0
+      acorn-import-attributes: 1.9.5(acorn@8.16.0)
       async-sema: 3.1.1
       bindings: 1.5.0
       estree-walker: 2.0.2
@@ -3860,7 +3881,7 @@ packages:
     dependencies:
       '@noble/hashes': 1.8.0
       eventemitter3: 5.0.1
-      ws: 8.18.3
+      ws: 8.19.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -3868,6 +3889,16 @@ packages:
 
   /@xrplf/secret-numbers@1.0.0:
     resolution: {integrity: sha512-qsCLGyqe1zaq9j7PZJopK+iGTGRbk6akkg6iZXJJgxKwck0C5x5Gnwlb1HKYGOwPKyrXWpV6a2YmcpNpUFctGg==}
+    dependencies:
+      '@xrplf/isomorphic': 1.0.1
+      ripple-keypairs: 2.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /@xrplf/secret-numbers@2.0.0:
+    resolution: {integrity: sha512-z3AOibRTE9E8MbjgzxqMpG1RNaBhQ1jnfhNCa1cGf2reZUJzPMYs4TggQTc7j8+0WyV3cr7y/U8Oz99SXIkN5Q==}
     dependencies:
       '@xrplf/isomorphic': 1.0.1
       ripple-keypairs: 2.0.0
@@ -3896,12 +3927,12 @@ packages:
       negotiator: 0.6.3
     dev: true
 
-  /acorn-import-attributes@1.9.5(acorn@8.15.0):
+  /acorn-import-attributes@1.9.5(acorn@8.16.0):
     resolution: {integrity: sha512-n02Vykv5uA3eHGM/Z2dQrcD56kL8TyDb2p1+0P83PClMnC/nc+anbQRhIOWnSq4Ke/KvDPrY3C9hDtC/A3eHnQ==}
     peerDependencies:
       acorn: ^8
     dependencies:
-      acorn: 8.15.0
+      acorn: 8.16.0
     dev: true
 
   /acorn-jsx@5.3.2(acorn@8.15.0):
@@ -3911,6 +3942,11 @@ packages:
     dependencies:
       acorn: 8.15.0
     dev: true
+
+  /acorn@0.1.0:
+    resolution: {integrity: sha512-+CoUKvPJxQAQtOIMB9toxYZm5lvavNJHqvSK06JNTkR5giFcm9zyehia5spkQpXGQR1zLlArnmHcolLFy5FkOQ==}
+    engines: {node: '>=0.4.0'}
+    dev: false
 
   /acorn@8.15.0:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
@@ -5328,6 +5364,11 @@ packages:
     engines: {node: '>=12'}
     dev: true
 
+  /dotenv@17.4.1:
+    resolution: {integrity: sha512-k8DaKGP6r1G30Lx8V4+pCsLzKr8vLmV2paqEj1Y55GdAgJuIqpRp5FfajGF8KtwMxCz9qJc6wUIJnm053d/WCw==}
+    engines: {node: '>=12'}
+    dev: false
+
   /draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
     dev: false
@@ -6201,6 +6242,12 @@ packages:
       signal-exit: 4.1.0
       strip-final-newline: 3.0.0
     dev: true
+
+  /expr@0.0.0:
+    resolution: {integrity: sha512-SEp1KcxzidxU81f9w91IYwiK6aBA8CXEtxxaRHAWO0Acu07vFN5SB0z9aY1ptPzvCUDOgjW33RU5yCS7EM5Arw==}
+    dependencies:
+      acorn: 0.1.0
+    dev: false
 
   /exsolve@1.0.8:
     resolution: {integrity: sha512-LmDxfWXwcTArk8fUEnOfSZpHOJ6zOMUJKOtFLFqJLoKJetuQG874Uc7/Kki7zFLzYybmZhp1M7+98pfMqeX8yA==}
@@ -9573,6 +9620,18 @@ packages:
       - utf-8-validate
     dev: false
 
+  /ripple-binary-codec@2.7.0:
+    resolution: {integrity: sha512-gEBqan5muVp+q7jgZ6aUniSyN+e4FKRzn9uFAeFSIW7IgvkezP1cUolNtpahQ+jvaSK/33hxZA7wNmn1mc330g==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@xrplf/isomorphic': 1.0.1
+      bignumber.js: 9.3.1
+      ripple-address-codec: 5.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
   /ripple-keypairs@2.0.0:
     resolution: {integrity: sha512-b5rfL2EZiffmklqZk1W+dvSy97v3V/C7936WxCCgDynaGPp7GE6R2XO7EU9O2LlM/z95rj870IylYnOQs+1Rag==}
     engines: {node: '>= 16'}
@@ -10433,7 +10492,7 @@ packages:
     hasBin: true
     dependencies:
       '@jridgewell/source-map': 0.3.11
-      acorn: 8.15.0
+      acorn: 8.16.0
       commander: 2.20.3
       source-map-support: 0.5.21
     dev: true
@@ -11477,19 +11536,6 @@ packages:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
     dev: true
 
-  /ws@8.18.3:
-    resolution: {integrity: sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-    dev: false
-
   /ws@8.19.0:
     resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
     engines: {node: '>=10.0.0'}
@@ -11501,7 +11547,19 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
-    dev: true
+
+  /ws@8.20.0:
+    resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
 
   /wsl-utils@0.1.0:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
@@ -11517,6 +11575,26 @@ packages:
 
   /xrpl-connect@0.7.1:
     resolution: {integrity: sha512-0xbiX+1i0pS2UzaOshwtT0co3RCiUNqAHRQJhHVmB8q99pK6eTl0ulhidUaGlswwl4Q0myS6NqniDrQqFAssng==}
+    dev: false
+
+  /xrpl@3.0.0:
+    resolution: {integrity: sha512-QC+dNx3tvMEn9IrxcXFFa0rWwvBwACkGFNKl+W2miMGYnlgSiIsnjdqwtG2WRs0Pyxs5dd9nBTQHyQ1BPxZ78A==}
+    engines: {node: '>=16.0.0'}
+    dependencies:
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      '@xrplf/isomorphic': 1.0.1
+      '@xrplf/secret-numbers': 1.0.0
+      bignumber.js: 9.3.1
+      cross-fetch: 4.1.0
+      eventemitter3: 5.0.1
+      ripple-address-codec: 5.0.0
+      ripple-binary-codec: 2.7.0
+      ripple-keypairs: 2.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
     dev: false
 
   /xrpl@3.1.0:
@@ -11536,6 +11614,24 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - encoding
+      - utf-8-validate
+    dev: false
+
+  /xrpl@4.5.0-smartescrow.4:
+    resolution: {integrity: sha512-bi+3IjO4yEw7OWBcwy2iCA3kpeqyiak4dmt7+wJBCTUr8rokiC7suJGPwBrogntZfHFQUJw5B7jKHOGM5q9BDA==}
+    engines: {node: '>=18.0.0'}
+    dependencies:
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      '@xrplf/isomorphic': 1.0.1
+      '@xrplf/secret-numbers': 2.0.0
+      bignumber.js: 9.3.1
+      eventemitter3: 5.0.1
+      ripple-address-codec: 5.0.0
+      ripple-binary-codec: 2.7.0
+      ripple-keypairs: 2.0.0
+    transitivePeerDependencies:
+      - bufferutil
       - utf-8-validate
     dev: false
 

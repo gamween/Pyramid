@@ -20,15 +20,15 @@ const rainbowFragmentShader = `
 
   vec3 getRainbowColor(float t) {
     vec3 red    = vec3(1.0, 0.1, 0.1);
-    vec3 orange = vec3(1.0, 0.5, 0.0);
+    vec3 magenta= vec3(1.0, 0.0, 1.0);
     vec3 yellow = vec3(1.0, 1.0, 0.1);
     vec3 green  = vec3(0.1, 1.0, 0.2);
     vec3 blue   = vec3(0.1, 0.4, 1.0);
     vec3 indigo = vec3(0.3, 0.0, 0.8);
     vec3 violet = vec3(0.6, 0.0, 1.0);
 
-    if (t < 0.143) return mix(red, orange, t / 0.143);
-    if (t < 0.286) return mix(orange, yellow, (t - 0.143) / 0.143);
+    if (t < 0.143) return mix(red, magenta, t / 0.143);
+    if (t < 0.286) return mix(magenta, yellow, (t - 0.143) / 0.143);
     if (t < 0.429) return mix(yellow, green, (t - 0.286) / 0.143);
     if (t < 0.571) return mix(green, blue, (t - 0.429) / 0.143);
     if (t < 0.714) return mix(blue, indigo, (t - 0.571) / 0.143);

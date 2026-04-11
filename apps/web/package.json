@@ -26,7 +26,8 @@
     "tailwind-merge": "^3.4.0",
     "three": "^0.183.2",
     "xrpl": "^3.0.0",
-    "xrpl-connect": "^0.7.1"
+    "xrpl-connect": "^0.7.1",
+    "xrpl-smartescrow": "npm:xrpl@4.5.0-smartescrow.4"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
