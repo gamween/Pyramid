@@ -5,6 +5,12 @@ import { getClient } from "@/lib/xrplClient"
 import { useWallet } from "@/components/providers/WalletProvider"
 import { WATCHER_ACCOUNT } from "@/lib/constants"
 
+async function getTxMeta(hash) {
+  const client = await getClient()
+  const response = await client.request({ command: "tx", transaction: hash })
+  return response.result
+}
+
 export function useEscrow() {
   const { walletManager } = useWallet()
 
@@ -17,15 +23,13 @@ export function useEscrow() {
       Condition: condition,
       CancelAfter: cancelAfter,
     }
-    const result = await walletManager.signAndSubmit(tx)
-
-    const sequence = result?.result?.tx_json?.Sequence
-    const escrowNode = result?.result?.meta?.AffectedNodes?.find(
+    const submitted = await walletManager.signAndSubmit(tx)
+    const txResult = await getTxMeta(submitted.hash)
+    const sequence = txResult.Sequence
+    const escrowId = txResult.meta?.AffectedNodes?.find(
       (n) => n.CreatedNode?.LedgerEntryType === "Escrow"
-    )
-    const escrowId = escrowNode?.CreatedNode?.LedgerIndex
-
-    return { result, escrowId, sequence }
+    )?.CreatedNode?.LedgerIndex
+    return { hash: submitted.hash, escrowId, sequence }
   }, [walletManager])
 
   const finishEscrow = useCallback(async (owner, sequence, condition, fulfillment) => {

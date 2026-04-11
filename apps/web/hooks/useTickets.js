@@ -1,8 +1,15 @@
 "use client"
 
 import { useCallback } from "react"
+import { getClient } from "@/lib/xrplClient"
 import { useWallet } from "@/components/providers/WalletProvider"
 import { ADDRESSES } from "@/lib/constants"
+
+async function getTxMeta(hash) {
+  const client = await getClient()
+  const response = await client.request({ command: "tx", transaction: hash })
+  return response.result
+}
 
 export function useTickets() {
   const { walletManager } = useWallet()
@@ -13,11 +20,12 @@ export function useTickets() {
       TransactionType: "TicketCreate",
       TicketCount: count,
     }
-    const result = await walletManager.signAndSubmit(tx)
+    const submitted = await walletManager.signAndSubmit(tx)
+    const txResult = await getTxMeta(submitted.hash)
 
     // Extract allocated ticket sequences from metadata
     const ticketSequences = []
-    const affectedNodes = result?.result?.meta?.AffectedNodes || []
+    const affectedNodes = txResult.meta?.AffectedNodes || []
     for (const node of affectedNodes) {
       if (node.CreatedNode?.LedgerEntryType === "Ticket") {
         ticketSequences.push(node.CreatedNode?.NewFields?.TicketSequence)
@@ -25,7 +33,7 @@ export function useTickets() {
     }
     ticketSequences.sort((a, b) => a - b)
 
-    return { result, ticketSequences }
+    return { hash: submitted.hash, ticketSequences }
   }, [walletManager])
 
   const buildPresignedOffers = useCallback((ticketSequences, pair, amountPerBuy, side) => {
@@ -35,7 +43,7 @@ export function useTickets() {
         TransactionType: "OfferCreate",
         TicketSequence: ticketSeq,
         Sequence: 0, // must be 0 when using TicketSequence
-        Flags: 131072, // tfImmediateOrCancel
+        Flags: 0x00020000, // tfImmediateOrCancel
       }
 
       if (isBuy) {
@@ -67,7 +75,7 @@ export function useTickets() {
     const signedBlobs = []
     for (const tx of txs) {
       const signed = await walletManager.sign(tx)
-      signedBlobs.push(signed.tx_blob || signed)
+      signedBlobs.push(signed.tx_blob)
     }
     return signedBlobs
   }, [walletManager])

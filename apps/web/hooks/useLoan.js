@@ -5,6 +5,12 @@ import { getClient } from "@/lib/xrplClient"
 import { useWallet } from "@/components/providers/WalletProvider"
 import { LENDING } from "@/lib/constants"
 
+async function getTxMeta(hash) {
+  const client = await getClient()
+  const response = await client.request({ command: "tx", transaction: hash })
+  return response.result
+}
+
 export function useLoan() {
   const { walletManager } = useWallet()
 
@@ -15,11 +21,12 @@ export function useLoan() {
       VaultID: vaultId,
       ManagementFeeRate: managementFeeRate,
     }
-    const result = await walletManager.signAndSubmit(tx)
-    const loanBrokerId = result?.result?.meta?.AffectedNodes?.find(
+    const submitted = await walletManager.signAndSubmit(tx)
+    const txResult = await getTxMeta(submitted.hash)
+    const loanBrokerId = txResult.meta?.AffectedNodes?.find(
       (n) => n.CreatedNode?.LedgerEntryType === "LoanBroker"
     )?.CreatedNode?.LedgerIndex
-    return { result, loanBrokerId }
+    return { hash: submitted.hash, loanBrokerId }
   }, [walletManager])
 
   const depositCover = useCallback(async (loanBrokerId, amount) => {
@@ -53,10 +60,10 @@ export function useLoan() {
       PaymentInterval: paymentInterval,
       GracePeriod: gracePeriod,
     }
-    // Broker signs first
+    // Broker signs first — returns { tx_blob, signature }
     const brokerSigned = await walletManager.sign(tx)
-    // Return for borrower cosign — borrower uses xrpl.signLoanSetByCounterparty
-    return { brokerSigned, tx }
+    // Return for borrower cosign
+    return { tx_blob: brokerSigned.tx_blob, tx }
   }, [walletManager])
 
   const payLoan = useCallback(async (loanId, amount, flags = 0) => {
@@ -94,11 +101,14 @@ export function useLoan() {
     return await walletManager.signAndSubmit(tx)
   }, [walletManager])
 
-  const getLoanInfo = useCallback(async (loanId) => {
+  const getLoanInfo = useCallback(async (loanBrokerId, loanSeq) => {
     const client = await getClient()
     const response = await client.request({
       command: "ledger_entry",
-      loan: loanId,
+      loan: {
+        loan_broker_id: loanBrokerId,
+        loan_seq: loanSeq,
+      },
     })
     return response.result.node
   }, [])

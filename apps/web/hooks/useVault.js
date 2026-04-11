@@ -4,6 +4,12 @@ import { useCallback } from "react"
 import { getClient } from "@/lib/xrplClient"
 import { useWallet } from "@/components/providers/WalletProvider"
 
+async function getTxMeta(hash) {
+  const client = await getClient()
+  const response = await client.request({ command: "tx", transaction: hash })
+  return response.result
+}
+
 export function useVault() {
   const { walletManager } = useWallet()
 
@@ -14,11 +20,12 @@ export function useVault() {
       Asset: asset,
       ...metadata,
     }
-    const result = await walletManager.signAndSubmit(tx)
-    const vaultId = result?.result?.meta?.AffectedNodes?.find(
+    const submitted = await walletManager.signAndSubmit(tx)
+    const txResult = await getTxMeta(submitted.hash)
+    const vaultId = txResult.meta?.AffectedNodes?.find(
       (n) => n.CreatedNode?.LedgerEntryType === "Vault"
     )?.CreatedNode?.LedgerIndex
-    return { result, vaultId }
+    return { hash: submitted.hash, vaultId }
   }, [walletManager])
 
   const deposit = useCallback(async (vaultId, amount) => {
@@ -65,7 +72,7 @@ export function useVault() {
     const response = await client.request({
       command: "ledger_entry",
       mptoken: {
-        mpt_issuance_id: vaultInfo.mptIssuanceId, // ShareMPTID from vault
+        mpt_issuance_id: vaultInfo.mptIssuanceId,
         account: account,
       },
     })
