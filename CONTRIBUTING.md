@@ -1,54 +1,64 @@
-# Contributing to Scaffold-XRP
+# Contributing to Tellement-French
 
-Thank you for your interest in contributing to Scaffold-XRP! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing! This document provides guidelines and instructions.
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/yourusername/scaffold-xrp.git`
+2. Clone your fork: `git clone https://github.com/yourusername/tellement-french.git`
 3. Install dependencies: `pnpm install`
-4. Create a branch: `git checkout -b feature/your-feature-name`
+4. Create a branch from `sofiane`: `git checkout -b feature/your-feature-name`
 
 ## Development Workflow
 
 ### Running the Development Server
 
-\`\`\`bash
+```bash
 pnpm dev
-\`\`\`
+```
 
 ### Building
 
-\`\`\`bash
+```bash
 pnpm build
-\`\`\`
+```
 
 ### Linting and Formatting
 
-\`\`\`bash
+```bash
 pnpm lint
 pnpm format
-\`\`\`
+```
 
 ## Project Structure
 
-- `apps/web` - Next.js frontend application
-- `packages/bedrock` - Smart contracts in Rust
-- Root configuration files for Turborepo, pnpm, etc.
+- `apps/web` — Next.js 14 frontend (lending, trading, dashboard)
+- `apps/watcher` — Node.js watcher bot (price monitoring, order execution)
+- `packages/zkp` — RISC0 ZK guest program + CLI prover
+- `docs/specs` — Design specification
+
+## Naming Conventions
+
+- **Components:** PascalCase (`VaultDeposit.js`, `OrderCard.js`)
+- **Hooks:** camelCase with `use` prefix (`usePrice.js`, `useVault.js`)
+- **Utils/lib:** camelCase (`constants.js`, `networks.js`)
+- **Watcher modules:** kebab-case (`devnet-loop.js`, `zk-prover.js`)
+- **Variables:** camelCase (`triggerPrice`, `vaultId`)
+- **Constants:** UPPER_SNAKE_CASE (`ORDER_STATUS`, `SIDES`)
 
 ## Code Style
 
 - Use Prettier for code formatting (configured in `.prettierrc`)
 - Follow existing code patterns and conventions
-- Write descriptive commit messages
+- Commit messages: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:` prefix
 
 ## Making Changes
 
 ### Adding New Features
 
-1. Create a new branch from `main`
+1. Create a new branch from `sofiane`
 2. Implement your feature
-3. Test thoroughly
+3. Test thoroughly on Devnet
 4. Submit a pull request
 
 ### Fixing Bugs
@@ -57,29 +67,18 @@ pnpm format
 2. Reference the issue in your pull request
 3. Include steps to reproduce and test the fix
 
-### Adding New Contracts
-
-1. Add your contract to `packages/bedrock/src/`
-2. Update the README with usage instructions
-3. Add example interactions to the frontend if applicable
-
 ## Pull Request Process
 
 1. Update documentation for any new features
-2. Ensure all tests pass and code is formatted
-3. Update the README.md if needed
-4. Reference any related issues in the PR description
-5. Wait for review from maintainers
+2. Ensure all code is formatted (`pnpm format`)
+3. Reference any related issues in the PR description
+4. Wait for review from maintainers
 
 ## Code of Conduct
 
 - Be respectful and inclusive
 - Provide constructive feedback
 - Focus on what is best for the community
-
-## Questions?
-
-Feel free to open an issue for any questions or concerns.
 
 ## License
 

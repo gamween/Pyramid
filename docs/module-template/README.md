@@ -1,6 +1,6 @@
-# Scaffold-XRP Module Template
+# Tellement-French Module Template
 
-This is an example module structure for scaffold-xrp. Use this as a reference when creating your own modules.
+This is an example module structure for Tellement-French. Use this as a reference when creating your own modules.
 
 ## Module Structure
 
@@ -24,9 +24,10 @@ my-module/
 │   │   └── example.tsx
 │   └── vue/                 # Nuxt pages
 │       └── example.vue
-├── contracts/               # Rust/WASM smart contracts
-│   └── src/
-│       └── lib.rs
+├── zkp/                     # ZK proof programs (RISC0 guest code)
+│   └── guest/
+│       └── src/
+│           └── main.rs
 ├── data/                    # Static data files
 │   └── config.json
 └── install.js               # Optional: Post-install script
@@ -51,7 +52,7 @@ The `module.json` file is required and defines your module's metadata:
     "hooks": ["hooks/"],
     "composables": ["composables/"],
     "lib": ["lib/"],
-    "contracts": ["contracts/"],
+    "zkp": ["zkp/"],
     "pages": ["pages/"],
     "data": ["data/"]
   },
@@ -89,7 +90,7 @@ When a user installs your module:
    - `hooks/*` → `apps/web/modules/<name>/hooks/`
    - `composables/*` → `apps/web/modules/<name>/composables/`
    - `lib/*` → `apps/web/modules/<name>/lib/`
-   - `contracts/*` → `packages/bedrock/modules/<name>/`
+   - `zkp/*` → `packages/zkp/modules/<name>/`
 5. NPM dependencies are installed
 6. `install.js` is executed (if present)
 7. Module is registered in `.scaffold-xrp.json`

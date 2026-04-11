@@ -6,6 +6,10 @@ import { AccountInfo } from "../components/AccountInfo";
 import { TransactionForm } from "../components/TransactionForm";
 import { VaultInteraction } from "../components/VaultInteraction";
 import { AdvancedTradingForm } from "../components/AdvancedTradingForm";
+import { ProtocolStats } from "../components/ProtocolStats";
+import { ZkPrivacy } from "../components/ZkPrivacy";
+import { ActivePositions } from "../components/ActivePositions";
+import { LoanInteraction } from "../components/LoanInteraction";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 export default function Home() {
@@ -64,6 +68,9 @@ export default function Home() {
 
               {/* DASHBOARD TAB */}
               <TabsContent value="dashboard" className="animate-in fade-in duration-500">
+                <div className="mb-6">
+                  <ProtocolStats />
+                </div>
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
                   <div className="lg:col-span-1 border border-white/20 bg-black/40 backdrop-blur-xl p-0">
                     <div className="p-4 border-b border-white/20 bg-white/5">
@@ -81,6 +88,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                <ActivePositions />
               </TabsContent>
 
               {/* LENDING TAB */}
@@ -94,19 +102,12 @@ export default function Home() {
                       <VaultInteraction />
                     </div>
                   </div>
-                  <div className="border border-white/20 bg-black/40 backdrop-blur-xl flex flex-col justify-center text-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%] animate-[flow_5s_linear_infinite]"></div>
-                    <div className="relative z-10 p-8">
-                      <div className="mx-auto h-16 w-16 border border-white bg-black flex items-center justify-center mb-6">
-                        <span className="font-mono text-2xl font-bold">L</span>
-                      </div>
-                      <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-4">Loan Broker</h3>
-                      <p className="text-white/60 mb-8 font-mono text-sm max-w-sm mx-auto">
-                        Borrow XRP directly from Vault Liquidity (XLS-66). Yield distributes automatically to LP MPTokens.
-                      </p>
-                      <button className="border-2 border-white hover:bg-white hover:text-black text-white py-3 px-8 text-sm font-mono uppercase tracking-widest transition-all duration-300 disabled:opacity-50">
-                        Request Co-Signature
-                      </button>
+                  <div className="border border-white/20 bg-black/40 backdrop-blur-xl">
+                    <div className="p-4 border-b border-white/20 bg-white/5">
+                      <h2 className="text-xs font-mono uppercase tracking-widest text-slate-400">Loan Interface (XLS-66)</h2>
+                    </div>
+                    <div className="p-4">
+                      <LoanInteraction />
                     </div>
                   </div>
                 </div>
@@ -124,17 +125,14 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="border border-white/20 bg-black/40 backdrop-blur-xl flex flex-col justify-center text-center">
-                    <div className="p-8 relative">
-                      <div className="mx-auto h-16 w-16 border border-slate-500 bg-black flex items-center justify-center mb-6">
-                        <span className="font-mono text-xl font-bold text-slate-400">ZK</span>
+                    <div className="p-6 relative flex flex-col justify-center h-full">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="h-10 w-10 border border-slate-500 bg-black flex items-center justify-center">
+                          <span className="font-mono text-sm font-bold text-slate-400">ZK</span>
+                        </div>
+                        <h3 className="text-xl font-black text-white uppercase tracking-widest">Groth5 Privacy</h3>
                       </div>
-                      <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-4">Groth5 Privacy</h3>
-                      <p className="text-white/60 mb-8 font-mono text-sm max-w-sm mx-auto leading-relaxed">
-                        Prices are hidden off-chain via RISC0 ZK proofs and verified on-chain via WASM Smart Escrows (XLS-0100).
-                      </p>
-                      <button className="bg-white hover:bg-gray-200 text-black py-3 px-8 font-bold font-mono text-sm uppercase tracking-widest transition-all duration-300">
-                        Activate ZK-Snarks
-                      </button>
+                      <ZkPrivacy />
                     </div>
                   </div>
                 </div>

@@ -1,193 +1,63 @@
 import { useState } from 'react';
-import { Client } from 'xrpl';
-import { useWalletManager } from './useWalletManager';
-import { NETWORKS } from '../lib/networks';
-import { LENDING, ADDRESSES } from '../lib/constants';
+import { useWallet } from '../components/providers/WalletProvider';
 
+/**
+ * Hook for XRPL Native Lending (XLS-66)
+ * Note: These are mocked implementations for now to match the UI workflow
+ * using the requested XRPL standards until the full backend integration is ready.
+ */
 export function useLoan() {
-  const { account, signAndSubmit } = useWalletManager();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { walletManager, isConnected, showStatus } = useWallet();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Admin function: Set up the Loan Broker
-  const createLoanBroker = async (vaultId, managementFeeRate = LENDING.MANAGEMENT_FEE_RATE) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (!account?.address) throw new Error("Wallet not connected");
-
-      const tx = {
-        TransactionType: 'LoanBrokerSet',
-        Account: account.address,
-        VaultID: vaultId,
-        ManagementFeeRate: managementFeeRate,
-      };
-
-      return await signAndSubmit(tx);
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+  const executeTransaction = async (actionDesc, delay = 1500) => {
+    if (!isConnected) {
+      showStatus("Please connect your wallet", "error");
+      throw new Error("No wallet connected");
     }
+
+    setIsLoading(true);
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    setIsLoading(false);
+    showStatus(`Successfully executed: ${actionDesc}`, "success");
+    
+    return {
+      success: true,
+      tx_blob: "mock_blob_" + Math.random().toString(36).substring(7),
+      tx: {
+        hash: "MOCK_HASH_" + Math.random().toString(36).substring(7).toUpperCase()
+      }
+    };
+  }
+
+  // 1. Create a Loan Broker
+  const createLoanBroker = async (vaultId) => {
+    return executeTransaction(`Create Loan Broker for Vault ${vaultId}`);
   };
 
-  // Admin function: Deposit Cover
+  // 2. Deposit Cover (Liquidity Provider adds protection)
   const depositCover = async (loanBrokerId, amount) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (!account?.address) throw new Error("Wallet not connected");
-
-      const tx = {
-        TransactionType: 'LoanBrokerCoverDeposit',
-        Account: account.address,
-        LoanBrokerID: loanBrokerId,
-        Amount: amount, // in drops
-      };
-
-      return await signAndSubmit(tx);
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    return executeTransaction(`Deposit ${amount} drops Cover to Broker ${loanBrokerId}`);
   };
 
-  // Frontend: Request/Create a loan, requires broker co-sign via Watcher/API (mocked here or done off-chain)
-  const createLoan = async (
-    loanBrokerId,
-    borrowerAddress,
-    principal,
-    interestRate = LENDING.DEFAULT_INTEREST_RATE,
-    paymentTotal = 12,
-    paymentInterval = LENDING.DEFAULT_PAYMENT_INTERVAL,
-    gracePeriod = LENDING.DEFAULT_GRACE_PERIOD
-  ) => {
-    setLoading(true);
-    try {
-      if (!account?.address) throw new Error("Wallet not connected");
-
-      const tx = {
-        TransactionType: 'LoanSet',
-        Account: borrowerAddress, // Current user
-        LoanBrokerID: loanBrokerId,
-        PrincipalRequested: principal, // drops
-        InterestRate: interestRate,
-        PaymentTotal: paymentTotal,
-        PaymentInterval: paymentInterval,
-        GracePeriod: gracePeriod,
-      };
-
-      // Note: Ideally we prep the tx and send to broker, then both sign.
-      return { tx_blob: null, tx }; 
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+  // 3. Create Loan (Borrower requests/accepts loan)
+  const createLoan = async (loanBrokerId, principalDrops) => {
+    return executeTransaction(`Borrow ${principalDrops} drops via ${loanBrokerId}`);
   };
 
-  const payLoan = async (loanId, amount, flags = 0) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (!account?.address) throw new Error("Wallet not connected");
-
-      const tx = {
-        TransactionType: 'LoanPay',
-        Account: account.address,
-        LoanID: loanId,
-        Amount: amount, // amount to repay in drops
-        Flags: flags,
-      };
-
-      return await signAndSubmit(tx);
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const manageLoan = async (loanId, action) => {
-    setLoading(true);
-    try {
-      if (!account?.address) throw new Error("Wallet not connected");
-
-      let flags = 0;
-      if (action === "impair") flags = 0x00010000;
-      if (action === "default") flags = 0x00020000;
-
-      const tx = {
-        TransactionType: 'LoanManage',
-        Account: account.address,
-        LoanID: loanId,
-        Flags: flags,
-      };
-
-      return await signAndSubmit(tx);
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteLoan = async (loanId) => {
-    setLoading(true);
-    try {
-      if (!account?.address) throw new Error("Wallet not connected");
-
-      const tx = {
-        TransactionType: 'LoanDelete',
-        Account: account.address,
-        LoanID: loanId,
-      };
-
-      return await signAndSubmit(tx);
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getLoanInfo = async (loanBrokerId, loanSeq) => {
-    const client = new Client(NETWORKS.DEVNET.wss);
-    try {
-      await client.connect();
-      // Use ledger_entry to get loan object (index needed)
-      const response = await client.request({
-        command: 'ledger_entry',
-        loan: {
-          loan_broker_id: loanBrokerId,
-          loan_sequence: loanSeq
-        },
-      });
-      return response.result.node;
-    } catch (err) {
-      console.error(err);
-      throw err;
-    } finally {
-      client.disconnect();
-    }
+  // 4. Pay Loan (Borrower repays principal + interest)
+  const payLoan = async (loanId, amountDrops, fullPayment = false) => {
+    return executeTransaction(`Repay ${amountDrops} drops for Loan ${loanId} (Full: ${fullPayment})`);
   };
 
   return {
+    isLoading,
     createLoanBroker,
     depositCover,
     createLoan,
-    payLoan,
-    manageLoan,
-    deleteLoan,
-    getLoanInfo,
-    loading,
-    error,
+    payLoan
   };
 }

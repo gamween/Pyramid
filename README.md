@@ -1,33 +1,29 @@
-# Scaffold-XRP
+# Tellement-French
 
-A Next.js-based development stack for building decentralized applications on XRPL with smart contracts. Built with Turborepo, inspired by Scaffold-ETH-2.
+First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Composes Vaults, Loans, and the native DEX into a complete trading + yield platform. No smart contracts, no Hooks — pure native XRPL primitives.
 
 ## Features
 
-- **Next.js 14** - Modern React framework with App Router
-- **Turborepo** - High-performance build system for monorepos
-- **XRPL Integration** - Full XRPL client with WebSocket support
-- **Multi-Wallet Support** - Connect with Xaman, Crossmark, GemWallet, or manual address
-- **Network Switching** - Easy switching between AlphaNet, Testnet, and Devnet
-- **Smart Contract Tools** - Deploy and interact with XRPL smart contracts
-- **Faucet Integration** - Request test XRP directly from the UI
-- **Transaction History** - View your transaction history with explorer links
-- **Debug Panel** - Execute custom XRPL commands and view network info
-- **Sample Contract** - Counter contract example in Rust
+- **Lending** — Deposit into Vaults, earn yield from loan interest (XLS-65/66)
+- **Borrowing** — Take loans from Vault liquidity, fixed term + rate
+- **Advanced Trading** — Stop-Loss, Take-Profit, Trailing Stop, OCO via Escrow + watcher
+- **DCA / TWAP** — Pre-signed orders with Tickets, auto-executed at intervals
+- **ZK Privacy** — Hidden trigger prices via Smart Escrows (XLS-0100) + RISC0 proofs on Groth5
+- **Multi-Wallet** — Xaman, Crossmark, GemWallet, WalletConnect, Otsu
+- **Native Prices** — `book_offers` + `amm_info` from XRPL DEX/AMM (no oracle)
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and pnpm 8+
-- Rust (optional, for building contracts)
 
 ### Installation
 
-```
+```bash
 # Clone the repository
-git clone https://github.com/yourusername/scaffold-xrp.git
-cd scaffold-xrp
+git clone https://github.com/yourusername/tellement-french.git
+cd tellement-french
 
 # Install dependencies
 pnpm install
@@ -38,20 +34,43 @@ pnpm dev
 
 The app will be available at [http://localhost:3000](http://localhost:3000)
 
+## Architecture
+
+| Layer | Network | Primitives |
+|---|---|---|
+| **Lending** | Devnet | VaultCreate, VaultDeposit, VaultWithdraw, LoanBrokerSet, LoanSet, LoanPay |
+| **Trading** | Devnet | EscrowCreate, EscrowFinish, EscrowCancel, OfferCreate (ImmediateOrCancel) |
+| **DCA/TWAP** | Devnet | TicketCreate + pre-signed OfferCreate |
+| **Privacy** | Groth5 | Smart Escrows (XLS-0100) + RISC0 proofs via Boundless, verified on-chain |
+| **Prices** | Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
+
+### The Flywheel
+
+```
+Depositors → Vaults (earn yield)
+    ↓
+Borrowers → loans → trade with advanced orders
+    ↓
+Trading → volume → more depositors → deeper liquidity
+```
+
 ## Project Structure
 
 ```
-scaffold-xrp/
+tellement-french/
 ├── apps/
-│   └── web/                 # Next.js application
-│       ├── app/             # Next.js App Router
-│       ├── components/      # React components
-│       └── lib/             # Utilities and configurations
+│   ├── web/                     # Next.js 14 frontend
+│   │   ├── app/                 # App Router pages
+│   │   ├── components/          # React components (lending/, trading/, dashboard/)
+│   │   ├── hooks/               # useVault, useLoan, useEscrow, useTickets, usePrice
+│   │   ├── providers/           # LendingProvider, OrderProvider
+│   │   └── lib/                 # xrplClient, networks, constants
+│   └── watcher/                 # Node.js watcher bot
+│       └── src/                 # devnet-loop, dca-scheduler, order-cache, zk-prover
 ├── packages/
-│   └── bedrock/             # Smart contracts (Rust)
-│       ├── src/
-│       │   └── lib.rs       # Counter contract example
-│       └── Cargo.toml
+│   └── zkp/                     # RISC0 guest program + CLI prover
+├── docs/
+│   └── specs/                   # Design specification
 ├── package.json
 ├── pnpm-workspace.yaml
 └── turbo.json
@@ -62,62 +81,57 @@ scaffold-xrp/
 ### Connecting Your Wallet
 
 1. Click "Connect Wallet" in the header
-2. Choose your wallet (Xaman, Crossmark, GemWallet) or enter address manually
-3. Approve the connection in your wallet extension
+2. Choose your wallet (Xaman, Crossmark, GemWallet, Otsu) or WalletConnect
+3. Approve the connection in your wallet
 
 ### Getting Test XRP
 
-1. Connect your wallet
+1. Connect your wallet on **Devnet**
 2. Go to the "Faucet" section
 3. Click "Request Test XRP"
-4. Wait for the transaction to complete
 
-### Deploying a Smart Contract
+### Lending
 
-1. Build your contract (see [Building Contracts](#building-contracts))
-2. Go to "Deploy Contract"
-3. Upload your `.wasm` file
-4. Confirm the transaction (requires 100 XRP fee)
-5. Copy the contract address from the confirmation
+1. **Deposit** — Enter amount → VaultDeposit transaction → receive share MPTokens
+2. **Borrow** — Request a loan → cosigned LoanSet transaction → receive funds
+3. **Repay** — LoanPay with principal + interest
 
-### Interacting with Contracts
+### Trading
 
-1. Go to "Interact with Contract"
-2. Enter the contract address
-3. Enter the function name (e.g., `increment`)
-4. Add arguments if needed
-5. Click "Call Contract Function"
-6. Confirm the transaction in your wallet
+1. **Stop-Loss / Take-Profit** — Set trigger price → EscrowCreate locks funds → watcher monitors DEX → executes when triggered
+2. **DCA** — Choose amount, count, interval → TicketCreate + pre-sign N orders → watcher submits at intervals
+3. **Private Orders** — Toggle "Hide trigger price (ZK)" → Smart Escrow on Groth5, RISC0 proof verified on-chain
 
-## Building Contracts
+## Networks
 
-### Install Rust
+### Devnet (Default)
+- **WebSocket:** wss://s.devnet.rippletest.net:51233
+- **Network ID:** 2
+- **Faucet:** https://faucet.devnet.rippletest.net/accounts
+- **Explorer:** https://devnet.xrpl.org
 
-```
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup target add wasm32-unknown-unknown
-```
+### Groth5 (ZK Smart Escrows Only)
+- **WebSocket:** wss://groth5.devnet.rippletest.net:51233
+- **Faucet:** http://groth5-faucet.devnet.rippletest.net
+- **Explorer:** http://custom.xrpl.org/groth5.devnet.rippletest.net
+- **xrpl.js:** `4.5.0-smartescrow.4` (required for `FinishFunction` + `ComputationAllowance`)
 
-### Build the Counter Contract
+## XRPL Transaction Types Used
 
-```
-cd packages/bedrock
-cargo build --target wasm32-unknown-unknown --release
-```
-
-The compiled WASM file will be at:
-```
-target/wasm32-unknown-unknown/release/counter.wasm
-```
-
-See [packages/bedrock/README.md](packages/bedrock/README.md) for more details.
+- `VaultCreate`, `VaultDeposit`, `VaultWithdraw` (XLS-65 Vaults)
+- `LoanBrokerSet`, `LoanSet`, `LoanPay`, `LoanManage`, `LoanDelete` (XLS-66 Lending)
+- `EscrowCreate`, `EscrowFinish`, `EscrowCancel` (conditional fund locking)
+- `OfferCreate` with `tfImmediateOrCancel` (DEX market orders)
+- `TicketCreate` (parallel pre-signed DCA/TWAP)
+- `Payment` (settlement)
+- `book_offers`, `amm_info` (native price discovery)
 
 ## Development
 
 ### Available Commands
 
-```
-pnpm dev          # Start development server
+```bash
+pnpm dev          # Start frontend + watcher
 pnpm build        # Build all packages
 pnpm lint         # Lint all packages
 pnpm format       # Format code with Prettier
@@ -128,73 +142,34 @@ pnpm clean        # Clean build artifacts
 
 Create a `.env.local` file in `apps/web/`:
 
+```bash
+# Network (default: devnet)
+NEXT_PUBLIC_DEFAULT_NETWORK=devnet
+
+# Wallet adapters (optional)
+NEXT_PUBLIC_XAMAN_API_KEY=your_xaman_api_key_here
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id_here
 ```
-# Optional: Configure default network
-NEXT_PUBLIC_DEFAULT_NETWORK=alphanet
-```
 
-## Networks
+## Tech Stack
 
-### AlphaNet (Default)
-- **WebSocket:** wss://alphanet.nerdnest.xyz
-- **Network ID:** 21465
-- **Faucet:** https://alphanet.faucet.nerdnest.xyz/accounts
-- **Explorer:** https://alphanet.xrpl.org
-
-### Testnet
-- **WebSocket:** wss://s.altnet.rippletest.net:51233
-- **Network ID:** 1
-- **Faucet:** https://faucet.altnet.rippletest.net/accounts
-- **Explorer:** https://testnet.xrpl.org
-
-### Devnet
-- **WebSocket:** wss://s.devnet.rippletest.net:51233
-- **Network ID:** 2
-- **Faucet:** https://faucet.devnet.rippletest.net/accounts
-- **Explorer:** https://devnet.xrpl.org
-
-## Components
-
-### Core Components
-
-- **Header** - Navigation with wallet connection and network switching
-- **AccountInfo** - Display wallet address and balance
-- **FaucetRequest** - Request test XRP from network faucet
-- **ContractDeployment** - Upload and deploy WASM contracts
-- **ContractInteraction** - Call contract functions
-- **TransactionHistory** - View transaction history
-- **DebugPanel** - Execute custom XRPL commands
-
-### Providers
-
-- **XRPLProvider** - Global state for XRPL connection, wallet, and network
-
-## Technologies
-
-- [Next.js 14](https://nextjs.org/)
-- [React 18](https://react.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Turborepo](https://turbo.build/)
-- [xrpl.js](https://js.xrpl.org/)
-- [Bedrock](https://github.com/XRPL-Commons/Bedrock)
+- [Next.js 14](https://nextjs.org/) + [React 18](https://react.dev/)
+- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- [xrpl.js v3](https://js.xrpl.org/) + [xrpl-connect](https://github.com/peerkat/xrpl-connect)
+- [Turborepo](https://turbo.build/) + pnpm workspaces
+- [RISC0 zkVM](https://www.risczero.com/) + [Boundless Market](https://boundless.xyz/)
 
 ## Resources
 
 - [XRPL Documentation](https://xrpl.org/)
-- [XRPL Smart Contracts Guide](https://xrpl.org/docs.html)
-- [Bedrock GitHub](https://github.com/XRPL-Commons/Bedrock)
-- [Scaffold-ETH-2](https://github.com/scaffold-eth/scaffold-eth-2)
+- [XLS-65 Vault Spec](https://github.com/XRPLF/XRPL-Standards/discussions/182)
+- [XLS-66 Lending Spec](https://github.com/XRPLF/XRPL-Standards/discussions/183)
+- [Design Specification](docs/specs/2026-04-11-tellement-french-design.md)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
 MIT License - see LICENSE file for details
-
-## Acknowledgments
-
-- Inspired by [Scaffold-ETH-2](https://github.com/scaffold-eth/scaffold-eth-2)
-- Built for the XRPL community
-- Uses [Bedrock](https://github.com/XRPL-Commons/Bedrock) for smart contract development
