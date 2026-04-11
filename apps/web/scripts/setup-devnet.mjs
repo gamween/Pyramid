@@ -12,17 +12,19 @@ import { writeFileSync } from "fs"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
 
-const WSS = "wss://alphanet.nerdnest.xyz"
-const FAUCET_HOST = "alphanet.faucet.nerdnest.xyz"
+const WSS = "wss://wasm.devnet.rippletest.net:51233"
+const FAUCET_HOST = "wasmfaucet.devnet.rippletest.net"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function fundWallet(client, label) {
-  console.log(`  Requesting faucet for ${label}...`)
-  const result = await client.fundWallet(null, {
+  console.log(`  Generating wallet for ${label}...`)
+  const wallet = Wallet.generate()
+  console.log(`  Address: ${wallet.address}`)
+  console.log(`  Requesting faucet...`)
+  const result = await client.fundWallet(wallet, {
     faucetHost: FAUCET_HOST,
   })
-  const wallet = result.wallet
   console.log(`  Funded ${label}: ${wallet.address} (${result.balance} XRP)`)
   return { wallet, seed: wallet.seed }
 }
