@@ -24,6 +24,18 @@ export const LENDING = {
   DEFAULT_GRACE_PERIOD: 604800,
 }
 
+export const LOAN_PAY_FLAGS = {
+  tfLoanOverpayment: 0x00010000,
+  tfLoanFullPayment: 0x00020000,
+  tfLoanLatePayment: 0x00040000,
+}
+
+export const LOAN_MANAGE_FLAGS = {
+  tfLoanDefault: 0x00010000,
+  tfLoanImpair: 0x00020000,
+  tfLoanUnimpair: 0x00040000,
+}
+
 export const WATCHER_ACCOUNT = "" // filled after watcher setup
 
 export const ADDRESSES = {

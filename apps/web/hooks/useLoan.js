@@ -46,7 +46,7 @@ export function useLoan() {
     const tx = {
       TransactionType: "LoanSet",
       LoanBrokerID: loanBrokerId,
-      Destination: borrowerAddress,
+      Counterparty: borrowerAddress,
       PrincipalRequested: principal,
       InterestRate: interestRate,
       PaymentTotal: paymentTotal,
@@ -73,9 +73,9 @@ export function useLoan() {
   const manageLoan = useCallback(async (loanId, action) => {
     if (!walletManager) throw new Error("Wallet not connected")
     const flagMap = {
-      impair: 0x00000001,   // tfLoanImpair
-      default: 0x00000002,  // tfLoanDefault
-      unimpair: 0x00000004, // tfLoanUnimpair
+      default: 0x00010000,  // tfLoanDefault
+      impair: 0x00020000,   // tfLoanImpair
+      unimpair: 0x00040000, // tfLoanUnimpair
     }
     const tx = {
       TransactionType: "LoanManage",
