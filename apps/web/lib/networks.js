@@ -1,4 +1,28 @@
 export const NETWORKS = {
+  DEVNET: {
+    id: "devnet",
+    name: "Devnet",
+    networkId: 2,
+    wss: "wss://s.devnet.rippletest.net:51233",
+    faucet: "https://faucet.devnet.rippletest.net/accounts",
+    explorer: "https://devnet.xrpl.org",
+  },
+  XAHAU_TESTNET: {
+    id: "xahau-testnet",
+    name: "Xahau Testnet",
+    networkId: 21338,
+    wss: "wss://xahau-test.net",
+    faucet: "https://xahau-test.net/accounts",
+    explorer: "https://explorer.xahau-test.net",
+  },
+  GROTH5: {
+    id: "groth5",
+    name: "Groth5 Devnet",
+    networkId: 2,
+    wss: "wss://groth5.devnet.rippletest.net:51233",
+    faucet: "https://faucet.devnet.rippletest.net/accounts",
+    explorer: "https://devnet.xrpl.org",
+  },
   ALPHANET: {
     id: "alphanet",
     name: "AlphaNet",
@@ -15,14 +39,7 @@ export const NETWORKS = {
     faucet: "https://faucet.altnet.rippletest.net/accounts",
     explorer: "https://testnet.xrpl.org",
   },
-  DEVNET: {
-    id: "devnet",
-    name: "Devnet",
-    networkId: 2,
-    wss: "wss://s.devnet.rippletest.net:51233",
-    faucet: "https://faucet.devnet.rippletest.net/accounts",
-    explorer: "https://devnet.xrpl.org",
-  },
 };
 
-export const DEFAULT_NETWORK = NETWORKS.ALPHANET;
+// Devnet is primary for Tellement-French (lending protocol + DEX)
+export const DEFAULT_NETWORK = NETWORKS.DEVNET;
