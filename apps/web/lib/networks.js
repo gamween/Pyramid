@@ -4,7 +4,7 @@ export const NETWORKS = {
     name: "Groth5 Devnet",
     networkId: 2,
     wss: "wss://groth5.devnet.rippletest.net:51233",
-    faucet: "http://groth5-faucet.devnet.rippletest.net/accounts",
+    faucet: "http://groth5-faucet.devnet.rippletest.net",
     explorer: "http://custom.xrpl.org/groth5.devnet.rippletest.net",
   },
 };

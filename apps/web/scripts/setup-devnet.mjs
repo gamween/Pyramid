@@ -13,24 +13,18 @@ import { fileURLToPath } from "url"
 import { dirname, join } from "path"
 
 const WSS = "wss://groth5.devnet.rippletest.net:51233"
-const FAUCET = "http://groth5-faucet.devnet.rippletest.net/accounts"
+const FAUCET_HOST = "groth5-faucet.devnet.rippletest.net"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function fundWallet(client, label) {
   console.log(`  Requesting faucet for ${label}...`)
-  const resp = await fetch(FAUCET, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
+  const result = await client.fundWallet(null, {
+    faucetHost: FAUCET_HOST,
   })
-  if (!resp.ok) throw new Error(`Faucet failed: ${resp.status} ${resp.statusText}`)
-  const data = await resp.json()
-  const wallet = Wallet.fromSeed(data.account.secret)
-  await new Promise((r) => setTimeout(r, 3000))
-  const info = await client.request({ command: "account_info", account: wallet.address })
-  console.log(`  Funded ${label}: ${wallet.address} (${info.result.account_data.Balance} drops)`)
-  return { wallet, seed: data.account.secret }
+  const wallet = result.wallet
+  console.log(`  Funded ${label}: ${wallet.address} (${result.balance} XRP)`)
+  return { wallet, seed: wallet.seed }
 }
 
 async function main() {
