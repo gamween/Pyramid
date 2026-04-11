@@ -1,6 +1,6 @@
 export const config = {
   devnet: {
-    wss: process.env.DEVNET_WSS || "wss://groth5.devnet.rippletest.net:51233",
+    wss: process.env.DEVNET_WSS || "wss://alphanet.nerdnest.xyz",
   },
   watcherSeed: process.env.WATCHER_SEED || "",
   rlusdIssuer: process.env.RLUSD_ISSUER || "",
