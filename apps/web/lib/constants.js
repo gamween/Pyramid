@@ -35,10 +35,10 @@ export const LENDING = {
 
 // Hook memo types for DCA/TWAP on Xahau
 export const HOOK_MEMO_TYPES = {
-  DCA_SETUP: "peach/dca",
-  TWAP_SETUP: "peach/twap",
-  EXECUTE: "peach/execute",
-  CANCEL: "peach/cancel",
+  DCA_SETUP: "tf/dca",
+  TWAP_SETUP: "tf/twap",
+  EXECUTE: "tf/execute",
+  CANCEL: "tf/cancel",
 };
 
 // Contract/account addresses (filled after deployment)
