@@ -30,6 +30,33 @@ All fields verified against official docs as of 2026-04-11.
 | TicketCreate | [docs](https://xrpl.org/docs/references/protocol/transactions/types/ticketcreate) | `TicketCount` (1-250) |
 | OfferCreate | [docs](https://xrpl.org/docs/references/protocol/transactions/types/offercreate) | `TakerPays`, `TakerGets` |
 
+### Smart Escrows (XLS-0100 — Groth5 only, requires xrpl@4.5.0-smartescrow.4)
+
+[spec](https://github.com/XRPLF/XRPL-Standards/tree/master/XLS-0100-smart-escrows) | [starter](https://github.com/boundless-xyz/xrpl-risc0-starter)
+
+**EscrowCreate — additional fields for smart escrows:**
+
+| Field | Type | Description |
+|---|---|---|
+| `FinishFunction` | Blob (hex) | Compiled WASM binary with `finish() -> i32` |
+| `Data` | Blob (hex) | Optional data readable by WASM at finish time |
+| `CancelAfter` | UInt32 | **Mandatory** for smart escrows (safety) |
+
+**EscrowFinish — additional fields for smart escrows:**
+
+| Field | Type | Description |
+|---|---|---|
+| `ComputationAllowance` | UInt32 | Gas budget for WASM execution (use 1000000) |
+| `Memos[0].MemoData` | Blob (hex) | Journal (public output of zkVM guest) |
+| `Memos[1].MemoData` | Blob (hex) | Seal (256-byte Groth16 proof) |
+
+**EscrowFinish metadata:**
+
+| Field | Description |
+|---|---|
+| `GasUsed` | Actual gas consumed by WASM |
+| `WasmReturnCode` | Return value of `finish()` (1 = release, 0 = keep locked) |
+
 ---
 
 ## Flags
@@ -74,19 +101,24 @@ All fields verified against official docs as of 2026-04-11.
 ### Vault
 [docs](https://xrpl.org/docs/references/protocol/ledger-data/ledger-entry-types/vault)
 
-| Field | Type |
-|---|---|
-| Owner | AccountID |
-| Account | AccountID |
-| Asset | Issue |
-| AssetsTotal | Number |
-| AssetsAvailable | Number |
-| AssetsMaximum | Number |
-| LossUnrealized | Number |
-| ShareMPTID | UInt192 |
-| WithdrawalPolicy | UInt8 |
-| Scale | UInt8 |
-| Data | Blob |
+| Field | Type | Description |
+|---|---|---|
+| Account | AccountID | Vault's pseudo-account (not the owner) |
+| Owner | AccountID | Vault owner's address |
+| Asset | Issue | Held asset (XRP, token, or MPT) |
+| AssetsTotal | Number | Total vault value |
+| AssetsAvailable | Number | Liquid/available amount |
+| AssetsMaximum | Number | Cap on holdings (0 = unlimited) |
+| LossUnrealized | Number | Unrealized loss |
+| ShareMPTID | UInt192 | MPTokenIssuance ID for vault shares |
+| Scale | UInt8 | Decimal precision (sigma = 10^Scale) |
+| WithdrawalPolicy | UInt8 | Withdrawal strategy |
+| Data | Blob | Hex-encoded metadata (max 256 bytes) |
+| Sequence | UInt32 | Sequence number at creation |
+
+Exchange rates:
+- Deposit: `shares = (assets * totalShares) / totalAssets` (initial: `assets * 10^Scale`)
+- Redemption: `assets = (shares * (totalAssets - lossUnrealized)) / totalShares`
 
 ### Loan
 [docs](https://xrpl.org/docs/references/protocol/ledger-data/ledger-entry-types/loan)
@@ -132,6 +164,39 @@ All fields verified against official docs as of 2026-04-11.
 ---
 
 ## RPC Queries
+
+### vault_info
+[docs](https://xrpl.org/docs/references/http-websocket-apis/public-api-methods/vault-methods/vault_info)
+
+```javascript
+// By vault ID
+{ command: "vault_info", vault_id: "HEX_ID" }
+
+// By owner + sequence
+{ command: "vault_info", owner: "rAddress", seq: 123 }
+```
+
+Response: `result.vault` contains all Vault fields plus `shares` object:
+```javascript
+{
+  vault: {
+    Account: "rPseudoAccount",    // vault's pseudo-account
+    Owner: "rOwnerAddress",       // vault owner
+    AssetsTotal: 1000,            // total vault value
+    AssetsAvailable: 800,         // liquid amount
+    AssetsMaximum: 0,             // 0 = unlimited
+    LossUnrealized: 0,            // unrealized loss
+    ShareMPTID: "HEX",           // share MPT issuance ID
+    Scale: 0,                     // decimal precision (sigma = 10^Scale)
+    shares: {
+      OutstandingAmount: "500",   // total shares issued (string)
+      mpt_issuance_id: "HEX",   // same as ShareMPTID
+    }
+  }
+}
+```
+
+Share price: `(AssetsTotal - LossUnrealized) / OutstandingAmount`
 
 ### ledger_entry
 [docs](https://xrpl.org/docs/references/http-websocket-apis/public-api-methods/ledger-methods/ledger_entry)

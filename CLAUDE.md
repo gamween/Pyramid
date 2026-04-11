@@ -17,7 +17,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 | **Lending** | Devnet | VaultCreate/Deposit/Withdraw, LoanBrokerSet, LoanSet/Pay/Manage |
 | **Trading** | Devnet | EscrowCreate/Finish/Cancel, OfferCreate (ImmediateOrCancel) |
 | **DCA/TWAP** | Devnet | TicketCreate + pre-signed OfferCreate |
-| **Privacy** | Groth5 | RISC0 ZK escrows (Boundless bounty) |
+| **Privacy** | Groth5 | Smart Escrows (XLS-0100) + RISC0 ZK proofs via Boundless |
 | **Prices** | Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
 
 ## Tech Stack

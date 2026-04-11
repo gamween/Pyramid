@@ -7,29 +7,13 @@ export const NETWORKS = {
     faucet: "https://faucet.devnet.rippletest.net/accounts",
     explorer: "https://devnet.xrpl.org",
   },
-  XAHAU_TESTNET: {
-    id: "xahau-testnet",
-    name: "Xahau Testnet",
-    networkId: 21338,
-    wss: "wss://xahau-test.net",
-    faucet: "https://xahau-test.net/accounts",
-    explorer: "https://explorer.xahau-test.net",
-  },
   GROTH5: {
     id: "groth5",
     name: "Groth5 Devnet",
     networkId: 2,
     wss: "wss://groth5.devnet.rippletest.net:51233",
-    faucet: "https://faucet.devnet.rippletest.net/accounts",
-    explorer: "https://devnet.xrpl.org",
-  },
-  ALPHANET: {
-    id: "alphanet",
-    name: "AlphaNet",
-    networkId: 21465,
-    wss: "wss://alphanet.nerdnest.xyz",
-    faucet: "https://alphanet.faucet.nerdnest.xyz/accounts",
-    explorer: "https://alphanet.xrpl.org",
+    faucet: "http://groth5-faucet.devnet.rippletest.net",
+    explorer: "http://custom.xrpl.org/groth5.devnet.rippletest.net",
   },
   TESTNET: {
     id: "testnet",
@@ -41,5 +25,6 @@ export const NETWORKS = {
   },
 };
 
-// Devnet is primary for Tellement-French (lending protocol + DEX)
+// Devnet is primary for Tellement-French (lending + trading + DCA)
+// Groth5 is used for ZK private orders only (Smart Escrows + RISC0, requires xrpl@4.5.0-smartescrow.4)
 export const DEFAULT_NETWORK = NETWORKS.DEVNET;

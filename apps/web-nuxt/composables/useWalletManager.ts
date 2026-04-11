@@ -63,7 +63,7 @@ export function useWalletManager() {
       adapters.push(new GemWalletAdapter())
       adapters.push(new OtsuAdapter())
 
-      const defaultNetwork = import.meta.env.VITE_DEFAULT_NETWORK || 'testnet'
+      const defaultNetwork = import.meta.env.VITE_DEFAULT_NETWORK || 'devnet'
 
       const manager = new WalletManager({
         adapters,

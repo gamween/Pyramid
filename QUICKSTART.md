@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get started with Scaffold-XRP in 5 minutes!
+Get started with Tellement-French in 5 minutes.
 
 ## Prerequisites
 
@@ -11,8 +11,8 @@ Get started with Scaffold-XRP in 5 minutes!
 
 ```bash
 # Clone the repository
-git clone https://github.com/XRPL-Commons/scaffold-xrp.git
-cd scaffold-xrp
+git clone https://github.com/yourusername/tellement-french.git
+cd tellement-french
 
 # Install dependencies
 pnpm install
@@ -28,88 +28,71 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### 1. Connect Your Wallet
 
 Click the "Connect Wallet" button in the header and choose:
-- **Xaman** - If you have Xaman wallet extension
-- **Crossmark** - If you have Crossmark wallet extension
-- **GemWallet** - If you have GemWallet extension
-- **Manual** - Enter any XRPL address to view (read-only)
+- **Xaman** — Xaman wallet extension
+- **Crossmark** — Crossmark wallet extension
+- **GemWallet** — GemWallet extension
+- **Otsu** — Otsu wallet
+- **WalletConnect** — Any WalletConnect-compatible wallet
 
 ### 2. Get Test XRP
 
-1. Make sure you're on **AlphaNet** (check the network switcher in the header)
+1. Make sure you're on **Devnet** (check the network indicator in the header)
 2. Scroll to the "Faucet" section
 3. Click "Request Test XRP"
 4. Wait a few seconds for your balance to update
 
-You'll receive 1000 XRP on AlphaNet for testing!
+### 3. Deposit into a Vault
 
-### 3. Deploy Your First Contract
+1. Go to the **Lending** tab
+2. Enter an amount of XRP to deposit
+3. Click "Deposit" → confirms a `VaultDeposit` transaction
+4. You'll receive share MPTokens representing your stake
 
-The project includes a sample counter contract in `packages/bedrock/`.
+### 4. Take a Loan
 
-#### Build the Contract
+1. In the **Lending** tab, find the loan section
+2. Enter your desired principal amount
+3. Review the interest rate and payment schedule
+4. Click "Request Loan" → cosigned `LoanSet` transaction
+5. Funds are transferred to your account
 
-```bash
-# Install Rust (if not already installed)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup target add wasm32-unknown-unknown
+### 5. Create a Trading Order
 
-# Build the counter contract
-cd packages/bedrock
-cargo build --target wasm32-unknown-unknown --release
-```
+1. Go to the **Trading** tab
+2. Choose an order type:
+   - **Stop-Loss / Take-Profit** — Set a trigger price, funds locked in escrow
+   - **Trailing Stop** — Set a trailing percentage
+   - **OCO** — Set both TP and SL prices (two escrows)
+   - **DCA** — Set amount per buy, number of buys, interval
+3. Submit → creates on-chain escrow or ticket transactions
+4. The watcher bot monitors prices and executes when conditions are met
 
-The compiled WASM file will be at:
-```
-packages/bedrock/target/wasm32-unknown-unknown/release/counter.wasm
-```
+### 6. Explore the Dashboard
 
-#### Deploy via UI
+The dashboard shows:
+- **Vault TVL** — Total assets in the lending vault
+- **Active Loans** — Current loan count
+- **Active Orders** — Your pending trading orders
+- **XRP Price** — Live from the native DEX
 
-1. Go to the "Deploy Contract" section
-2. Click "Upload WASM File" and select `counter.wasm`
-3. Review the contract code (displayed in hex)
-4. Click "Deploy Contract"
-5. Approve the transaction in your wallet (requires 100 XRP fee)
-6. Copy the contract address from the confirmation
+## How It Works
 
-### 4. Interact with Your Contract
+All operations use native XRPL transaction types — no smart contracts, no Hooks:
 
-1. Go to the "Interact with Contract" section
-2. Paste your contract address
-3. Click "Load Counter Example" or enter a function name:
-   - `increment` - Increase counter by 1
-   - `decrement` - Decrease counter by 1
-   - `get_value` - Get current value
-   - `reset` - Reset to 0
-4. Click "Call Contract Function"
-5. Approve the transaction in your wallet
-
-### 5. Explore the Debug Panel
-
-The debug panel on the right shows:
-- Current network information
-- Your wallet details
-- Connection status
-
-Try executing custom XRPL commands:
-1. Click one of the example buttons (Server Info, Account Info, Ledger)
-2. Or write your own JSON command
-3. Click "Execute Command"
-4. View the results
+| Action | XRPL Transaction |
+|--------|-----------------|
+| Deposit into vault | `VaultDeposit` |
+| Take a loan | `LoanSet` (cosigned) |
+| Repay a loan | `LoanPay` |
+| Create stop-loss | `EscrowCreate` (locks funds) |
+| Execute order | `EscrowFinish` + `OfferCreate` |
+| DCA setup | `TicketCreate` + pre-signed `OfferCreate` |
 
 ## What's Next?
 
 - Read the [full README](README.md) for detailed documentation
-- Check out [packages/bedrock/README.md](packages/bedrock/README.md) for contract development
-- Explore the source code in `apps/web/components/`
-- Switch networks using the network switcher
-- View your transaction history with explorer links
-
-## Need Help?
-
-- Check the [XRPL Documentation](https://xrpl.org/)
-- Visit the [Bedrock GitHub](https://github.com/XRPL-Commons/Bedrock)
-- Review the [Contributing Guide](CONTRIBUTING.md)
+- Check the [design spec](docs/specs/2026-04-11-tellement-french-design.md) for architecture details
+- Review [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines
 
 ## Common Issues
 
@@ -118,7 +101,7 @@ Make sure you have the wallet extension installed and unlocked.
 
 ### Transaction Failed
 - Check you have sufficient XRP balance
-- Verify you're on the correct network
+- Verify you're on **Devnet** (not Testnet or AlphaNet)
 - Try refreshing your balance
 
 ### Build Errors
@@ -128,5 +111,3 @@ pnpm clean
 rm -rf node_modules
 pnpm install
 ```
-
-Happy building on XRPL! 🚀

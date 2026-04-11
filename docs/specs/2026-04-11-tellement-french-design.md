@@ -14,14 +14,14 @@ Tellement-French is the first DeFi protocol built on XRPL's new native lending p
 2. **BORROW** — Take a loan from Vault liquidity for trading
 3. **TRADE** — Advanced orders (SL, TP, trailing, OCO) via Escrow + watcher + DEX
 4. **ACCUMULATE** — DCA/TWAP via Tickets + pre-signed OfferCreate
-5. **PRIVATE** — ZK-hidden trigger prices via Boundless/RISC0 (Groth5)
+5. **PRIVATE** — ZK-hidden trigger prices via Smart Escrows (XLS-0100) + RISC0/Boundless on Groth5
 
 ### Networks
 
-| Network | Purpose |
-|---------|---------|
-| **Devnet** (`wss://s.devnet.rippletest.net:51233`) | Everything core: lending, trading, DCA |
-| **Groth5** (`wss://groth5.devnet.rippletest.net:51233`) | ZK private orders only (Boundless bounty) |
+| Network | Purpose | xrpl.js |
+|---------|---------|---------|
+| **Devnet** (`wss://s.devnet.rippletest.net:51233`) | Lending, trading, DCA, price monitoring | `xrpl@^3.0.0` |
+| **Groth5** (`wss://groth5.devnet.rippletest.net:51233`) | ZK private orders via Smart Escrows (XLS-0100) | `xrpl@4.5.0-smartescrow.4` |
 
 ### Price Source
 
@@ -176,44 +176,96 @@ Same as DCA but:
 
 ## ZK Privacy Layer (Boundless Bounty)
 
-Private orders on Groth5 devnet. Trigger prices hidden via RISC0 ZK proofs.
+Private orders on Groth5 devnet. Trigger prices hidden via RISC0 ZK proofs, verified **on-chain** by Smart Escrows (XLS-0100).
+
+### How Privacy Works
+
+Public orders expose trigger prices on-chain (the watcher knows and could leak them). Private orders solve this: the trigger price is hidden in a cryptographic commitment, and a ZK proof proves the execution condition was legitimately met — without ever revealing the trigger price.
+
+The escrow uses a **`FinishFunction`** — a compiled WASM binary deployed at escrow creation time. When someone submits `EscrowFinish`, Groth5's rippled executes the WASM on-chain. The WASM reads the proof from Memos, verifies it using Groth5's built-in BN254/Groth16 precompiles, and returns 1 to release funds.
+
+This is **not Hooks** — it's XLS-0100 Smart Escrows, a separate XRPL feature only available on the Groth5 devnet.
 
 ### Lifecycle
 
-1. **Creation:**
+1. **Setup (one-time):**
+   - Build RISC0 guest program (proves trigger price condition)
+   - Build escrow WASM (verifies RISC0 proof on-chain, linked by `IMAGE_ID`)
+   - Both compiled via `xrpl-risc0-starter` workspace structure
+
+2. **Creation:**
    - Frontend computes `commitment = sha256(trigger_price || order_type || nonce)`
-   - User creates `EscrowCreate` on Groth5:
-     - Amount: order funds
-     - Destination: watcher account
-     - Condition: requires RISC0 proof with Tellement-French IMAGE_ID
-     - Data: commitment hash
-   - trigger_price + nonce shared with watcher (encrypted)
+   - User creates `EscrowCreate` on **Groth5**:
+     - `Amount`: order funds (in drops)
+     - `Destination`: watcher account
+     - `FinishFunction`: hex-encoded escrow WASM binary
+     - `Data`: commitment hash (readable by WASM at finish time)
+     - `CancelAfter`: order expiry time (mandatory for smart escrows)
+   - trigger_price + nonce shared with watcher (encrypted, off-chain)
 
-2. **Monitoring:**
-   - Watcher monitors devnet DEX prices (same as public orders)
+3. **Monitoring:**
+   - Watcher monitors **standard DevNet** DEX prices (`book_offers` + `amm_info`)
+   - Same price feed as public orders
 
-3. **Execution:**
-   - Watcher submits proof request to **Boundless Market** (decentralized prover network)
-   - RISC0 guest proves: "I know (trigger_price, nonce) such that hash matches commitment AND price condition is met"
-   - Watcher submits `EscrowFinish` on Groth5 with proof (journal + seal in Memos)
-   - Escrow WASM verifies proof → releases funds
-   - Watcher submits `OfferCreate` on Groth5 DEX
+4. **Execution (condition met):**
+   - Watcher generates RISC0 Groth16 proof (local or via **Boundless Market**)
+   - Guest proves: "I know (trigger_price, nonce) such that hash matches commitment AND price condition is met"
+   - Proof output: journal (public — commitment + current_price) + seal (256-byte Groth16 proof)
+   - Watcher submits `EscrowFinish` on **Groth5**:
+     - `Owner`: escrow creator
+     - `OfferSequence`: from EscrowCreate
+     - `ComputationAllowance`: 1000000 (gas budget for WASM execution)
+     - `Memos[0]`: journal (hex-encoded)
+     - `Memos[1]`: seal (hex-encoded, always 256 bytes)
+   - Groth5 rippled executes WASM `finish()` → reads Memos → verifies proof → returns 1 → funds released
+   - Watcher submits `OfferCreate` on Groth5 DEX with `tfImmediateOrCancel`
+   - Watcher submits `Payment` → sends proceeds back to user
 
-4. **Privacy guarantee:**
+5. **Privacy guarantee:**
    - Trigger price never revealed on-chain, not even after execution
-   - Journal only contains commitment + current_price
+   - Commitment hash is in escrow `Data` field
+   - ZK proof verified on-chain by WASM — trustless, no need to trust the watcher
+   - Journal only contains commitment + current_price (not the trigger itself)
 
-### RISC0 Components
+6. **Cancellation / Safety:**
+   - User calls `EscrowCancel` after `CancelAfter` time → funds returned
+   - `CancelAfter` is mandatory for smart escrows — funds are never permanently locked
 
-- **Guest program (zkVM):** verifies hash(trigger, type, nonce) == commitment AND price condition
-- **Escrow contract (Groth5 WASM):** verifies RISC0 proof on EscrowFinish
-- **CLI prover:** watcher calls as child process, submits to Boundless Market
+### RISC0 Components (packages/zkp/)
+
+Based on `xrpl-risc0-starter` (https://github.com/boundless-xyz/xrpl-risc0-starter):
+
+```
+packages/zkp/
+├── zkvm/trigger-proof/          # Build crate: compiles guest, exports IMAGE_ID + ELF
+│   ├── guest/src/main.rs        # RISC0 guest: proves trigger condition
+│   ├── build.rs                 # risc0_build::embed_methods()
+│   └── src/lib.rs               # Re-exports TRIGGER_PROOF_ID + TRIGGER_PROOF_ELF
+├── escrow/src/lib.rs            # WASM contract: verifies proof on-chain (wasm32v1-none)
+├── cli/src/main.rs              # Prover CLI: local or Boundless Market
+└── justfile                     # build, prove, test commands
+```
+
+- **Guest program:** reads (trigger_price, order_type, nonce, current_price) → validates condition → commits (commitment, current_price) to journal
+- **Escrow WASM:** reads journal + seal from Memos, reads commitment from `Data`, verifies RISC0 proof against `TRIGGER_PROOF_ID`
+- **CLI prover:** builds `ExecutorEnv`, proves with `ProverOpts::groth16()`, outputs journal + seal as hex memo JSON
+- **IMAGE_ID linkage:** both CLI and escrow import from the same build crate — any guest change regenerates IMAGE_ID, requiring escrow WASM redeployment
+
+### Key Dependencies
+
+| Crate | Version | Notes |
+|---|---|---|
+| `risc0-zkvm` | ^3.0.3 | Core zkVM prover + verifier |
+| `risc0-verifier-xrpl-wasm` | 0.1.0 | On-chain proof verifier for XRPL WASM |
+| `xrpl-wasm-stdlib` | 0.8.0 | XRPL WASM host function bindings |
+| `boundless-market` | 1.3.3 | Boundless proving market client |
+| `xrpl.js` | 4.5.0-smartescrow.4 | Required for FinishFunction + ComputationAllowance fields |
 
 ---
 
 ## Watcher Bot
 
-Node.js service with 2 modules. Each touches one network.
+Node.js service connected to both networks. Monitors prices on DevNet and executes orders.
 
 ### Devnet Loop
 
@@ -229,15 +281,16 @@ Each ledger close on devnet:
 ### ZK Prover (Groth5)
 
 Called by devnet loop when a private order triggers:
-1. Submit proof request to Boundless Market
-2. Receive Groth16 proof (journal + seal)
-3. EscrowFinish on Groth5 with proof in Memos
-4. OfferCreate on Groth5 DEX
+1. Generate RISC0 Groth16 proof (local or Boundless Market)
+2. Receive proof: journal + seal (256 bytes)
+3. `EscrowFinish` on **Groth5** with `ComputationAllowance: 1000000` + proof in Memos
+4. Groth5 WASM verifies proof on-chain → releases funds
+5. `OfferCreate` on Groth5 DEX + `Payment` back to user
 
 ### Connection Manager
 
-- Devnet: `wss://s.devnet.rippletest.net:51233` (main loop)
-- Groth5: `wss://groth5.devnet.rippletest.net:51233` (ZK only)
+- Devnet: `wss://s.devnet.rippletest.net:51233` (lending, trading, DCA, price monitoring) — `xrpl@^3.0.0`
+- Groth5: `wss://groth5.devnet.rippletest.net:51233` (ZK smart escrows only) — `xrpl@4.5.0-smartescrow.4`
 - Auto-reconnect + health checks
 
 ### State
@@ -273,7 +326,7 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 - OCO: pair, side, amount, tp_price, sl_price → 2× EscrowCreate
 - DCA: pair, amount_per_buy, num_buys, interval → TicketCreate + sign N txs
 - TWAP: pair, total_amount, num_slices, interval → TicketCreate + sign N txs
-- Private toggle: "Hide trigger price (ZK)" → routes to Groth5
+- Private toggle: "Hide trigger price (ZK)" → EscrowCreate on Groth5 with FinishFunction (WASM) + commitment in Data
 
 **Order Detail:**
 - Status, condition, network badge
@@ -283,9 +336,234 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 ### Technical
 
 - WalletProvider (existing scaffold)
-- New hooks: `usePrice`, `useVault`, `useLoan`, `useOrders`
+- Hooks: `usePrice`, `useVault`, `useLoan`, `useEscrow`, `useTickets`, `useWalletManager`
 - xrpl.js for all network interactions
 - shadcn/ui: Card, Button, Input, Label, Badge, Tabs
+
+---
+
+## Frontend Integration Guide
+
+This section maps every UI button/action to the exact hook function call. All hooks are in `apps/web/hooks/`. All require a connected wallet via `WalletProvider`.
+
+### Wallet Connection
+
+**Hook:** `useWalletManager()` (`hooks/useWalletManager.js`)
+
+Initializes wallet adapters on mount. Uses `xrpl-connect` with adapters: Xaman, WalletConnect, Crossmark, GemWallet, Otsu.
+
+| Button | Action |
+|--------|--------|
+| "Connect Wallet" | `walletManager.connect("crossmark")` — pass adapter name as string |
+| "Disconnect" | `walletManager.disconnect()` |
+
+**Wallet state** comes from `WalletProvider` context:
+- `isConnected` (boolean)
+- `accountInfo` → `{ address, network, walletName }`
+- `walletManager.account.address` → user's r-address
+
+**Network:** Hardcoded to `"devnet"` in WalletManager config.
+
+### Live Price Feed
+
+**Hook:** `usePrice()` (`hooks/usePrice.js`)
+
+Auto-subscribes to ledger stream on mount. Updates every ledger close (~4s).
+
+```js
+const { price, bid, ask, loading, error } = usePrice()
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `price` | `number \| null` | Mid price (avg of bid + ask), USD per XRP |
+| `bid` | `number \| null` | Best bid (sell XRP for USD) |
+| `ask` | `number \| null` | Best ask (buy XRP with USD) |
+| `loading` | `boolean` | True until first fetch completes |
+| `error` | `string \| null` | Error message if fetch failed |
+
+No buttons needed — auto-updates. Display in header/dashboard.
+
+### Vault (Lending)
+
+**Hook:** `useVault()` (`hooks/useVault.js`)
+
+```js
+const { createVault, deposit, withdraw, getVaultInfo, getShareBalance } = useVault()
+```
+
+| Button | Hook Call | Parameters | Returns |
+|--------|-----------|------------|---------|
+| "Deposit" | `deposit(vaultId, amount)` | `vaultId`: string (hash), `amount`: string (drops, e.g. `"500000000"` = 500 XRP) | `{ hash }` |
+| "Withdraw" | `withdraw(vaultId, amount)` | Same as deposit | `{ hash }` |
+| "Refresh Vault Stats" | `getVaultInfo(vaultId)` | `vaultId`: string | See return shape below |
+| "My Shares" | `getShareBalance(vaultId, account)` | `vaultId`: string, `account`: user's r-address | `string` (share amount) |
+
+**`getVaultInfo` return shape:**
+```js
+{
+  totalAssets: number,       // Total XRP in vault (drops as number)
+  assetsAvailable: number,   // Available for new loans
+  assetsMaximum: number,     // Cap (0 = unlimited)
+  lossUnrealized: number,    // Pending losses
+  totalShares: number,       // Outstanding share MPTokens
+  sharePrice: number,        // Current price per share
+  owner: string,             // Vault owner r-address
+  account: string,           // Vault account r-address
+  mptIssuanceId: string,     // MPToken issuance ID for shares
+  scale: number,             // Decimal scale factor
+}
+```
+
+**Note:** `ADDRESSES.VAULT_ID` in `lib/constants.js` must be set to the protocol's vault hash after setup.
+
+### Loans (Lending)
+
+**Hook:** `useLoan()` (`hooks/useLoan.js`)
+
+```js
+const { createLoanBroker, depositCover, createLoan, payLoan, manageLoan, deleteLoan, getLoanInfo } = useLoan()
+```
+
+| Button | Hook Call | Parameters | Returns |
+|--------|-----------|------------|---------|
+| "Request Loan" | `createLoan(loanBrokerId, borrowerAddress, principal, interestRate?, paymentTotal?, paymentInterval?, gracePeriod?)` | `loanBrokerId`: string, `borrowerAddress`: r-address, `principal`: string (drops), optionals have defaults from `LENDING` constants | `{ tx_blob, tx }` — needs borrower cosign (see flow below) |
+| "Repay" | `payLoan(loanId, amount, flags?)` | `loanId`: string (hash), `amount`: string (drops), `flags`: number (0 = normal, see `LOAN_PAY_FLAGS`) | `{ hash }` |
+| "Full Repay" | `payLoan(loanId, amount, 0x00020000)` | Use `LOAN_PAY_FLAGS.tfLoanFullPayment` | `{ hash }` |
+| "Loan Info" | `getLoanInfo(loanBrokerId, loanSeq)` | `loanBrokerId`: string, `loanSeq`: number | Loan ledger entry object |
+
+**Cosign flow for new loans:**
+1. Broker (our backend/admin) calls `createLoan(...)` → gets `{ tx_blob, tx }`
+2. `tx_blob` is sent to borrower (the frontend user)
+3. Borrower signs the same transaction via their wallet
+4. Both signatures combined and submitted
+5. **For hackathon MVP:** The broker signs server-side, and the frontend just needs to display loan status and repay.
+
+**Admin-only functions** (not for regular UI, broker/watcher manages these):
+
+| Action | Hook Call | Parameters |
+|--------|-----------|------------|
+| Setup broker | `createLoanBroker(vaultId, managementFeeRate?)` | `vaultId`: string |
+| Deposit cover | `depositCover(loanBrokerId, amount)` | First-loss capital |
+| Impair loan | `manageLoan(loanId, "impair")` | Starts grace period |
+| Default loan | `manageLoan(loanId, "default")` | After grace period |
+| Delete loan | `deleteLoan(loanId)` | After full repay or default |
+
+**LENDING defaults** (`lib/constants.js`):
+- `MANAGEMENT_FEE_RATE`: 1000 (1%)
+- `DEFAULT_INTEREST_RATE`: 500 (0.5% annualized)
+- `DEFAULT_PAYMENT_INTERVAL`: 2592000 (30 days in seconds)
+- `DEFAULT_GRACE_PERIOD`: 604800 (7 days in seconds)
+
+### Trading Orders (Escrow-based)
+
+**Hook:** `useEscrow()` (`hooks/useEscrow.js`)
+
+```js
+const { createEscrow, finishEscrow, cancelEscrow, getEscrow } = useEscrow()
+```
+
+| Button | Hook Call | Parameters | Returns |
+|--------|-----------|------------|---------|
+| "Create SL/TP Order" | `createEscrow(destination, amount, condition, cancelAfter)` | `destination`: watcher r-address (or null → uses `WATCHER_ACCOUNT`), `amount`: string (drops), `condition`: hex SHA-256 hash, `cancelAfter`: number (ripple epoch timestamp) | `{ hash, escrowId, sequence }` |
+| "Cancel Order" | `cancelEscrow(owner, sequence)` | `owner`: creator r-address, `sequence`: number (from createEscrow) | `{ hash }` |
+| "Check Order" | `getEscrow(owner, sequence)` | Same | Escrow ledger entry object |
+
+**Order creation flow for SL/TP:**
+1. Frontend generates a random preimage (32 bytes) → `crypto.randomBytes(32)`
+2. Compute SHA-256 condition: `sha256(preimage)` → hex-encode with PREIMAGE-SHA-256 prefix
+3. Pick `cancelAfter` (e.g., 24h from now in ripple epoch: `Math.floor(Date.now()/1000) - 946684800 + 86400`)
+4. Call `createEscrow(null, amountInDrops, conditionHex, cancelAfter)`
+5. Send to watcher (off-chain POST): `{ escrowId, sequence, owner, trigger_price, order_type, side, preimage, cancelAfter }`
+6. Watcher monitors and executes via `EscrowFinish` + `OfferCreate` + `Payment`
+
+**Trailing Stop** — Same `createEscrow`, but send `trailing_pct` (basis points) instead of `trigger_price` to watcher.
+
+**OCO** — Two `createEscrow` calls:
+1. Escrow A: TP condition (preimage_A)
+2. Escrow B: SL condition (preimage_B)
+3. Same `cancelAfter` for both
+4. Send both to watcher. When one triggers, the other expires naturally.
+
+**Watcher API** (to be implemented, REST endpoint on watcher bot):
+```
+POST /api/orders
+Body: { escrowId, sequence, owner, trigger_price, order_type, side, preimage, cancelAfter, trailing_pct? }
+
+GET  /api/orders/:owner          → list user's active orders
+GET  /api/orders/:owner/:sequence → single order status
+DELETE /api/orders/:owner/:sequence → tell watcher to stop monitoring
+```
+
+### DCA / TWAP
+
+**Hook:** `useTickets()` (`hooks/useTickets.js`)
+
+```js
+const { createTickets, buildPresignedOffers, signAll } = useTickets()
+```
+
+**DCA Creation Flow (3 steps):**
+
+| Step | Button | Hook Call | Parameters |
+|------|--------|-----------|------------|
+| 1 | "Create DCA Plan" | `createTickets(count)` | `count`: number (e.g., 10 for 10 buys) |
+| 2 | (auto) | `buildPresignedOffers(ticketSequences, pair, amountPerBuy, side)` | `ticketSequences`: number[] (from step 1), `pair`: `{ usdAmount }`, `amountPerBuy`: string (drops), `side`: `"BUY"` or `"SELL"` |
+| 3 | "Sign All" | `signAll(txs)` | `txs`: transaction objects from step 2 |
+
+After step 3, the signed blobs are sent to the watcher which submits them at intervals.
+
+```
+POST /api/dca
+Body: { signedBlobs: string[], interval: number (seconds), owner: string }
+```
+
+**TWAP** — Same flow, just shorter intervals and larger amounts split into more slices.
+
+**`buildPresignedOffers` details:**
+- Each tx uses `OfferCreate` with `tfImmediateOrCancel` (flag `0x00020000`)
+- `Sequence: 0` (required when using TicketSequence)
+- BUY: `TakerPays` = XRP drops, `TakerGets` = `{ currency: "USD", issuer: RLUSD_ISSUER, value }`
+- SELL: reversed
+
+### Constants & Addresses (`lib/constants.js`)
+
+These must be filled before the frontend works:
+
+| Constant | Where to get it | Used by |
+|----------|----------------|---------|
+| `ADDRESSES.VAULT_ID` | Output of `createVault()` — run setup script once | Vault deposit/withdraw/info |
+| `ADDRESSES.LOAN_BROKER_ID` | Output of `createLoanBroker()` | Loan operations |
+| `ADDRESSES.RLUSD_ISSUER` | DevNet RLUSD gateway address (from faucet or trust line setup) | Price feed, offers |
+| `WATCHER_ACCOUNT` | Watcher bot's funded DevNet r-address | Escrow destination |
+
+### Order Types & Status Enums
+
+```js
+import { ORDER_TYPES, ORDER_STATUS, SIDES } from "@/lib/constants"
+
+ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO, DCA, TWAP }
+ORDER_STATUS: { ACTIVE, TRIGGERED, EXECUTED, CANCELLED, EXPIRED }
+SIDES: { BUY, SELL }
+```
+
+### Error Handling
+
+All hook functions throw on error. Wrap in try/catch:
+```js
+try {
+  const result = await deposit(vaultId, amount)
+  showStatus(`Deposited! tx: ${result.hash}`, "success")
+} catch (err) {
+  showStatus(err.message, "error")
+}
+```
+
+Common errors:
+- `"Wallet not connected"` — user hasn't connected yet
+- `tecUNFUNDED` — insufficient XRP balance
+- `tecNO_ENTRY` — vault/loan/escrow doesn't exist
+- `tecNO_PERMISSION` — wrong account for this operation
 
 ---
 
@@ -300,7 +578,8 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 - TicketCreate (parallel pre-signed DCA/TWAP)
 - Payment (settlement)
 - book_offers, amm_info (native price discovery)
-- RISC0 ZK proofs on Groth5 (Boundless)
+- Smart Escrows with FinishFunction (XLS-0100) on Groth5
+- RISC0 ZK proofs via Boundless Market, verified on-chain by escrow WASM
 
 ### Transaction Volume Estimate
 
@@ -309,9 +588,9 @@ Per active user:
 - Each loan: 3+ txs (create + N payments + delete)
 - Each SL/TP order: 4 txs (escrow create + finish + offer + payment)
 - Each DCA (10 buys): 12 txs (ticket create + 10 offers + cleanup)
-- Each private order: 4 txs on Groth5
+- Each private order: 4 txs on Groth5 (escrow create + finish w/ proof + offer + payment)
 
-10 users × 5 actions = 200+ transactions across devnet + Groth5.
+10 users × 5 actions = 200+ transactions across DevNet + Groth5.
 
 ### Pitch
 

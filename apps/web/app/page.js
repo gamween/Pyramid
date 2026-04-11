@@ -14,9 +14,9 @@ export default function Home() {
       <main className="flex-1">
         <div className="container py-6">
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold tracking-tight">Scaffold-XRP</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Tellement-French</h1>
             <p className="text-muted-foreground">
-              Build dApps on XRPL with smart contracts
+              DeFi on XRPL — Lending, Trading, Privacy
             </p>
           </div>
 
@@ -31,8 +31,8 @@ export default function Home() {
             <h2 className="font-semibold mb-3">Getting Started</h2>
             <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
               <li>Connect your wallet using the button in the header</li>
-              <li>Deploy your smart contract using Bedrock or XRPL CLI</li>
-              <li>Interact with deployed contracts using the contract panel</li>
+              <li>Deposit into a Vault or take a loan</li>
+              <li>Create advanced trading orders (SL, TP, DCA)</li>
               <li>Send XRP transactions using the transaction form</li>
             </ol>
           </div>

@@ -9,11 +9,11 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Scaffold-XRP',
+      title: 'Tellement-French',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'A starter kit for building dApps on XRPL with smart contracts' },
+        { name: 'description', content: 'DeFi on XRPL — Lending, Trading, Privacy. Native Vaults, Loans, and DEX.' },
       ],
     },
   },

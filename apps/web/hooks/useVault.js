@@ -51,16 +51,32 @@ export function useVault() {
   const getVaultInfo = useCallback(async (vaultId) => {
     const client = await getClient()
     const response = await client.request({
-      command: "ledger_entry",
-      vault: vaultId,
+      command: "vault_info",
+      vault_id: vaultId,
     })
-    const vault = response.result.node
+    const vault = response.result.vault
+    const totalAssets = Number(vault.AssetsTotal)
+    const lossUnrealized = Number(vault.LossUnrealized || 0)
+    const totalShares = Number(vault.shares?.OutstandingAmount || "0")
+    const scale = vault.Scale || 0
+    const sigma = Math.pow(10, scale)
+
+    // sharePrice = (AssetsTotal - LossUnrealized) / OutstandingAmount
+    const sharePrice = totalShares > 0
+      ? (totalAssets - lossUnrealized) / totalShares
+      : 1 / sigma // initial price before any deposits
+
     return {
-      totalAssets: vault.AssetsTotal,
-      assetsAvailable: vault.AssetsAvailable,
-      lossUnrealized: vault.LossUnrealized,
+      totalAssets,
+      assetsAvailable: Number(vault.AssetsAvailable),
+      assetsMaximum: Number(vault.AssetsMaximum || 0),
+      lossUnrealized,
+      totalShares,
+      sharePrice,
       owner: vault.Owner,
+      account: vault.Account,
       mptIssuanceId: vault.ShareMPTID,
+      scale,
     }
   }, [])
 

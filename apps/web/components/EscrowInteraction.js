@@ -123,7 +123,7 @@ export function EscrowInteraction() {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Escrow Interaction</CardTitle>
-        <CardDescription>Create and manage smart escrows</CardDescription>
+        <CardDescription>Create and manage conditional escrows for trading orders</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -225,10 +225,11 @@ export function EscrowInteraction() {
         )}
 
         <div className="rounded-md border p-3 text-sm">
-          <p className="font-medium mb-2">Smart Escrow Entry Point</p>
+          <p className="font-medium mb-2">Escrow for Trading Orders</p>
           <ul className="text-muted-foreground space-y-1 text-xs">
-            <li>finish() - WASM condition checked on EscrowFinish</li>
-            <li>Returns 1 to release funds, 0 to keep locked</li>
+            <li>Create — locks funds with SHA-256 condition + CancelAfter expiry</li>
+            <li>Finish — watcher releases funds with preimage when trigger price is hit</li>
+            <li>Cancel — reclaim funds after CancelAfter (safety guarantee)</li>
           </ul>
         </div>
 

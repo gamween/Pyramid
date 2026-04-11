@@ -1,0 +1,1 @@
+- [Always ask for docs](feedback_always_ask_docs.md) — never intuit XRPL tx fields, always ask user for official docs first
