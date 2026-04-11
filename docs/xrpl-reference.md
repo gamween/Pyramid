@@ -62,7 +62,10 @@ All fields verified against official docs as of 2026-04-11.
 ### OfferCreate
 | Flag | Hex | Decimal |
 |---|---|---|
+| tfPassive | 0x00010000 | 65536 |
 | tfImmediateOrCancel | 0x00020000 | 131072 |
+| tfFillOrKill | 0x00040000 | 262144 |
+| tfSell | 0x00080000 | 524288 |
 
 ---
 
