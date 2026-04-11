@@ -44,8 +44,7 @@ app.delete("/api/orders/:owner/:sequence", (req, res) => {
 
 app.get("/api/health", (req, res) => {
   res.json({
-    devnet: connections.get("devnet")?.isConnected() || false,
-    groth5: connections.get("groth5")?.isConnected() || false,
+    connected: connections.getClient()?.isConnected() || false,
     wallet: connections.getWallet()?.address || null,
     activeOrders: orderCache.getActiveOrders().length,
     price: devnetLoop?.getPrice() || null,

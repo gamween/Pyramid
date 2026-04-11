@@ -9,11 +9,11 @@ export class ZkProver {
   }
 
   async executePrivateOrder(order, currentPrice) {
-    const groth5 = this.connections.get("groth5")
+    const client = this.connections.getClient()
     const wallet = this.connections.getWallet()
 
-    if (!groth5) {
-      console.error("[zk-prover] Groth5 not connected — cannot execute private order")
+    if (!client) {
+      console.error("[zk-prover] Not connected — cannot execute private order")
       return
     }
     if (!wallet) {
@@ -35,7 +35,8 @@ export class ZkProver {
       const memos = JSON.parse(proofOutput)
       console.log(`[zk-prover] Proof generated (journal: ${memos[0].Memo.MemoData.length / 2} bytes, seal: ${memos[1].Memo.MemoData.length / 2} bytes)`)
 
-      console.log(`[zk-prover] EscrowFinish on Groth5`)
+      // EscrowFinish with ZK proof in Memos + ComputationAllowance
+      console.log(`[zk-prover] EscrowFinish with ZK proof`)
       const finishTx = {
         TransactionType: "EscrowFinish",
         Account: wallet.address,
@@ -44,10 +45,11 @@ export class ZkProver {
         ComputationAllowance: 1000000,
         Memos: memos,
       }
-      const finishResult = await groth5.submitAndWait(finishTx, { wallet, autofill: true })
+      const finishResult = await client.submitAndWait(finishTx, { wallet, autofill: true })
       console.log(`[zk-prover] EscrowFinish: ${finishResult.result.meta.TransactionResult}`)
 
-      console.log(`[zk-prover] OfferCreate on Groth5 DEX`)
+      // OfferCreate on DEX
+      console.log(`[zk-prover] OfferCreate on DEX`)
       const offerTx = {
         TransactionType: "OfferCreate",
         Account: wallet.address,
@@ -55,10 +57,11 @@ export class ZkProver {
         TakerGets: order.amount,
         TakerPays: { currency: "USD", issuer: config.rlusdIssuer, value: "999999" },
       }
-      const offerResult = await groth5.submitAndWait(offerTx, { wallet, autofill: true })
+      const offerResult = await client.submitAndWait(offerTx, { wallet, autofill: true })
       console.log(`[zk-prover] OfferCreate: ${offerResult.result.meta.TransactionResult}`)
 
-      const balances = await groth5.request({
+      // Payment back to user
+      const balances = await client.request({
         command: "account_lines",
         account: wallet.address,
       })
@@ -72,7 +75,7 @@ export class ZkProver {
           Destination: order.owner,
           Amount: { currency: "USD", issuer: config.rlusdIssuer, value: usdLine.balance },
         }
-        const payResult = await groth5.submitAndWait(payTx, { wallet, autofill: true })
+        const payResult = await client.submitAndWait(payTx, { wallet, autofill: true })
         console.log(`[zk-prover] Payment: ${payResult.result.meta.TransactionResult}`)
       }
 

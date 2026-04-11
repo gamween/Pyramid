@@ -11,7 +11,7 @@ export class DevnetLoop {
   }
 
   async start() {
-    const client = this.connections.get("devnet")
+    const client = this.connections.getClient()
     if (!client) throw new Error("DevNet client not connected")
 
     client.on("ledgerClosed", () => this.onLedger())
@@ -22,7 +22,7 @@ export class DevnetLoop {
   }
 
   async fetchPrice() {
-    const client = this.connections.get("devnet")
+    const client = this.connections.getClient()
     if (!config.rlusdIssuer) return
 
     try {
@@ -89,7 +89,7 @@ export class DevnetLoop {
     }
 
     const dueSchedules = this.orderCache.getDueSchedules()
-    const client = this.connections.get("devnet")
+    const client = this.connections.getClient()
     for (const schedule of dueSchedules) {
       await this.dcaScheduler.submitNext(schedule, client)
     }
@@ -110,7 +110,7 @@ export class DevnetLoop {
   }
 
   async executePublicOrder(order) {
-    const client = this.connections.get("devnet")
+    const client = this.connections.getClient()
     const wallet = this.connections.getWallet()
     if (!wallet) { console.error("[devnet-loop] No wallet for execution"); return }
 

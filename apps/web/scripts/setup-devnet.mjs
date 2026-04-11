@@ -12,8 +12,8 @@ import { writeFileSync } from "fs"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
 
-const WSS = "wss://s.devnet.rippletest.net:51233"
-const FAUCET = "https://faucet.devnet.rippletest.net/accounts"
+const WSS = "wss://groth5.devnet.rippletest.net:51233"
+const FAUCET = "http://groth5-faucet.devnet.rippletest.net/accounts"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 

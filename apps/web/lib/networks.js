@@ -1,18 +1,10 @@
 export const NETWORKS = {
   DEVNET: {
     id: "devnet",
-    name: "Devnet",
-    networkId: 2,
-    wss: "wss://s.devnet.rippletest.net:51233",
-    faucet: "https://faucet.devnet.rippletest.net/accounts",
-    explorer: "https://devnet.xrpl.org",
-  },
-  GROTH5: {
-    id: "groth5",
     name: "Groth5 Devnet",
     networkId: 2,
     wss: "wss://groth5.devnet.rippletest.net:51233",
-    faucet: "http://groth5-faucet.devnet.rippletest.net",
+    faucet: "http://groth5-faucet.devnet.rippletest.net/accounts",
     explorer: "http://custom.xrpl.org/groth5.devnet.rippletest.net",
   },
   TESTNET: {
@@ -25,6 +17,6 @@ export const NETWORKS = {
   },
 };
 
-// Devnet is primary for Tellement-French (lending + trading + DCA)
-// Groth5 is used for ZK private orders only (Smart Escrows + RISC0, requires xrpl@4.5.0-smartescrow.4)
+// Groth5 Devnet is the single network for Tellement-French
+// Supports: XLS-65/66 (lending), standard XRPL (trading), Smart Escrows + ZK (XLS-0100)
 export const DEFAULT_NETWORK = NETWORKS.DEVNET;

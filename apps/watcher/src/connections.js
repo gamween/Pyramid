@@ -3,38 +3,21 @@ import { config } from "./config.js"
 
 export class ConnectionManager {
   constructor() {
-    this.clients = {}
+    this.client = null
     this.wallet = null
   }
 
   async connect() {
-    this.clients.devnet = new Client(config.devnet.wss, { connectionTimeout: 20000 })
-    await this.clients.devnet.connect()
-    console.log("[connections] Connected to DevNet")
+    this.client = new Client(config.devnet.wss, { connectionTimeout: 20000 })
+    await this.client.connect()
+    console.log(`[connections] Connected to ${config.devnet.wss}`)
 
-    this.clients.devnet.on("disconnected", async () => {
-      console.log("[connections] DevNet disconnected, reconnecting...")
-      try { await this.clients.devnet.connect() } catch (e) {
-        console.error("[connections] DevNet reconnect failed:", e.message)
+    this.client.on("disconnected", async () => {
+      console.log("[connections] Disconnected, reconnecting...")
+      try { await this.client.connect() } catch (e) {
+        console.error("[connections] Reconnect failed:", e.message)
       }
     })
-
-    try {
-      const smartescrow = await import("xrpl-smartescrow")
-      this.clients.groth5 = new smartescrow.Client(config.groth5.wss, { connectionTimeout: 20000 })
-      await this.clients.groth5.connect()
-      console.log("[connections] Connected to Groth5")
-
-      this.clients.groth5.on("disconnected", async () => {
-        console.log("[connections] Groth5 disconnected, reconnecting...")
-        try { await this.clients.groth5.connect() } catch (e) {
-          console.error("[connections] Groth5 reconnect failed:", e.message)
-        }
-      })
-    } catch (err) {
-      console.warn("[connections] Groth5 connection failed (ZK features disabled):", err.message)
-      this.clients.groth5 = null
-    }
 
     if (config.watcherSeed) {
       this.wallet = Wallet.fromSeed(config.watcherSeed)
@@ -44,8 +27,8 @@ export class ConnectionManager {
     }
   }
 
-  get(name) {
-    return this.clients[name] || null
+  getClient() {
+    return this.client
   }
 
   getWallet() {
@@ -53,11 +36,9 @@ export class ConnectionManager {
   }
 
   async disconnect() {
-    for (const [name, client] of Object.entries(this.clients)) {
-      if (client?.isConnected()) {
-        await client.disconnect()
-        console.log(`[connections] Disconnected from ${name}`)
-      }
+    if (this.client?.isConnected()) {
+      await this.client.disconnect()
+      console.log("[connections] Disconnected")
     }
   }
 }
