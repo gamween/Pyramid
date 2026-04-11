@@ -9,6 +9,7 @@ export function useEscrow() {
   const { walletManager } = useWallet()
 
   const createEscrow = useCallback(async (destination, amount, condition, cancelAfter) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "EscrowCreate",
       Destination: destination || WATCHER_ACCOUNT,
@@ -27,20 +28,20 @@ export function useEscrow() {
     return { result, escrowId, sequence }
   }, [walletManager])
 
-  const finishEscrow = useCallback(async (owner, sequence, fulfillment) => {
+  const finishEscrow = useCallback(async (owner, sequence, condition, fulfillment) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "EscrowFinish",
       Owner: owner,
       OfferSequence: sequence,
-      Condition: undefined, // filled by watcher with the original condition
+      Condition: condition,
       Fulfillment: fulfillment,
     }
-    // Remove undefined fields
-    if (!tx.Condition) delete tx.Condition
     return await walletManager.signAndSubmit(tx)
   }, [walletManager])
 
   const cancelEscrow = useCallback(async (owner, sequence) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "EscrowCancel",
       Owner: owner,

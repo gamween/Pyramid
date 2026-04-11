@@ -5,8 +5,9 @@ let client = null
 
 export async function getClient() {
   if (!client || !client.isConnected()) {
-    client = new Client(DEFAULT_NETWORK.wss)
-    await client.connect()
+    const c = new Client(DEFAULT_NETWORK.wss)
+    await c.connect()
+    client = c
   }
   return client
 }

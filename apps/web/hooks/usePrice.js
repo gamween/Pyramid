@@ -11,8 +11,15 @@ export function usePrice() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const clientRef = useRef(null)
+  const handlerRef = useRef(null)
 
   const fetchPrice = useCallback(async () => {
+    if (!ADDRESSES.RLUSD_ISSUER) {
+      setError("RLUSD issuer address not configured")
+      setLoading(false)
+      return
+    }
+
     try {
       const client = await getClient()
       clientRef.current = client
@@ -79,9 +86,11 @@ export function usePrice() {
 
         await fetchPrice()
 
-        client.on("ledgerClosed", () => {
+        const handler = () => {
           if (!unsubscribed) fetchPrice()
-        })
+        }
+        handlerRef.current = handler
+        client.on("ledgerClosed", handler)
 
         await client.request({ command: "subscribe", streams: ["ledger"] })
       } catch (err) {
@@ -97,6 +106,7 @@ export function usePrice() {
     return () => {
       unsubscribed = true
       if (clientRef.current) {
+        if (handlerRef.current) clientRef.current.off("ledgerClosed", handlerRef.current)
         clientRef.current.request({ command: "unsubscribe", streams: ["ledger"] }).catch(() => {})
       }
     }

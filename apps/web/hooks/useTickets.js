@@ -8,6 +8,7 @@ export function useTickets() {
   const { walletManager } = useWallet()
 
   const createTickets = useCallback(async (count) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "TicketCreate",
       TicketCount: count,
@@ -62,6 +63,7 @@ export function useTickets() {
   }, [])
 
   const signAll = useCallback(async (txs) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const signedBlobs = []
     for (const tx of txs) {
       const signed = await walletManager.sign(tx)

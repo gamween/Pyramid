@@ -9,6 +9,7 @@ export function useLoan() {
   const { walletManager } = useWallet()
 
   const createLoanBroker = useCallback(async (vaultId, managementFeeRate = LENDING.MANAGEMENT_FEE_RATE) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "LoanBrokerSet",
       VaultID: vaultId,
@@ -22,6 +23,7 @@ export function useLoan() {
   }, [walletManager])
 
   const depositCover = useCallback(async (loanBrokerId, amount) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "LoanBrokerCoverDeposit",
       LoanBrokerID: loanBrokerId,
@@ -39,7 +41,8 @@ export function useLoan() {
     paymentInterval = LENDING.DEFAULT_PAYMENT_INTERVAL,
     gracePeriod = LENDING.DEFAULT_GRACE_PERIOD
   ) => {
-    // Step 1: Broker builds and signs the LoanSet tx
+    if (!walletManager) throw new Error("Wallet not connected")
+    // Broker builds and signs the LoanSet tx
     const tx = {
       TransactionType: "LoanSet",
       LoanBrokerID: loanBrokerId,
@@ -57,6 +60,7 @@ export function useLoan() {
   }, [walletManager])
 
   const payLoan = useCallback(async (loanId, amount, flags = 0) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "LoanPay",
       LoanID: loanId,
@@ -67,6 +71,7 @@ export function useLoan() {
   }, [walletManager])
 
   const manageLoan = useCallback(async (loanId, action) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const flagMap = {
       impair: 0x00000001,   // tfLoanImpair
       default: 0x00000002,  // tfLoanDefault
@@ -81,6 +86,7 @@ export function useLoan() {
   }, [walletManager])
 
   const deleteLoan = useCallback(async (loanId) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "LoanDelete",
       LoanID: loanId,

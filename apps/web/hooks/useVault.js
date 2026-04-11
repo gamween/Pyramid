@@ -8,6 +8,7 @@ export function useVault() {
   const { walletManager } = useWallet()
 
   const createVault = useCallback(async (asset, metadata = {}) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "VaultCreate",
       Asset: asset,
@@ -21,6 +22,7 @@ export function useVault() {
   }, [walletManager])
 
   const deposit = useCallback(async (vaultId, amount) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "VaultDeposit",
       VaultID: vaultId,
@@ -30,6 +32,7 @@ export function useVault() {
   }, [walletManager])
 
   const withdraw = useCallback(async (vaultId, amount) => {
+    if (!walletManager) throw new Error("Wallet not connected")
     const tx = {
       TransactionType: "VaultWithdraw",
       VaultID: vaultId,
