@@ -1,0 +1,15 @@
+{
+  "name": "tellement-french-watcher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env src/index.js"
+  },
+  "dependencies": {
+    "xrpl": "^3.0.0",
+    "xrpl-smartescrow": "npm:xrpl@4.5.0-smartescrow.4",
+    "express": "^4.18.0",
+    "five-bells-condition": "^5.0.1"
+  }
+}
