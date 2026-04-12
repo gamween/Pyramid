@@ -7,7 +7,7 @@
  * Usage: node apps/web/scripts/setup-devnet.mjs
  */
 
-import { Client, Wallet, encode } from "xrpl"
+import { Client, Wallet, encode, decodeAccountID } from "xrpl"
 import { writeFileSync } from "fs"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
@@ -35,6 +35,47 @@ async function submitRawTx(client, wallet, tx) {
     throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
   }
   // Wait for validation
+  await new Promise((r) => setTimeout(r, 5000))
+  const txResult = await client.request({ command: "tx", transaction: result.result.tx_json?.hash })
+  return txResult.result
+}
+
+// Multisigned submission — for XLS-66 LoanSet which requires broker + borrower cosigning
+async function submitCosignedTx(client, signerWallets, tx) {
+  const acctInfo = await client.request({ command: "account_info", account: tx.Account })
+  const ledgerInfo = await client.request({ command: "ledger_current" })
+  const prepared = {
+    ...tx,
+    Fee: String(12 * (signerWallets.length + 1)),
+    Sequence: acctInfo.result.account_data.Sequence,
+    LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
+    NetworkID: 2002,
+    SigningPubKey: "", // empty = multisigned
+  }
+  const encoded = encode(prepared)
+
+  // Each signer signs: multisign prefix (534D5400) + encoded_tx + account_id_hex
+  const signers = signerWallets.map((wallet) => {
+    const accountIdHex = Buffer.from(decodeAccountID(wallet.address)).toString("hex").toUpperCase()
+    const signature = rawSign("534D5400" + encoded + accountIdHex, wallet.privateKey)
+    return {
+      Signer: {
+        Account: wallet.address,
+        SigningPubKey: wallet.publicKey,
+        TxnSignature: signature,
+      },
+    }
+  })
+
+  // XRPL requires signers sorted by account address
+  signers.sort((a, b) => a.Signer.Account.localeCompare(b.Signer.Account))
+
+  prepared.Signers = signers
+  const tx_blob = encode(prepared)
+  const result = await client.request({ command: "submit", tx_blob })
+  if (result.result.engine_result !== "tesSUCCESS") {
+    throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
+  }
   await new Promise((r) => setTimeout(r, 5000))
   const txResult = await client.request({ command: "tx", transaction: result.result.tx_json?.hash })
   return txResult.result
@@ -91,7 +132,7 @@ async function createVaultWithBroker(client, owner, label, depositDrops, coverDr
 
 async function createLoanOnVault(client, owner, borrower, loanBrokerId, principalDrops) {
   console.log(`  LoanSet (${principalDrops / 1_000_000} XRP to ${borrower.address})...`)
-  const loanResult = await submitRawTx(client, owner, {
+  const loanResult = await submitCosignedTx(client, [owner, borrower], {
     TransactionType: "LoanSet",
     Account: owner.address,
     LoanBrokerID: loanBrokerId,
