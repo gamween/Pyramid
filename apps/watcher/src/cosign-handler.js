@@ -109,16 +109,8 @@ export class CosignHandler {
       throw new Error(`Tx Account ${preparedTx.Account} does not match watcher wallet ${wallet.address}`)
     }
 
-    // Re-autofill Sequence and LastLedgerSequence with fresh values
-    const acctInfo = await client.request({
-      command: "account_info",
-      account: wallet.address,
-    })
-    const ledgerInfo = await client.request({
-      command: "ledger_current",
-    })
-    preparedTx.Sequence = acctInfo.result.account_data.Sequence
-    preparedTx.LastLedgerSequence = ledgerInfo.result.ledger_current_index + 20
+    // Use the Sequence and LastLedgerSequence from the prepare phase.
+    // Do NOT re-autofill — the borrower already signed these exact values.
 
     // Both parties sign encodeForSigning(tx) which prepends 0x53545800
     const signingData = encodeForSigning(preparedTx)

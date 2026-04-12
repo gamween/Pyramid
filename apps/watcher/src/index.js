@@ -65,7 +65,7 @@ app.get("/api/health", (req, res) => {
 app.get("/api/loans/available", async (req, res) => {
   try {
     const vaults = await cosignHandler.getAvailableVaults()
-    res.json(vaults)
+    res.json({ vaults })
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message })
   }
@@ -73,8 +73,8 @@ app.get("/api/loans/available", async (req, res) => {
 
 app.post("/api/loans/prepare", async (req, res) => {
   try {
-    const prepared = await cosignHandler.prepareLoanTx(req.body)
-    res.json(prepared)
+    const preparedTx = await cosignHandler.prepareLoanTx(req.body)
+    res.json({ preparedTx })
   } catch (err) {
     res.status(400).json({ status: "error", message: err.message })
   }
@@ -109,7 +109,7 @@ app.get("/api/loans/status", async (req, res) => {
       return res.status(400).json({ status: "error", message: "account query param required" })
     }
     const loans = await cosignHandler.getLoansForAccount(req.query.account)
-    res.json(loans)
+    res.json({ loans })
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message })
   }
