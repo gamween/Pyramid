@@ -18,15 +18,28 @@ export function LoanRepayModal({ loan, open, onOpenChange, onRepay }) {
 
   const loanId = loan?.index || loan?.LoanID;
 
+  // Parse loan payment info
+  const periodicPaymentDrops = parseFloat(loan?.PeriodicPayment || "0");
+  const periodicPaymentXRP = periodicPaymentDrops / 1_000_000;
+  const totalOwedDrops = parseInt(loan?.TotalValueOutstanding || "0", 10);
+  const totalOwedXRP = totalOwedDrops / 1_000_000;
+
   const handleConfirm = async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
+    const payXRP = parseFloat(amount);
+    if (!payXRP || payXRP <= 0) return;
 
     setIsSubmitting(true);
     setResult(null);
 
     try {
-      const amountDrops = Math.floor(parseFloat(amount) * 1_000_000);
-      const flags = isFullPayment ? LOAN_PAY_FLAGS.tfLoanFullPayment : 0;
+      const amountDrops = Math.floor(payXRP * 1_000_000);
+      // Use tfLoanOverpayment if paying more than periodic but not full
+      let flags = 0;
+      if (isFullPayment) {
+        flags = LOAN_PAY_FLAGS.tfLoanFullPayment;
+      } else if (amountDrops > Math.ceil(periodicPaymentDrops)) {
+        flags = LOAN_PAY_FLAGS.tfLoanOverpayment;
+      }
       await onRepay(loanId, amountDrops, flags);
       setResult({ success: true });
       setIsSubmitting(false);
@@ -59,6 +72,18 @@ export function LoanRepayModal({ loan, open, onOpenChange, onRepay }) {
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
+          {/* Loan summary */}
+          <div className="border border-white/10 p-3 space-y-1 text-xs font-mono text-white/60">
+            <div className="flex justify-between">
+              <span>Min Payment</span>
+              <span className="text-white">{periodicPaymentXRP.toFixed(6)} XRP</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Total Owed</span>
+              <span className="text-white">{totalOwedXRP.toFixed(6)} XRP</span>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="repayAmount" className="text-white/70 font-mono text-xs uppercase">
               Amount (XRP)
@@ -67,8 +92,8 @@ export function LoanRepayModal({ loan, open, onOpenChange, onRepay }) {
               id="repayAmount"
               type="number"
               step="0.000001"
-              min="0"
-              placeholder="0.000000"
+              min={periodicPaymentXRP > 0 ? periodicPaymentXRP.toFixed(6) : "0"}
+              placeholder={periodicPaymentXRP > 0 ? periodicPaymentXRP.toFixed(6) : "0.000000"}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="rounded-none bg-black border-white/30 text-white font-mono placeholder:text-white/20 text-xs md:text-sm"
@@ -80,7 +105,10 @@ export function LoanRepayModal({ loan, open, onOpenChange, onRepay }) {
             <Checkbox
               id="fullPayment"
               checked={isFullPayment}
-              onCheckedChange={setIsFullPayment}
+              onCheckedChange={(checked) => {
+                setIsFullPayment(checked);
+                if (checked && totalOwedXRP > 0) setAmount(totalOwedXRP.toFixed(6));
+              }}
               className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-black rounded-none"
             />
             <label htmlFor="fullPayment" className="text-sm font-mono text-white/90 leading-none cursor-pointer">
