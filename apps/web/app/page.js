@@ -23,7 +23,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const tabsNode = (
-    <TabsList className="bg-transparent border-none p-0 h-auto rounded-none w-full max-w-2xl flex justify-between gap-1 md:gap-4 relative mt-2 group">
+    <TabsList className="bg-transparent border-none p-0 h-auto rounded-none w-full max-w-3xl flex justify-between gap-1 md:gap-4 relative mt-2 group">
       {/* Background track for all tabs */}
       <div className="absolute inset-0 bg-[#02040a]/40 border border-white/5 pointer-events-none" />
       
