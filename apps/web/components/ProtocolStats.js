@@ -1,16 +1,70 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Activity, Database, ShieldCheck, TrendingUp, Lock } from "lucide-react";
+import { usePrice } from "@/hooks/usePrice";
+import { useVault } from "@/hooks/useVault";
+import { ADDRESSES } from "@/lib/constants";
 
 export function ProtocolStats() {
-  // Mock data for the protocol dashboard
+  const { price, loading: priceLoading } = usePrice();
+  const { getVaultInfo } = useVault();
+  const [vaultInfo, setVaultInfo] = useState(null);
+  const [vaultLoading, setVaultLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchVault() {
+      try {
+        const info = await getVaultInfo(ADDRESSES.VAULT_ID);
+        if (!cancelled) setVaultInfo(info);
+      } catch {
+        // leave vaultInfo null so UI shows "—"
+      } finally {
+        if (!cancelled) setVaultLoading(false);
+      }
+    }
+    fetchVault();
+    return () => { cancelled = true; };
+  }, [getVaultInfo]);
+
+  const formatXrp = (drops) => {
+    if (drops == null) return "\u2014";
+    return Number((drops / 1_000_000).toFixed(0)).toLocaleString() + " XRP";
+  };
+
   const stats = [
-    { label: "Total Value Locked", value: "14,502,340 XRP", icon: Lock, trend: "+5.2%" },
-    { label: "Active Vaults (XLS-65)", value: "1,204", icon: Database, trend: "+12" },
-    { label: "Active Loans (XLS-66)", value: "8,349", icon: Activity, trend: "+4.1%" },
-    { label: "ZK-Proofs (Groth5)", value: "245,901", icon: ShieldCheck, trend: "+2.4%" },
-    { label: "24h Volume", value: "2,104,000 XRP", icon: TrendingUp, trend: "-1.2%" },
+    {
+      label: "Total Value Locked",
+      value: vaultLoading ? "Loading..." : formatXrp(vaultInfo?.totalAssets),
+      icon: Lock,
+      trend: "\u2014",
+    },
+    {
+      label: "XRP/USD Price",
+      value: priceLoading ? "Loading..." : price != null ? "$" + price.toFixed(4) : "\u2014",
+      icon: TrendingUp,
+      trend: "\u2014",
+    },
+    {
+      label: "Vault Shares",
+      value: vaultLoading ? "Loading..." : vaultInfo?.totalShares != null ? Number(vaultInfo.totalShares).toLocaleString() : "\u2014",
+      icon: Database,
+      trend: "\u2014",
+    },
+    {
+      label: "Share Price",
+      value: vaultLoading ? "Loading..." : vaultInfo?.sharePrice != null ? vaultInfo.sharePrice.toFixed(6) : "\u2014",
+      icon: Activity,
+      trend: "\u2014",
+    },
+    {
+      label: "ZK-Proofs (Groth5)",
+      value: "\u2014",
+      icon: ShieldCheck,
+      trend: "\u2014",
+    },
   ];
 
   return (
@@ -32,7 +86,7 @@ export function ProtocolStats() {
             <CardContent className="p-4 flex flex-col justify-between h-full">
               <div className="flex justify-between items-start mb-4">
                 <stat.icon className="h-5 w-5 text-white/50" />
-                <span className={`text-[10px] font-mono ${stat.trend.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`text-[10px] font-mono ${stat.trend === '\u2014' ? 'text-slate-500' : stat.trend.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>
                   {stat.trend}
                 </span>
               </div>

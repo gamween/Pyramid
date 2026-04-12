@@ -1,25 +1,77 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Activity, AlertTriangle, ArrowRight, Lock, Database } from "lucide-react";
+import { useVault } from "@/hooks/useVault";
+import { ADDRESSES } from "@/lib/constants";
 
 export function ActivePositions() {
-  // Mock data representing active positions
-  const mockEscrows = [
-    { id: "ESC-8A92", type: "Stop-Loss", pair: "XRP/USD", size: "1,500 XRP", trigger: "Price < $0.45", status: "WAITING_ORACLE" },
-    { id: "ESC-11B4", type: "TWAP", pair: "XRP/BTC", size: "5,000 XRP", trigger: "Time + 1h", status: "PROCESSING" },
-    { id: "ESC-ZK99", type: "Groth5 Private", pair: "HIDDEN", size: "10,000 XRP", trigger: "ZK_PROOF_REQUIRED", status: "LOCKED" },
-  ];
+  const { getVaultInfo } = useVault();
+  const [orders, setOrders] = useState([]);
+  const [vaults, setVaults] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [vaultsLoading, setVaultsLoading] = useState(true);
 
-  const mockVaults = [
-    { id: "VLT-0A11", asset: "XRP", supplied: "25,000", mptBalance: "25,050 aXRP", apy: "4.2%" },
-    { id: "VLT-0B22", asset: "USD", supplied: "10,000", mptBalance: "10,120 aUSD", apy: "8.5%" },
-  ];
+  // Fetch orders from watcher API
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchOrders() {
+      try {
+        const res = await fetch("http://localhost:3001/api/orders");
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setOrders(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        // watcher may be offline; leave orders empty
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
+      }
+    }
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 10000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
 
-  const mockLoans = [
-    { id: "LOAN-55X", principal: "5,000 XRP", accrued: "12 XRP", health: "1.8", status: "ACTIVE" },
-  ];
+  // Fetch vault info
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchVault() {
+      try {
+        const info = await getVaultInfo(ADDRESSES.VAULT_ID);
+        if (!cancelled) {
+          setVaults([{
+            id: ADDRESSES.VAULT_ID.slice(0, 8),
+            asset: "XRP",
+            supplied: Number((info.totalAssets / 1_000_000).toFixed(0)).toLocaleString(),
+            mptBalance: info.totalShares != null ? Number(info.totalShares).toLocaleString() + " shares" : "\u2014",
+            apy: info.sharePrice != null ? ((info.sharePrice - 1) * 100).toFixed(2) + "%" : "\u2014",
+          }]);
+        }
+      } catch {
+        // leave vaults empty
+      } finally {
+        if (!cancelled) setVaultsLoading(false);
+      }
+    }
+    fetchVault();
+    return () => { cancelled = true; };
+  }, [getVaultInfo]);
+
+  // Map watcher orders to escrow display format
+  const escrows = orders.map((o) => ({
+    id: o.escrowId ? o.escrowId.slice(0, 8) : o.id || "\u2014",
+    type: o.type || "\u2014",
+    pair: o.pair || "\u2014",
+    size: o.amount ? (Number(o.amount) / 1_000_000).toLocaleString() + " XRP" : "\u2014",
+    trigger: o.triggerPrice ? `Price ${o.type === "STOP_LOSS" || o.type === "SL" ? "<" : ">"} $${o.triggerPrice}` : o.trailingPct ? `Trail ${o.trailingPct} bps` : "\u2014",
+    status: o.status || "ACTIVE",
+  }));
+
+  // Loans: no real-time source yet, show empty
+  const loans = [];
 
   return (
     <div className="border border-white/20 bg-black/40 backdrop-blur-xl mt-6">
@@ -35,13 +87,13 @@ export function ActivePositions() {
         <Tabs defaultValue="escrows" className="w-full">
           <TabsList className="grid grid-cols-3 mb-6 rounded-none bg-transparent border border-white/20 p-0 h-auto">
             <TabsTrigger value="escrows" className="rounded-none border-r border-transparent data-[state=active]:border-white/20 data-[state=active]:bg-white data-[state=active]:text-black py-2 text-xs font-mono uppercase tracking-widest">
-              Escrows & Orders ({mockEscrows.length})
+              Escrows & Orders ({escrows.length})
             </TabsTrigger>
             <TabsTrigger value="vaults" className="rounded-none border-r border-transparent data-[state=active]:border-white/20 data-[state=active]:bg-white data-[state=active]:text-black py-2 text-xs font-mono uppercase tracking-widest">
-              Vaults (XLS-65) ({mockVaults.length})
+              Vaults (XLS-65) ({vaults.length})
             </TabsTrigger>
             <TabsTrigger value="loans" className="rounded-none border-transparent data-[state=active]:border-white/20 data-[state=active]:bg-white data-[state=active]:text-black py-2 text-xs font-mono uppercase tracking-widest">
-              Loans (XLS-66) ({mockLoans.length})
+              Loans (XLS-66) ({loans.length})
             </TabsTrigger>
           </TabsList>
 
@@ -59,7 +111,7 @@ export function ActivePositions() {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockEscrows.map((escrow, idx) => (
+                  {escrows.map((escrow, idx) => (
                     <tr key={idx} className="border-b border-white/10 hover:bg-white/5 transition-colors text-white">
                       <td className="p-3">
                         <div className="font-bold">{escrow.id}</div>
@@ -80,7 +132,7 @@ export function ActivePositions() {
                   ))}
                 </tbody>
               </table>
-              {mockEscrows.length === 0 && (
+              {escrows.length === 0 && (
                 <div className="text-center py-8 text-slate-500 font-mono text-xs uppercase">No active escrows found.</div>
               )}
             </div>
@@ -89,7 +141,7 @@ export function ActivePositions() {
           {/* VAULTS TAB */}
           <TabsContent value="vaults" className="animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mockVaults.map((vault, idx) => (
+              {vaults.map((vault, idx) => (
                 <Card key={idx} className="border border-white/20 bg-black rounded-none">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-2">
@@ -136,7 +188,7 @@ export function ActivePositions() {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockLoans.map((loan, idx) => (
+                  {loans.map((loan, idx) => (
                     <tr key={idx} className="border-b border-white/10 hover:bg-white/5 transition-colors text-white">
                       <td className="p-3 font-bold">{loan.id}</td>
                       <td className="p-3">{loan.principal}</td>

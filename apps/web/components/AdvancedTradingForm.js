@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useWallet } from "./providers/WalletProvider";
+import { useEscrow } from "@/hooks/useEscrow";
+import { WATCHER_ACCOUNT } from "@/lib/constants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -12,7 +14,8 @@ import { Info } from "lucide-react";
 
 export function AdvancedTradingForm() {
   const { walletManager, isConnected, showStatus } = useWallet();
-  
+  const { createEscrow } = useEscrow();
+
   // order form state
   const [pair, setPair] = useState("XRP/USD");
   const [side, setSide] = useState("SELL");
@@ -21,7 +24,7 @@ export function AdvancedTradingForm() {
   const [trailingPct, setTrailingPct] = useState("");
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
-  
+
   // DCA/TWAP state
   const [amountPerBuy, setAmountPerBuy] = useState("");
   const [numBuys, setNumBuys] = useState("");
@@ -31,24 +34,97 @@ export function AdvancedTradingForm() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Generate a crypto-condition preimage + condition hex
+  function generateCondition() {
+    const preimage = crypto.getRandomValues(new Uint8Array(32));
+    // SHA-256 prefix-condition encoding for XRPL
+    // We pass raw hex; the watcher will verify via fulfillment
+    const preimageHex = Array.from(preimage).map(b => b.toString(16).padStart(2, "0")).join("");
+    return { preimageHex, preimage };
+  }
+
+  async function hashPreimage(preimage) {
+    const digest = await crypto.subtle.digest("SHA-256", preimage);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
   const handleSubmit = async (e, type) => {
     e.preventDefault();
     if (!walletManager || !walletManager.account) {
       showStatus("Please connect a wallet first", "error");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
-      // Mock submission for now since we just build the UI
-      setTimeout(() => {
-        showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
-        setIsSubmitting(false);
-        setAmount("");
-        setTriggerPrice("");
-      }, 1000);
+      const { preimageHex, preimage } = generateCondition();
+      const conditionHash = await hashPreimage(preimage);
+
+      // Build XRPL crypto-condition (SHA-256 preimage condition)
+      // Format: A0 25 80 20 <32-byte-hash> 81 01 20
+      const conditionHex = "A0258020" + conditionHash + "810120";
+      const fulfillmentHex = "A0228020" + preimageHex;
+
+      // Cancel after 24 hours (XRPL Ripple epoch offset)
+      const rippleEpoch = 946684800;
+      const cancelAfter = Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
+
+      // Determine amount in drops
+      let amountInDrops;
+      if (type === "DCA") {
+        amountInDrops = amountPerBuy;
+      } else {
+        amountInDrops = amount;
+      }
+
+      // Create the escrow on-ledger
+      const result = await createEscrow(
+        WATCHER_ACCOUNT,
+        amountInDrops,
+        conditionHex,
+        cancelAfter
+      );
+
+      // Build the order payload for the watcher
+      const orderPayload = {
+        type,
+        pair,
+        side,
+        amount: amountInDrops,
+        escrowId: result.escrowId,
+        escrowSequence: result.sequence,
+        owner: walletManager.account,
+        conditionHex,
+        fulfillmentHex,
+        isPrivate,
+      };
+
+      // Add type-specific fields
+      if (type === "SL" || type === "TP") {
+        orderPayload.triggerPrice = triggerPrice;
+      } else if (type === "TRAILING") {
+        orderPayload.trailingPct = trailingPct;
+      } else if (type === "OCO") {
+        orderPayload.tpPrice = tpPrice;
+        orderPayload.slPrice = slPrice;
+      } else if (type === "DCA" || type === "TWAP") {
+        orderPayload.numBuys = numBuys;
+        orderPayload.ticketInterval = ticketInterval;
+      }
+
+      // Register with the watcher bot
+      await fetch("http://localhost:3001/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+
+      showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
+      setAmount("");
+      setTriggerPrice("");
     } catch (err) {
       showStatus(err.message || "Failed to create order", "error");
+    } finally {
       setIsSubmitting(false);
     }
   };
