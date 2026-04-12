@@ -80,7 +80,7 @@ export function EscrowInteraction() {
           TransactionType: "EscrowFinish",
           Account: walletManager.account.address,
           Owner: owner,
-          EscrowID: escrowId,
+          OfferSequence: parseInt(escrowId, 10),
         };
       } else {
         if (!owner || !escrowId) {
@@ -92,7 +92,7 @@ export function EscrowInteraction() {
           TransactionType: "EscrowCancel",
           Account: walletManager.account.address,
           Owner: owner,
-          EscrowID: escrowId,
+          OfferSequence: parseInt(escrowId, 10),
         };
       }
 

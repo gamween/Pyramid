@@ -7,10 +7,38 @@
  * Usage: node apps/web/scripts/setup-devnet.mjs
  */
 
-import { Client, Wallet } from "xrpl"
+import { Client, Wallet, encode } from "xrpl"
 import { writeFileSync } from "fs"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
+
+// Raw signing — bypasses xrpl.js validation for tx types it doesn't know (XLS-66 loans)
+const keypairsPath = join(dirname(fileURLToPath(import.meta.url)), "../../../node_modules/.pnpm/xrpl@4.5.0-smartescrow.4/node_modules/ripple-keypairs/dist/index.js")
+const { sign: rawSign } = await import(keypairsPath)
+
+async function submitRawTx(client, wallet, tx) {
+  const acctInfo = await client.request({ command: "account_info", account: wallet.address })
+  const ledgerInfo = await client.request({ command: "ledger_current" })
+  const prepared = {
+    ...tx,
+    Fee: "12",
+    Sequence: acctInfo.result.account_data.Sequence,
+    LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
+    NetworkID: 2002,
+    SigningPubKey: wallet.publicKey,
+  }
+  const encoded = encode(prepared)
+  prepared.TxnSignature = rawSign("53545800" + encoded, wallet.privateKey)
+  const tx_blob = encode(prepared)
+  const result = await client.request({ command: "submit", tx_blob })
+  if (result.result.engine_result !== "tesSUCCESS") {
+    throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
+  }
+  // Wait for validation
+  await new Promise((r) => setTimeout(r, 5000))
+  const txResult = await client.request({ command: "tx", transaction: result.result.tx_json?.hash })
+  return txResult.result
+}
 
 const WSS = "wss://wasm.devnet.rippletest.net:51233"
 const FAUCET_HOST = "wasmfaucet.devnet.rippletest.net"
@@ -111,21 +139,19 @@ async function main() {
     console.log("  (XLS-65 may not be enabled on this devnet build)")
   }
 
-  // 8. Create LoanBroker
+  // 8. Create LoanBroker (uses raw signing — xrpl.js doesn't know XLS-66 tx types)
   console.log("\n8. Creating LoanBroker...")
   let loanBrokerId = null
   if (vaultId) {
     try {
-      const brokerTx = {
+      const brokerTxResult = await submitRawTx(client, owner, {
         TransactionType: "LoanBrokerSet",
         Account: owner.address,
         VaultID: vaultId,
         ManagementFeeRate: 1000,
-      }
-      const brokerResult = await client.submitAndWait(brokerTx, { wallet: owner })
-      console.log(`  LoanBrokerSet: ${brokerResult.result.meta.TransactionResult}`)
-
-      const brokerNode = brokerResult.result.meta.AffectedNodes?.find(
+      })
+      console.log(`  LoanBrokerSet: ${brokerTxResult.meta?.TransactionResult}`)
+      const brokerNode = brokerTxResult.meta?.AffectedNodes?.find(
         (n) => n.CreatedNode?.LedgerEntryType === "LoanBroker"
       )
       loanBrokerId = brokerNode?.CreatedNode?.LedgerIndex || null
