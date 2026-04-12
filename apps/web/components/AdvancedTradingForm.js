@@ -69,12 +69,12 @@ export function AdvancedTradingForm() {
       const rippleEpoch = 946684800;
       const cancelAfter = Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
 
-      // Determine amount in drops
+      // Convert XRP to drops (user enters XRP, protocol uses drops)
       let amountInDrops;
       if (type === "DCA") {
-        amountInDrops = amountPerBuy;
+        amountInDrops = String(Math.floor(parseFloat(amountPerBuy) * 1000000));
       } else {
-        amountInDrops = amount;
+        amountInDrops = String(Math.floor(parseFloat(amount) * 1000000));
       }
 
       // Create the escrow on-ledger
@@ -165,7 +165,7 @@ export function AdvancedTradingForm() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-white/70 font-mono text-xs">Amount (XRP drops)</Label>
+                  <Label className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
                   <Input type="number" placeholder="500000000" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                 </div>
 
@@ -211,7 +211,7 @@ export function AdvancedTradingForm() {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-white/70 font-mono text-xs">Amount (XRP drops)</Label>
+                <Label className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
                 <Input type="number" placeholder="500000000" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
               </div>
 
@@ -255,7 +255,7 @@ export function AdvancedTradingForm() {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-white/70 font-mono text-xs">Amount (XRP drops)</Label>
+                <Label className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
                 <Input type="number" placeholder="500000000" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
               </div>
 

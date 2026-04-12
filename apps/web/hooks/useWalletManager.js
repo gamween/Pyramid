@@ -66,9 +66,9 @@ export function useWalletManager() {
           showStatus(error.message, "error");
         });
 
-        // Check initial connection status
+        // Check initial connection status (don't show message on landing page)
         if (!manager.connected) {
-          showStatus("Please connect a wallet to get started", "info");
+          // silent — the landing page has its own CTA
         } else {
           showStatus("Wallet reconnected from previous session", "success");
           updateConnectionState(manager);

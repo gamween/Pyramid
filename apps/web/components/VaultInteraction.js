@@ -28,11 +28,13 @@ export function VaultInteraction() {
       return;
     }
 
-    const parsedAmount = Number(amount);
-    if (!Number.isInteger(parsedAmount) || parsedAmount <= 0) {
-      showStatus("Amount must be a positive integer (drops)", "error");
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      showStatus("Amount must be a positive number (XRP)", "error");
       return;
     }
+
+    const amountInDrops = String(Math.floor(parsedAmount * 1000000));
 
     try {
       setIsSubmitting(true);
@@ -42,7 +44,7 @@ export function VaultInteraction() {
         TransactionType: action === "deposit" ? "VaultDeposit" : "VaultWithdraw",
         Account: walletManager.account.address,
         VaultID: vaultId,
-        Amount: String(parsedAmount),
+        Amount: amountInDrops,
         ComputationAllowance: 1000000,
         Fee: "1000000",
       };
@@ -111,7 +113,7 @@ export function VaultInteraction() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="vaultAmount" className="text-white/70 font-mono text-xs">Amount (drops)</Label>
+          <Label htmlFor="vaultAmount" className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
           <Input
             id="vaultAmount"
             type="text"
