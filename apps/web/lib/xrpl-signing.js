@@ -115,6 +115,9 @@ export async function submitAndWait(client, tx_blob) {
   }
 
   const txHash = submitResult.result.tx_json?.hash
+  if (!txHash) {
+    throw new Error("Submit succeeded but response contained no transaction hash")
+  }
 
   for (let i = 0; i < 10; i++) {
     await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -126,9 +129,7 @@ export async function submitAndWait(client, tx_blob) {
     }
   }
 
-  // Final attempt — return whatever we have
-  const txResult = await client.request({ command: "tx", transaction: txHash })
-  return txResult.result
+  throw new Error(`Transaction ${txHash} not validated after polling timeout`)
 }
 
 // ─── 5. assembleCosigned ──────────────────────────────────────────────────────
