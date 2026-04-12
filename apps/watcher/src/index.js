@@ -65,9 +65,30 @@ app.get("/api/health", (req, res) => {
 app.get("/api/loans/available", async (req, res) => {
   try {
     const vaults = await cosignHandler.getAvailableVaults()
-    res.json({ vaults })
+    const borrowerAddress = cosignHandler.borrowerWallet?.address || null
+    res.json({ vaults, borrowerAddress })
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message })
+  }
+})
+
+app.post("/api/loans/borrow", async (req, res) => {
+  try {
+    const { vaultId, principalDrops, interestRate, paymentTotal, paymentInterval, gracePeriod } = req.body
+    if (!vaultId || !principalDrops) {
+      return res.status(400).json({ status: "error", message: "Missing vaultId or principalDrops" })
+    }
+    const result = await cosignHandler.borrowFromVault({
+      vaultId,
+      principalDrops: parseInt(principalDrops, 10),
+      interestRate,
+      paymentTotal,
+      paymentInterval,
+      gracePeriod,
+    })
+    res.json({ success: true, ...result })
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message })
   }
 })
 

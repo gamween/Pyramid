@@ -25,7 +25,7 @@ export function LoansPage() {
         loading={loading}
         onBorrow={borrowFromVault}
       />
-      {isConnected && (
+      {(isConnected || activeLoans.length > 0) && (
         <ActiveLoans
           loans={activeLoans}
           loading={loading}
