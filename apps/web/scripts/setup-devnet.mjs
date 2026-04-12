@@ -34,9 +34,17 @@ async function submitRawTx(client, wallet, tx) {
   if (result.result.engine_result !== "tesSUCCESS") {
     throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
   }
-  // Wait for validation
-  await new Promise((r) => setTimeout(r, 5000))
-  const txResult = await client.request({ command: "tx", transaction: result.result.tx_json?.hash })
+  // Wait for validation with retry
+  const txHash = result.result.tx_json?.hash
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 2000))
+    try {
+      const txResult = await client.request({ command: "tx", transaction: txHash })
+      if (txResult.result.validated) return txResult.result
+    } catch {}
+  }
+  // Final attempt
+  const txResult = await client.request({ command: "tx", transaction: txHash })
   return txResult.result
 }
 
@@ -132,17 +140,34 @@ async function createVaultWithBroker(client, owner, label, depositDrops, coverDr
 
 async function createLoanOnVault(client, owner, borrower, loanBrokerId, principalDrops) {
   console.log(`  LoanSet (${principalDrops / 1_000_000} XRP to ${borrower.address})...`)
-  const loanResult = await submitCosignedTx(client, [owner, borrower], {
-    TransactionType: "LoanSet",
-    Account: owner.address,
-    LoanBrokerID: loanBrokerId,
-    Counterparty: borrower.address,
-    PrincipalRequested: String(principalDrops),
-    InterestRate: 500,
-    PaymentTotal: 12,
-    PaymentInterval: 2592000,
-    GracePeriod: 604800,
-  })
+  // Try borrower as Account first (borrower requests loan from broker)
+  // If that fails, try owner as Account with borrower as Counterparty
+  let loanResult
+  try {
+    loanResult = await submitRawTx(client, borrower, {
+      TransactionType: "LoanSet",
+      Account: borrower.address,
+      LoanBrokerID: loanBrokerId,
+      PrincipalRequested: String(principalDrops),
+      InterestRate: 500,
+      PaymentTotal: 12,
+      PaymentInterval: 2592000,
+      GracePeriod: 604800,
+    })
+  } catch (err) {
+    console.log(`  LoanSet (borrower-signed) failed: ${err.message}, trying owner-signed...`)
+    loanResult = await submitRawTx(client, owner, {
+      TransactionType: "LoanSet",
+      Account: owner.address,
+      LoanBrokerID: loanBrokerId,
+      Counterparty: borrower.address,
+      PrincipalRequested: String(principalDrops),
+      InterestRate: 500,
+      PaymentTotal: 12,
+      PaymentInterval: 2592000,
+      GracePeriod: 604800,
+    })
+  }
   const loanId = loanResult.meta?.AffectedNodes?.find(
     (n) => n.CreatedNode?.LedgerEntryType === "Loan"
   )?.CreatedNode?.LedgerIndex
