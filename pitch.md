@@ -20,7 +20,7 @@ XRPL shipped a native lending protocol (XLS-65/66) in January 2026. Nobody has b
 - **DCA / TWAP** — pre-sign N orders with Tickets, watcher submits at intervals
 
 ### Privacy (Boundless bounty)
-- Trigger prices hidden via ZK proofs — Smart Escrows (XLS-0100) on Groth5, verified on-chain
+- Trigger prices hidden via ZK proofs — Smart Escrows (XLS-0100) on WASM Devnet, verified on-chain
 
 ## The Flywheel
 
@@ -45,8 +45,8 @@ We didn't add a layer — we composed the chain's own primitives.
 
 | What | Network | How |
 |---|---|---|
-| Lending + Trading + DCA | Devnet | Native XLS-65/66 + Escrow + DEX + Tickets |
-| ZK Privacy | Groth5 | Smart Escrows (XLS-0100) + RISC0 proofs via Boundless, verified on-chain |
+| Lending + Trading + DCA | WASM Devnet | Native XLS-65/66 + Escrow + DEX + Tickets |
+| ZK Privacy | WASM Devnet | Smart Escrows (XLS-0100) + RISC0 proofs via Boundless, verified on-chain |
 
 ## Roadmap
 
@@ -63,6 +63,6 @@ We didn't add a layer — we composed the chain's own primitives.
 3. Stop-loss → EscrowCreate locks funds, watcher monitors
 4. Price triggers → EscrowFinish + OfferCreate on DEX
 5. DCA → TicketCreate + pre-signed orders, auto-executed
-6. Private order → Smart Escrow on Groth5, ZK proof verifies trigger on-chain (Boundless)
+6. Private order → Smart Escrow on WASM Devnet, ZK proof verifies trigger on-chain (Boundless)
 
 **"We built on the features that shipped THIS YEAR. This is DeFi built WITH the chain, not on top of it."**

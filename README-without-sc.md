@@ -52,23 +52,17 @@ The app will be available at [http://localhost:3000](http://localhost:3000)
 
 ## Networks
 
-### AlphaNet (Default)
-- **WebSocket:** wss://alphanet.nerdnest.xyz
-- **Network ID:** 21465
-- **Faucet:** https://alphanet.faucet.nerdnest.xyz/accounts
-- **Explorer:** https://alphanet.xrpl.org
+### WASM Devnet (Default)
+- **WebSocket:** wss://wasm.devnet.rippletest.net:51233
+- **Network ID:** 2002
+- **Faucet:** https://wasmfaucet.devnet.rippletest.net/accounts
+- **Explorer:** https://devnet.xrpl.org
 
 ### Testnet
 - **WebSocket:** wss://s.altnet.rippletest.net:51233
 - **Network ID:** 1
 - **Faucet:** https://faucet.altnet.rippletest.net/accounts
 - **Explorer:** https://testnet.xrpl.org
-
-### Devnet
-- **WebSocket:** wss://s.devnet.rippletest.net:51233
-- **Network ID:** 2
-- **Faucet:** https://faucet.devnet.rippletest.net/accounts
-- **Explorer:** https://devnet.xrpl.org
 
 ## Resources
 

@@ -1,12 +1,12 @@
 # Backend Implementation Design — Tellement-French
 
 **Date:** 2026-04-11
-**Scope:** Everything except frontend (Dev 2). Covers DevNet setup, watcher bot, ZK proofs, integration.
-**Approach:** Bottom-up — validate DevNet first, then build watcher, then ZK, then integrate.
+**Scope:** Everything except frontend (Dev 2). Covers WASM Devnet setup, watcher bot, ZK proofs, integration.
+**Approach:** Bottom-up — validate WASM Devnet first, then build watcher, then ZK, then integrate.
 
 ---
 
-## Phase 1: DevNet Validation
+## Phase 1: WASM Devnet Validation
 
 **Goal:** Prove XLS-65/66 amendments are live. Fill all empty ADDRESSES. Unblock hook testing.
 
@@ -32,13 +32,13 @@
 
 ### Risk
 
-If XLS-65/66 amendments aren't active on DevNet, VaultCreate/LoanBrokerSet will fail with `temDISABLED`. In that case: fall back to testing only the trading layer (escrow + DEX + tickets) which uses standard XRPL features.
+If XLS-65/66 amendments aren't active on WASM Devnet, VaultCreate/LoanBrokerSet will fail with `temDISABLED`. In that case: fall back to testing only the trading layer (escrow + DEX + tickets) which uses standard XRPL features.
 
 ---
 
 ## Phase 2: Watcher Bot
 
-**Goal:** Standalone Node.js service that monitors DevNet prices and executes orders.
+**Goal:** Standalone Node.js service that monitors WASM Devnet prices and executes orders.
 
 ### Structure
 
@@ -48,19 +48,18 @@ apps/watcher/
 ├── src/
 │   ├── index.js            # Express server + startup
 │   ├── config.js           # WSS URLs, watcher seed, port
-│   ├── connections.js      # ConnectionManager (devnet + groth5 clients)
+│   ├── connections.js      # ConnectionManager (WASM Devnet client)
 │   ├── devnet-loop.js      # Ledger subscription + trigger evaluation
 │   ├── order-cache.js      # In-memory Map for orders + DCA schedules
 │   ├── dca-scheduler.js    # Interval-based submission of pre-signed blobs
-│   └── zk-prover.js        # RISC0 proof gen + Groth5 EscrowFinish
+│   └── zk-prover.js        # RISC0 proof gen + WASM Devnet EscrowFinish
 ```
 
 ### config.js
 
 ```javascript
 export const config = {
-  devnet: { wss: "wss://s.devnet.rippletest.net:51233" },
-  groth5: { wss: "wss://groth5.devnet.rippletest.net:51233" },
+  wasmDevnet: { wss: "wss://wasm.devnet.rippletest.net:51233" },
   watcherSeed: process.env.WATCHER_SEED,
   port: process.env.PORT || 3001,
 }
@@ -69,12 +68,10 @@ export const config = {
 ### connections.js
 
 ConnectionManager class:
-- `connect()` — creates xrpl.Client for devnet. Creates separate client for groth5 using `xrpl@4.5.0-smartescrow.4` (imported dynamically or as aliased package).
-- `get("devnet")` / `get("groth5")` — returns the respective client.
-- `disconnect()` — clean shutdown of both.
+- `connect()` — creates xrpl.Client for WASM Devnet using `xrpl@4.5.0-smartescrow.4` (supports Smart Escrows + lending).
+- `get("wasmDevnet")` — returns the client.
+- `disconnect()` — clean shutdown.
 - Auto-reconnect on disconnect events.
-
-**Two xrpl.js versions:** The watcher needs `xrpl@^3.0.0` for DevNet and `xrpl@4.5.0-smartescrow.4` for Groth5. Approach: install the smartescrow version under an npm alias (`"xrpl-smartescrow": "npm:xrpl@4.5.0-smartescrow.4"`) and import it only in `zk-prover.js` and `connections.js` for the Groth5 client.
 
 ### order-cache.js
 
@@ -97,7 +94,7 @@ Methods: `addOrder()`, `addDca()`, `getActiveOrders()`, `getDueSchedules()`, `re
 ### devnet-loop.js
 
 DevnetLoop class:
-- `start()` — subscribe to devnet `ledgerClosed` stream.
+- `start()` — subscribe to WASM Devnet `ledgerClosed` stream.
 - `onLedger()` — each ledger close:
   1. Query `book_offers` for current XRP/USD price.
   2. For each active order: evaluate trigger condition.
@@ -119,7 +116,7 @@ Execution (public order — pair is always XRP/USD via RLUSD):
 
 1. `EscrowFinish` with `Condition` + `Fulfillment` (crypto-condition format via `five-bells-condition`)
    - Watcher receives the escrowed funds
-2. `OfferCreate` with `tfImmediateOrCancel` on DevNet DEX
+2. `OfferCreate` with `tfImmediateOrCancel` on WASM Devnet DEX
    - SELL side: `TakerGets` = escrowed XRP amount, `TakerPays` = `{ currency: "USD", issuer: RLUSD_ISSUER, value: ... }`
    - BUY side: `TakerGets` = `{ currency: "USD", ... }`, `TakerPays` = XRP amount
    - Trade size = full escrow amount (no partial fills)
@@ -154,7 +151,7 @@ DcaScheduler class:
 - `isDue(schedule)` — `Date.now() >= schedule.nextSubmitTime && schedule.completed < schedule.total`
 - `submitNext(schedule, client)` — take next blob, `client.submit(blob)`, increment completed, update nextSubmitTime.
 
-Called by devnet-loop on each ledger close.
+Called by the ledger loop on each ledger close.
 
 ### index.js — HTTP API
 
@@ -310,7 +307,7 @@ prove:        cargo run -p cli -- --trigger-price <X> --order-type <Y> --nonce <
 
 ### Key constraint
 
-IMAGE_ID links guest to escrow. Any change to `guest/src/main.rs` requires recompiling the escrow WASM and redeploying it to Groth5.
+IMAGE_ID links guest to escrow. Any change to `guest/src/main.rs` requires recompiling the escrow WASM and redeploying it to WASM Devnet.
 
 ---
 
@@ -322,9 +319,9 @@ IMAGE_ID links guest to escrow. Any change to `guest/src/main.rs` requires recom
 2. Fill `ADDRESSES` in `constants.js` with output.
 3. Create `.env` for watcher with `WATCHER_SEED`.
 4. Start watcher: `node apps/watcher/src/index.js`.
-5. Fund watcher account on Groth5 via `http://groth5-faucet.devnet.rippletest.net`.
+5. Fund watcher account on WASM Devnet via `https://wasmfaucet.devnet.rippletest.net`.
 6. Build ZK workspace: `cd packages/zkp && just build`.
-7. Deploy escrow WASM to Groth5 via web UI or script.
+7. Deploy escrow WASM to WASM Devnet via web UI or script.
 
 ### E2E test flows
 
@@ -334,7 +331,7 @@ IMAGE_ID links guest to escrow. Any change to `guest/src/main.rs` requires recom
 | 2 | Create loan → repay with `tfLoanFullPayment` | Loan lifecycle (XLS-66) |
 | 3 | Create SL escrow → POST to watcher `/api/orders` → manually seed DEX to trigger → verify EscrowFinish + OfferCreate | Full trading pipeline |
 | 4 | Create tickets → build+sign offers → POST to watcher `/api/dca` → watch interval submissions | DCA/TWAP pipeline |
-| 5 | Create smart escrow on Groth5 with WASM → generate proof → EscrowFinish with Memos → verify funds released | ZK privacy pipeline |
+| 5 | Create smart escrow on WASM Devnet with WASM → generate proof → EscrowFinish with Memos → verify funds released | ZK privacy pipeline |
 
 ### Deliverable order
 

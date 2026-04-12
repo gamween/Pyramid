@@ -14,14 +14,13 @@ Tellement-French is the first DeFi protocol built on XRPL's new native lending p
 2. **BORROW** — Take a loan from Vault liquidity for trading
 3. **TRADE** — Advanced orders (SL, TP, trailing, OCO) via Escrow + watcher + DEX
 4. **ACCUMULATE** — DCA/TWAP via Tickets + pre-signed OfferCreate
-5. **PRIVATE** — ZK-hidden trigger prices via Smart Escrows (XLS-0100) + RISC0/Boundless on Groth5
+5. **PRIVATE** — ZK-hidden trigger prices via Smart Escrows (XLS-0100) + RISC0/Boundless on WASM Devnet
 
 ### Networks
 
 | Network | Purpose | xrpl.js |
 |---------|---------|---------|
-| **Devnet** (`wss://s.devnet.rippletest.net:51233`) | Lending, trading, DCA, price monitoring | `xrpl@^3.0.0` |
-| **Groth5** (`wss://groth5.devnet.rippletest.net:51233`) | ZK private orders via Smart Escrows (XLS-0100) | `xrpl@4.5.0-smartescrow.4` |
+| **WASM Devnet** (`wss://wasm.devnet.rippletest.net:51233`) | Lending, trading, DCA, price monitoring, ZK private orders via Smart Escrows (XLS-0100) | `xrpl@4.5.0-smartescrow.4` |
 
 ### Price Source
 
@@ -31,7 +30,7 @@ Native XRPL DEX/AMM: `book_offers` for bid/ask, `amm_info` for AMM spot. No orac
 
 ## Lending Layer (Flagship)
 
-Uses native XLS-65 (Vaults) + XLS-66 (Lending Protocol) on devnet.
+Uses native XLS-65 (Vaults) + XLS-66 (Lending Protocol) on WASM Devnet.
 
 ### Vault (XLS-65)
 
@@ -43,9 +42,9 @@ Tellement-French creates and manages a single-asset Vault.
 - `VaultWithdraw` — user redeems shares for assets
 
 **Exchange rate:**
-- Initial: `shares = assets × scale`
-- Subsequent: `shares = (assets × total_shares) / total_assets` (rounded down)
-- Redemption: `assets = (shares × (total_assets - loss)) / total_shares`
+- Initial: `shares = assets * scale`
+- Subsequent: `shares = (assets * total_shares) / total_assets` (rounded down)
+- Redemption: `assets = (shares * (total_assets - loss)) / total_shares`
 
 ### Loan Broker (XLS-66)
 
@@ -65,7 +64,7 @@ Tellement-French acts as the Loan Broker — manages the lending protocol.
   - `InterestRate`: annualized, 1/10th basis points (e.g., 500 = 0.5%)
   - `PaymentTotal`: number of payments
   - `PaymentInterval`: seconds between payments (e.g., 2592000 = 30 days)
-  - `GracePeriod`: seconds after missed payment before default (min 60, ≤ PaymentInterval)
+  - `GracePeriod`: seconds after missed payment before default (min 60, <= PaymentInterval)
   - Fees: `LoanOriginationFee`, `LoanServiceFee`, `LatePaymentFee`
 
 **Loan lifecycle:**
@@ -96,12 +95,12 @@ Depositors earn yield → more deposits → deeper liquidity
 
 ## Trading Layer (Complementary)
 
-All on devnet using native XRPL primitives. A Node.js watcher bot monitors prices and executes.
+All on WASM Devnet using native XRPL primitives. A Node.js watcher bot monitors prices and executes.
 
 ### Stop-Loss / Take-Profit
 
 **Creation:**
-1. User creates `EscrowCreate` on devnet:
+1. User creates `EscrowCreate` on WASM Devnet:
    - `Amount`: funds to lock (e.g., 500 XRP)
    - `Destination`: watcher account
    - `Condition`: SHA-256 hash of a random preimage
@@ -109,7 +108,7 @@ All on devnet using native XRPL primitives. A Node.js watcher bot monitors price
 2. User shares with watcher (off-chain): trigger_price, order_type (SL/TP), side (BUY/SELL), preimage (fulfillment)
 
 **Monitoring:**
-- Watcher subscribes to devnet ledger stream
+- Watcher subscribes to WASM Devnet ledger stream
 - Each ledger close: queries `book_offers` for current price
 - Checks: does current_price satisfy the trigger condition?
   - SL SELL: current_price ≤ trigger_price
@@ -145,7 +144,7 @@ Same as SL/TP but:
 
 ### DCA (Dollar-Cost Averaging)
 
-Uses Tickets for pre-signed orders — all on devnet, no Hooks needed.
+Uses Tickets for pre-signed orders — all on WASM Devnet, no Hooks needed.
 
 **Setup:**
 1. User submits `TicketCreate` with `TicketCount: N` (e.g., 10)
@@ -158,7 +157,7 @@ Uses Tickets for pre-signed orders — all on devnet, no Hooks needed.
 
 **Execution:**
 - Watcher holds the N signed blobs
-- Every `interval` ledgers, submits the next one to devnet
+- Every `interval` ledgers, submits the next one to WASM Devnet
 - Tickets allow out-of-sequence submission — user's wallet stays usable
 
 **Cancellation:**
@@ -176,15 +175,15 @@ Same as DCA but:
 
 ## ZK Privacy Layer (Boundless Bounty)
 
-Private orders on Groth5 devnet. Trigger prices hidden via RISC0 ZK proofs, verified **on-chain** by Smart Escrows (XLS-0100).
+Private orders on WASM Devnet. Trigger prices hidden via RISC0 ZK proofs, verified **on-chain** by Smart Escrows (XLS-0100).
 
 ### How Privacy Works
 
 Public orders expose trigger prices on-chain (the watcher knows and could leak them). Private orders solve this: the trigger price is hidden in a cryptographic commitment, and a ZK proof proves the execution condition was legitimately met — without ever revealing the trigger price.
 
-The escrow uses a **`FinishFunction`** — a compiled WASM binary deployed at escrow creation time. When someone submits `EscrowFinish`, Groth5's rippled executes the WASM on-chain. The WASM reads the proof from Memos, verifies it using Groth5's built-in BN254/Groth16 precompiles, and returns 1 to release funds.
+The escrow uses a **`FinishFunction`** — a compiled WASM binary deployed at escrow creation time. When someone submits `EscrowFinish`, WASM Devnet's rippled executes the WASM on-chain. The WASM reads the proof from Memos, verifies it using the built-in BN254/Groth16 precompiles, and returns 1 to release funds.
 
-This is **not Hooks** — it's XLS-0100 Smart Escrows, a separate XRPL feature only available on the Groth5 devnet.
+This is **not Hooks** — it's XLS-0100 Smart Escrows, a separate XRPL feature available on the WASM Devnet.
 
 ### Lifecycle
 
@@ -195,7 +194,7 @@ This is **not Hooks** — it's XLS-0100 Smart Escrows, a separate XRPL feature o
 
 2. **Creation:**
    - Frontend computes `commitment = sha256(trigger_price || order_type || nonce)`
-   - User creates `EscrowCreate` on **Groth5**:
+   - User creates `EscrowCreate` on **WASM Devnet**:
      - `Amount`: order funds (in drops)
      - `Destination`: watcher account
      - `FinishFunction`: hex-encoded escrow WASM binary
@@ -204,21 +203,21 @@ This is **not Hooks** — it's XLS-0100 Smart Escrows, a separate XRPL feature o
    - trigger_price + nonce shared with watcher (encrypted, off-chain)
 
 3. **Monitoring:**
-   - Watcher monitors **standard DevNet** DEX prices (`book_offers` + `amm_info`)
+   - Watcher monitors **WASM Devnet** DEX prices (`book_offers` + `amm_info`)
    - Same price feed as public orders
 
 4. **Execution (condition met):**
    - Watcher generates RISC0 Groth16 proof (local or via **Boundless Market**)
    - Guest proves: "I know (trigger_price, nonce) such that hash matches commitment AND price condition is met"
    - Proof output: journal (public — commitment + current_price) + seal (256-byte Groth16 proof)
-   - Watcher submits `EscrowFinish` on **Groth5**:
+   - Watcher submits `EscrowFinish` on **WASM Devnet**:
      - `Owner`: escrow creator
      - `OfferSequence`: from EscrowCreate
      - `ComputationAllowance`: 1000000 (gas budget for WASM execution)
      - `Memos[0]`: journal (hex-encoded)
      - `Memos[1]`: seal (hex-encoded, always 256 bytes)
-   - Groth5 rippled executes WASM `finish()` → reads Memos → verifies proof → returns 1 → funds released
-   - Watcher submits `OfferCreate` on Groth5 DEX with `tfImmediateOrCancel`
+   - WASM Devnet rippled executes WASM `finish()` → reads Memos → verifies proof → returns 1 → funds released
+   - Watcher submits `OfferCreate` on WASM Devnet DEX with `tfImmediateOrCancel`
    - Watcher submits `Payment` → sends proceeds back to user
 
 5. **Privacy guarantee:**
@@ -265,32 +264,31 @@ packages/zkp/
 
 ## Watcher Bot
 
-Node.js service connected to both networks. Monitors prices on DevNet and executes orders.
+Node.js service connected to WASM Devnet. Monitors prices and executes orders.
 
 ### Devnet Loop
 
 Handles: SL, TP, trailing stop, OCO, DCA, TWAP.
 
-Each ledger close on devnet:
+Each ledger close on WASM Devnet:
 1. Query `book_offers` + `amm_info` via xrpl.js (native, no oracle)
 2. For each active escrow order: check trigger condition
 3. For trailing stops: update high watermark
 4. If triggered → EscrowFinish + OfferCreate + Payment back to user
 5. For DCA/TWAP: check if next interval is due → submit next pre-signed tx
 
-### ZK Prover (Groth5)
+### ZK Prover (WASM Devnet)
 
-Called by devnet loop when a private order triggers:
+Called by the ledger loop when a private order triggers:
 1. Generate RISC0 Groth16 proof (local or Boundless Market)
 2. Receive proof: journal + seal (256 bytes)
-3. `EscrowFinish` on **Groth5** with `ComputationAllowance: 1000000` + proof in Memos
-4. Groth5 WASM verifies proof on-chain → releases funds
-5. `OfferCreate` on Groth5 DEX + `Payment` back to user
+3. `EscrowFinish` on **WASM Devnet** with `ComputationAllowance: 1000000` + proof in Memos
+4. WASM Devnet verifies proof on-chain → releases funds
+5. `OfferCreate` on WASM Devnet DEX + `Payment` back to user
 
 ### Connection Manager
 
-- Devnet: `wss://s.devnet.rippletest.net:51233` (lending, trading, DCA, price monitoring) — `xrpl@^3.0.0`
-- Groth5: `wss://groth5.devnet.rippletest.net:51233` (ZK smart escrows only) — `xrpl@4.5.0-smartescrow.4`
+- WASM Devnet: `wss://wasm.devnet.rippletest.net:51233` (lending, trading, DCA, price monitoring, ZK smart escrows) — `xrpl@4.5.0-smartescrow.4`
 - Auto-reconnect + health checks
 
 ### State
@@ -326,7 +324,7 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 - OCO: pair, side, amount, tp_price, sl_price → 2× EscrowCreate
 - DCA: pair, amount_per_buy, num_buys, interval → TicketCreate + sign N txs
 - TWAP: pair, total_amount, num_slices, interval → TicketCreate + sign N txs
-- Private toggle: "Hide trigger price (ZK)" → EscrowCreate on Groth5 with FinishFunction (WASM) + commitment in Data
+- Private toggle: "Hide trigger price (ZK)" → EscrowCreate on WASM Devnet with FinishFunction (WASM) + commitment in Data
 
 **Order Detail:**
 - Status, condition, network badge
@@ -534,8 +532,8 @@ These must be filled before the frontend works:
 |----------|----------------|---------|
 | `ADDRESSES.VAULT_ID` | Output of `createVault()` — run setup script once | Vault deposit/withdraw/info |
 | `ADDRESSES.LOAN_BROKER_ID` | Output of `createLoanBroker()` | Loan operations |
-| `ADDRESSES.RLUSD_ISSUER` | DevNet RLUSD gateway address (from faucet or trust line setup) | Price feed, offers |
-| `WATCHER_ACCOUNT` | Watcher bot's funded DevNet r-address | Escrow destination |
+| `ADDRESSES.RLUSD_ISSUER` | WASM Devnet RLUSD gateway address (from faucet or trust line setup) | Price feed, offers |
+| `WATCHER_ACCOUNT` | Watcher bot's funded WASM Devnet r-address | Escrow destination |
 
 ### Order Types & Status Enums
 
@@ -578,7 +576,7 @@ Common errors:
 - TicketCreate (parallel pre-signed DCA/TWAP)
 - Payment (settlement)
 - book_offers, amm_info (native price discovery)
-- Smart Escrows with FinishFunction (XLS-0100) on Groth5
+- Smart Escrows with FinishFunction (XLS-0100) on WASM Devnet
 - RISC0 ZK proofs via Boundless Market, verified on-chain by escrow WASM
 
 ### Transaction Volume Estimate
@@ -588,9 +586,9 @@ Per active user:
 - Each loan: 3+ txs (create + N payments + delete)
 - Each SL/TP order: 4 txs (escrow create + finish + offer + payment)
 - Each DCA (10 buys): 12 txs (ticket create + 10 offers + cleanup)
-- Each private order: 4 txs on Groth5 (escrow create + finish w/ proof + offer + payment)
+- Each private order: 4 txs on WASM Devnet (escrow create + finish w/ proof + offer + payment)
 
-10 users × 5 actions = 200+ transactions across DevNet + Groth5.
+10 users × 5 actions = 200+ transactions on WASM Devnet.
 
 ### Pitch
 
@@ -600,7 +598,7 @@ Per active user:
 
 | Phase | What | When |
 |---|---|---|
-| Now | Devnet: lending + trading + ZK privacy | Hackathon |
+| Now | WASM Devnet: lending + trading + ZK privacy | Hackathon |
 | Q2 2026 | Lending hits mainnet → go live | Amendment passes |
 | Q3 2026 | SC integration (XLS-101) → order engine on-chain | Post-amendment |
 | Future | Margin, liquidation, dynamic rates, collateral | As amendments ship |

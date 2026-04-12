@@ -8,7 +8,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 - **Borrowing** — Take loans from Vault liquidity, fixed term + rate
 - **Advanced Trading** — Stop-Loss, Take-Profit, Trailing Stop, OCO via Escrow + watcher
 - **DCA / TWAP** — Pre-signed orders with Tickets, auto-executed at intervals
-- **ZK Privacy** — Hidden trigger prices via Smart Escrows (XLS-0100) + RISC0 proofs on Groth5
+- **ZK Privacy** — Hidden trigger prices via Smart Escrows (XLS-0100) + RISC0 proofs on WASM Devnet
 - **Multi-Wallet** — Xaman, Crossmark, GemWallet, WalletConnect, Otsu
 - **Native Prices** — `book_offers` + `amm_info` from XRPL DEX/AMM (no oracle)
 
@@ -38,11 +38,11 @@ The app will be available at [http://localhost:3000](http://localhost:3000)
 
 | Layer | Network | Primitives |
 |---|---|---|
-| **Lending** | Devnet | VaultCreate, VaultDeposit, VaultWithdraw, LoanBrokerSet, LoanSet, LoanPay |
-| **Trading** | Devnet | EscrowCreate, EscrowFinish, EscrowCancel, OfferCreate (ImmediateOrCancel) |
-| **DCA/TWAP** | Devnet | TicketCreate + pre-signed OfferCreate |
-| **Privacy** | Groth5 | Smart Escrows (XLS-0100) + RISC0 proofs via Boundless, verified on-chain |
-| **Prices** | Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
+| **Lending** | WASM Devnet | VaultCreate, VaultDeposit, VaultWithdraw, LoanBrokerSet, LoanSet, LoanPay |
+| **Trading** | WASM Devnet | EscrowCreate, EscrowFinish, EscrowCancel, OfferCreate (ImmediateOrCancel) |
+| **DCA/TWAP** | WASM Devnet | TicketCreate + pre-signed OfferCreate |
+| **Privacy** | WASM Devnet | Smart Escrows (XLS-0100) + RISC0 proofs via Boundless, verified on-chain |
+| **Prices** | WASM Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
 
 ### The Flywheel
 
@@ -86,7 +86,7 @@ tellement-french/
 
 ### Getting Test XRP
 
-1. Connect your wallet on **Devnet**
+1. Connect your wallet on **WASM Devnet**
 2. Go to the "Faucet" section
 3. Click "Request Test XRP"
 
@@ -100,20 +100,15 @@ tellement-french/
 
 1. **Stop-Loss / Take-Profit** — Set trigger price → EscrowCreate locks funds → watcher monitors DEX → executes when triggered
 2. **DCA** — Choose amount, count, interval → TicketCreate + pre-sign N orders → watcher submits at intervals
-3. **Private Orders** — Toggle "Hide trigger price (ZK)" → Smart Escrow on Groth5, RISC0 proof verified on-chain
+3. **Private Orders** — Toggle "Hide trigger price (ZK)" → Smart Escrow on WASM Devnet, RISC0 proof verified on-chain
 
-## Networks
+## Network
 
-### Devnet (Default)
-- **WebSocket:** wss://s.devnet.rippletest.net:51233
-- **Network ID:** 2
-- **Faucet:** https://faucet.devnet.rippletest.net/accounts
+### WASM Devnet
+- **WebSocket:** wss://wasm.devnet.rippletest.net:51233
+- **Network ID:** 2002
+- **Faucet:** https://wasmfaucet.devnet.rippletest.net/accounts
 - **Explorer:** https://devnet.xrpl.org
-
-### Groth5 (ZK Smart Escrows Only)
-- **WebSocket:** wss://groth5.devnet.rippletest.net:51233
-- **Faucet:** http://groth5-faucet.devnet.rippletest.net
-- **Explorer:** http://custom.xrpl.org/groth5.devnet.rippletest.net
 - **xrpl.js:** `4.5.0-smartescrow.4` (required for `FinishFunction` + `ComputationAllowance`)
 
 ## XRPL Transaction Types Used

@@ -30,7 +30,7 @@ All fields verified against official docs as of 2026-04-11.
 | TicketCreate | [docs](https://xrpl.org/docs/references/protocol/transactions/types/ticketcreate) | `TicketCount` (1-250) |
 | OfferCreate | [docs](https://xrpl.org/docs/references/protocol/transactions/types/offercreate) | `TakerPays`, `TakerGets` |
 
-### Smart Escrows (XLS-0100 — Groth5 only, requires xrpl@4.5.0-smartescrow.4)
+### Smart Escrows (XLS-0100 — WASM Devnet, requires xrpl@4.5.0-smartescrow.4)
 
 [spec](https://github.com/XRPLF/XRPL-Standards/tree/master/XLS-0100-smart-escrows) | [starter](https://github.com/boundless-xyz/xrpl-risc0-starter)
 

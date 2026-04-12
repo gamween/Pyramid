@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the complete backend: validate DevNet, build watcher bot, build ZK proof workspace, and verify end-to-end.
+**Goal:** Build the complete backend: validate WASM Devnet, build watcher bot, build ZK proof workspace, and verify end-to-end.
 
-**Architecture:** Bottom-up — Phase 1 validates DevNet works and fills addresses. Phase 2 builds the watcher bot (Express + ledger loop). Phase 3 builds the ZK Rust workspace. Phase 4 ties everything together. No frontend work — other devs handle that.
+**Architecture:** Bottom-up — Phase 1 validates WASM Devnet works and fills addresses. Phase 2 builds the watcher bot (Express + ledger loop). Phase 3 builds the ZK Rust workspace. Phase 4 ties everything together. No frontend work — other devs handle that.
 
-**Tech Stack:** Node.js (watcher), Rust (ZK/RISC0), xrpl.js v3 (DevNet), xrpl.js 4.5.0-smartescrow.4 (Groth5), Express, five-bells-condition, RISC0 zkVM 3.0.x
+**Tech Stack:** Node.js (watcher), Rust (ZK/RISC0), xrpl.js 4.5.0-smartescrow.4 (WASM Devnet), Express, five-bells-condition, RISC0 zkVM 3.0.x
 
 **Spec:** `docs/superpowers/specs/2026-04-11-backend-implementation-design.md`
 
@@ -14,7 +14,7 @@
 
 ## File Map
 
-### Phase 1 — DevNet Validation
+### Phase 1 — WASM Devnet Validation
 | File | Action | Responsibility |
 |------|--------|---------------|
 | `apps/web/scripts/setup-devnet.mjs` | Modify | Add watcher funding, write JSON output |
@@ -26,11 +26,11 @@
 |------|--------|---------------|
 | `apps/watcher/package.json` | Create | Package manifest with deps |
 | `apps/watcher/src/config.js` | Create | WSS URLs, env vars |
-| `apps/watcher/src/connections.js` | Create | ConnectionManager (devnet + groth5) |
+| `apps/watcher/src/connections.js` | Create | ConnectionManager (WASM Devnet) |
 | `apps/watcher/src/order-cache.js` | Create | In-memory order + DCA store |
 | `apps/watcher/src/dca-scheduler.js` | Create | Interval-based DCA submission |
 | `apps/watcher/src/devnet-loop.js` | Create | Ledger subscription + trigger logic + execution |
-| `apps/watcher/src/zk-prover.js` | Create | RISC0 proof gen + Groth5 EscrowFinish |
+| `apps/watcher/src/zk-prover.js` | Create | RISC0 proof gen + WASM Devnet EscrowFinish |
 | `apps/watcher/src/index.js` | Create | Express API + startup |
 
 ### Phase 3 — ZK Layer
@@ -50,7 +50,7 @@
 
 ---
 
-## Phase 1: DevNet Validation
+## Phase 1: WASM Devnet Validation
 
 ### Task 1: Update setup script — add watcher account + JSON output
 
@@ -76,8 +76,8 @@ import { writeFileSync } from "fs"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
 
-const WSS = "wss://s.devnet.rippletest.net:51233"
-const FAUCET = "https://faucet.devnet.rippletest.net/accounts"
+const WSS = "wss://wasm.devnet.rippletest.net:51233"
+const FAUCET = "https://wasmfaucet.devnet.rippletest.net/accounts"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -337,11 +337,8 @@ git commit -m "chore: run devnet setup, fill ADDRESSES, add five-bells-condition
 
 ```javascript
 export const config = {
-  devnet: {
-    wss: process.env.DEVNET_WSS || "wss://s.devnet.rippletest.net:51233",
-  },
-  groth5: {
-    wss: process.env.GROTH5_WSS || "wss://groth5.devnet.rippletest.net:51233",
+  wasmDevnet: {
+    wss: process.env.WASM_DEVNET_WSS || "wss://wasm.devnet.rippletest.net:51233",
   },
   watcherSeed: process.env.WATCHER_SEED || "",
   rlusdIssuer: process.env.RLUSD_ISSUER || "",
@@ -380,37 +377,19 @@ export class ConnectionManager {
   }
 
   async connect() {
-    // DevNet client (xrpl@^3.0.0)
-    this.clients.devnet = new Client(config.devnet.wss, { connectionTimeout: 20000 })
-    await this.clients.devnet.connect()
-    console.log("[connections] Connected to DevNet")
+    // WASM Devnet client (xrpl@4.5.0-smartescrow.4 — supports lending + smart escrows)
+    this.clients.wasmDevnet = new Client(config.wasmDevnet.wss, { connectionTimeout: 20000 })
+    await this.clients.wasmDevnet.connect()
+    console.log("[connections] Connected to WASM Devnet")
 
-    this.clients.devnet.on("disconnected", async () => {
-      console.log("[connections] DevNet disconnected, reconnecting...")
-      try { await this.clients.devnet.connect() } catch (e) {
-        console.error("[connections] DevNet reconnect failed:", e.message)
+    this.clients.wasmDevnet.on("disconnected", async () => {
+      console.log("[connections] WASM Devnet disconnected, reconnecting...")
+      try { await this.clients.wasmDevnet.connect() } catch (e) {
+        console.error("[connections] WASM Devnet reconnect failed:", e.message)
       }
     })
 
-    // Groth5 client (xrpl-smartescrow alias)
-    try {
-      const smartescrow = await import("xrpl-smartescrow")
-      this.clients.groth5 = new smartescrow.Client(config.groth5.wss, { connectionTimeout: 20000 })
-      await this.clients.groth5.connect()
-      console.log("[connections] Connected to Groth5")
-
-      this.clients.groth5.on("disconnected", async () => {
-        console.log("[connections] Groth5 disconnected, reconnecting...")
-        try { await this.clients.groth5.connect() } catch (e) {
-          console.error("[connections] Groth5 reconnect failed:", e.message)
-        }
-      })
-    } catch (err) {
-      console.warn("[connections] Groth5 connection failed (ZK features disabled):", err.message)
-      this.clients.groth5 = null
-    }
-
-    // Watcher wallet (signs DevNet + Groth5 transactions)
+    // Watcher wallet (signs WASM Devnet transactions)
     if (config.watcherSeed) {
       this.wallet = Wallet.fromSeed(config.watcherSeed)
       console.log(`[connections] Watcher wallet: ${this.wallet.address}`)
@@ -448,7 +427,7 @@ Expected: `OK` (no import errors)
 
 ```bash
 git add apps/watcher/src/connections.js
-git commit -m "feat: watcher ConnectionManager (devnet + groth5)"
+git commit -m "feat: watcher ConnectionManager (WASM Devnet)"
 ```
 
 ---
@@ -594,7 +573,7 @@ export class DevnetLoop {
 
   async start() {
     const client = this.connections.get("devnet")
-    if (!client) throw new Error("DevNet client not connected")
+    if (!client) throw new Error("WASM Devnet client not connected")
 
     client.on("ledgerClosed", () => this.onLedger())
     await client.request({ command: "subscribe", streams: ["ledger"] })
@@ -771,7 +750,7 @@ git commit -m "feat: watcher DevnetLoop — price monitor + trigger + execution"
 
 ---
 
-### Task 6: ZK Prover (Groth5 smart escrow execution)
+### Task 6: ZK Prover (WASM Devnet smart escrow execution)
 
 **Files:**
 - Create: `apps/watcher/src/zk-prover.js`
@@ -790,11 +769,11 @@ export class ZkProver {
   }
 
   async executePrivateOrder(order, currentPrice) {
-    const groth5 = this.connections.get("groth5")
+    const wasmDevnet = this.connections.get("wasmDevnet")
     const wallet = this.connections.getWallet()
 
-    if (!groth5) {
-      console.error("[zk-prover] Groth5 not connected — cannot execute private order")
+    if (!wasmDevnet) {
+      console.error("[zk-prover] WASM Devnet not connected — cannot execute private order")
       return
     }
     if (!wallet) {
@@ -817,8 +796,8 @@ export class ZkProver {
       const memos = JSON.parse(proofOutput)
       console.log(`[zk-prover] Proof generated (journal: ${memos[0].Memo.MemoData.length / 2} bytes, seal: ${memos[1].Memo.MemoData.length / 2} bytes)`)
 
-      // 2. EscrowFinish on Groth5 with proof in Memos + ComputationAllowance
-      console.log(`[zk-prover] EscrowFinish on Groth5`)
+      // 2. EscrowFinish on WASM Devnet with proof in Memos + ComputationAllowance
+      console.log(`[zk-prover] EscrowFinish on WASM Devnet`)
       const finishTx = {
         TransactionType: "EscrowFinish",
         Account: wallet.address,
@@ -827,11 +806,11 @@ export class ZkProver {
         ComputationAllowance: 1000000,
         Memos: memos,
       }
-      const finishResult = await groth5.submitAndWait(finishTx, { wallet, autofill: true })
+      const finishResult = await wasmDevnet.submitAndWait(finishTx, { wallet, autofill: true })
       console.log(`[zk-prover] EscrowFinish: ${finishResult.result.meta.TransactionResult}`)
 
-      // 3. OfferCreate on Groth5 DEX
-      console.log(`[zk-prover] OfferCreate on Groth5 DEX`)
+      // 3. OfferCreate on WASM Devnet DEX
+      console.log(`[zk-prover] OfferCreate on WASM Devnet DEX`)
       const offerTx = {
         TransactionType: "OfferCreate",
         Account: wallet.address,
@@ -839,11 +818,11 @@ export class ZkProver {
         TakerGets: order.amount,
         TakerPays: { currency: "USD", issuer: config.rlusdIssuer, value: "999999" },
       }
-      const offerResult = await groth5.submitAndWait(offerTx, { wallet, autofill: true })
+      const offerResult = await wasmDevnet.submitAndWait(offerTx, { wallet, autofill: true })
       console.log(`[zk-prover] OfferCreate: ${offerResult.result.meta.TransactionResult}`)
 
-      // 4. Payment back to user on Groth5
-      const balances = await groth5.request({
+      // 4. Payment back to user on WASM Devnet
+      const balances = await wasmDevnet.request({
         command: "account_lines",
         account: wallet.address,
       })
@@ -857,7 +836,7 @@ export class ZkProver {
           Destination: order.owner,
           Amount: { currency: "USD", issuer: config.rlusdIssuer, value: usdLine.balance },
         }
-        const payResult = await groth5.submitAndWait(payTx, { wallet, autofill: true })
+        const payResult = await wasmDevnet.submitAndWait(payTx, { wallet, autofill: true })
         console.log(`[zk-prover] Payment: ${payResult.result.meta.TransactionResult}`)
       }
 
@@ -873,7 +852,7 @@ export class ZkProver {
 
 ```bash
 git add apps/watcher/src/zk-prover.js
-git commit -m "feat: watcher ZkProver — RISC0 proof gen + Groth5 execution"
+git commit -m "feat: watcher ZkProver — RISC0 proof gen + WASM Devnet execution"
 ```
 
 ---
@@ -931,7 +910,7 @@ app.delete("/api/orders/:owner/:sequence", (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({
     devnet: connections.get("devnet")?.isConnected() || false,
-    groth5: connections.get("groth5")?.isConnected() || false,
+    wasmDevnet: connections.get("wasmDevnet")?.isConnected() || false,
     wallet: connections.getWallet()?.address || null,
     activeOrders: orderCache.getActiveOrders().length,
     price: devnetLoop?.getPrice() || null,
@@ -951,7 +930,7 @@ async function main() {
 
   app.listen(config.port, () => {
     console.log(`[watcher] HTTP API on port ${config.port}`)
-    console.log(`[watcher] Ready — monitoring DevNet prices`)
+    console.log(`[watcher] Ready — monitoring WASM Devnet prices`)
   })
 }
 
@@ -983,19 +962,18 @@ Run: `cd /Users/fianso/Development/hackathons/Tellement-French/apps/watcher && n
 
 Expected output:
 ```
-[connections] Connected to DevNet
-[connections] Connected to Groth5 (or warning if unavailable)
+[connections] Connected to WASM Devnet
 [connections] Watcher wallet: rXXXXXX
 [devnet-loop] Subscribed to ledger stream
 [watcher] HTTP API on port 3001
-[watcher] Ready — monitoring DevNet prices
+[watcher] Ready — monitoring WASM Devnet prices
 ```
 
 - [ ] **Step 4: Test health endpoint**
 
 Run (in another terminal): `curl http://localhost:3001/api/health`
 
-Expected: `{"devnet":true,"groth5":...,"wallet":"rXXXX","activeOrders":0,"price":...}`
+Expected: `{"wasmDevnet":true,"wallet":"rXXXX","activeOrders":0,"price":...}`
 
 - [ ] **Step 5: Test order registration**
 
@@ -1439,7 +1417,7 @@ git commit -m "feat: ZK CLI prover — local Groth16 proof generation"
 
 ### Task 12: End-to-end verification
 
-- [ ] **Step 1: Verify DevNet setup**
+- [ ] **Step 1: Verify WASM Devnet setup**
 
 Run: `node apps/web/scripts/setup-devnet.mjs`
 
@@ -1449,7 +1427,7 @@ Check: All transactions return `tesSUCCESS`. Constants are filled.
 
 Run: `cd apps/watcher && node --env-file=.env src/index.js`
 
-Check: connects to DevNet, subscribes to ledger, logs prices.
+Check: connects to WASM Devnet, subscribes to ledger, logs prices.
 
 - [ ] **Step 3: Test order registration via curl**
 
