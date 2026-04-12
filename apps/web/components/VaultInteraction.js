@@ -45,7 +45,6 @@ export function VaultInteraction() {
         Account: walletManager.account.address,
         VaultID: vaultId,
         Amount: amountInDrops,
-        ComputationAllowance: 1000000,
       };
 
       const txResult = await walletManager.signAndSubmit(transaction);
