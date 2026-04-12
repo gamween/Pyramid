@@ -17,7 +17,7 @@ export function Header({ isAppLaunched, onLaunch, onGoHome, tabsNode }) {
         {/* Left Side: Logo */}
         <button onClick={onGoHome} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity outline-none text-left">
           
-          <img src="/logo.png" alt="Pyramid Logo" className={`object-contain transition-all duration-500 ${isAppLaunched ? "h-10 w-10 md:h-10 md:w-10" : "h-16 w-16 md:h-20 md:w-20 drop-shadow-md"}`} />
+          <img src="/logo.png" alt="Pyramid Logo" className={`object-contain transition-all duration-500 ${isAppLaunched ? "h-6 w-6 md:h-6 md:w-6" : "h-10 w-10 md:h-12 md:w-12 drop-shadow-md"}`} />
           <span className={`tracking-[0.1em] font-bold text-white uppercase transition-all duration-500 ${isAppLaunched ? "text-lg md:text-xl" : "text-2xl"}`} style={{ fontFamily: "'Bitcount Grid', monospace" }}>
             Pyramid
           </span>

@@ -64,54 +64,34 @@ export default function TechStats() {
   };
 
   const stats = [
-    { label: "NETWORK", val: "DEVNET", accent: "text-white", col: "md:border-r border-b md:border-b-0", delay: 0 },
-    { label: "LATENCY", val: "~300MS", accent: "text-[#00b8ff] drop-shadow-[0_0_8px_rgba(0,184,255,0.5)]", col: "md:border-r border-b md:border-b-0", delay: 0.15 },
-    { label: "SMART CONTRACTS", val: "ZERO", accent: "text-white", col: "md:border-r border-b border-r-0 md:border-b-0", delay: 0.3 },
-    { label: "ZKP SYSTEM", val: "RISC0 ZKVM", accent: "text-[#00b8ff] drop-shadow-[0_0_8px_rgba(0,184,255,0.5)]", col: "", delay: 0.45 }
+    { label: "NETWORK", val: "DEVNET", accent: "text-white", delay: 0 },
+    { label: "LATENCY", val: "~300MS", accent: "text-[#0088ff]", delay: 0.15 },
+    { label: "SMART CONTRACTS", val: "ZERO", accent: "text-white", delay: 0.3 },
+    { label: "ZKP SYSTEM", val: "RISC0", accent: "text-[#0088ff]", delay: 0.45 }
   ];
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 1, ease: "easeOut" }}
-      className="mt-40 relative group"
+      transition={{ duration: 1 }}
+      className="mt-32 max-w-7xl mx-auto px-4 relative z-10"
     >
       <div 
          ref={containerRef}
-         onMouseMove={handleMouseMove}
-         onMouseEnter={() => setIsHovering(true)}
-         onMouseLeave={() => setIsHovering(false)}
-         className="grid grid-cols-2 md:grid-cols-4 border border-white/20 bg-[#02040a]/80 backdrop-blur-xl relative overflow-hidden"
+         className="flex flex-row flex-wrap items-center justify-center gap-x-12 gap-y-8 py-8 border-y border-white/5"
       >
-         {/* Global Spotlight Overlay - Follows Cursor */}
-         <div 
-            className="pointer-events-none absolute -inset-px transition-opacity duration-300 z-10"
-            style={{
-              opacity: isHovering ? 1 : 0,
-              background: `radial-gradient(500px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(0, 184, 255, 0.15), transparent 40%)`
-            }}
-         />
-         
-         {/* Glossy Scanline Effect that passes through once */}
-         <motion.div 
-            initial={{ x: "-100%" }}
-            whileInView={{ x: "200%" }}
-            viewport={{ once: true }}
-            transition={{ duration: 2, ease: "easeInOut", delay: 0.5 }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00b8ff]/10 to-transparent skew-x-12 w-1/2 pointer-events-none z-0" 
-         />
-
          {stats.map((stat, i) => (
-           <div 
-             key={i} 
-             className={`p-8 md:p-10 border-white/20 flex flex-col justify-center items-center text-center relative z-20 ${stat.col}`}
-           >
-             <span className="text-[10px] text-white/30 mb-3 uppercase tracking-[0.3em] font-mono transition-colors duration-500 group-hover:text-[#00b8ff]/60">
-               {stat.label}
-             </span>
-             <ScrambleText inView={isInView} text={stat.val} delay={stat.delay} className={`text-2xl md:text-3xl font-bold tracking-widest ${stat.accent}`} />
+           <div key={i} className="flex flex-col items-center justify-center group pl-4 pr-4">
+             <div className="flex items-center gap-3 mb-2 md:mb-3 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                <span className="hidden md:block w-4 h-[1px] bg-gradient-to-r from-transparent to-[#0088ff]/60"></span>
+                <span className="text-xs text-[#0088ff] uppercase tracking-[0.2em] md:tracking-[0.3em] font-mono whitespace-nowrap">
+                  {stat.label}
+                </span>
+                <span className="hidden md:block w-4 h-[1px] bg-gradient-to-l from-transparent to-[#0088ff]/60"></span>
+             </div>
+             <ScrambleText inView={isInView} text={stat.val} delay={stat.delay} className={`text-2xl md:text-3xl lg:text-4xl font-bold tracking-widest whitespace-nowrap ${stat.accent}`} />
            </div>
          ))}
       </div>
