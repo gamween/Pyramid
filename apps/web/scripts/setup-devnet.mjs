@@ -152,7 +152,7 @@ async function createLoanOnVault(client, owner, borrower, loanBrokerId, principa
     PaymentTotal: 12,
     PaymentInterval: 2592000,
     GracePeriod: 604800,
-    Fee: "12",
+    Fee: "24",
     Sequence: acctInfo.result.account_data.Sequence,
     LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
     NetworkID: 2002,
