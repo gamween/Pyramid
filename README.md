@@ -241,6 +241,45 @@ pnpm dev
 5. **Place a Stop-Loss** so the Watcher Bot monitors prices and executes automatically
 6. **Set up a DCA**: sign once, the bot handles the rest
 
+## On-Chain Proof — Nothing Is Mocked
+
+Every transaction Pyramid executes is a real, validated XRPL transaction on the WASM Devnet. You can verify everything on the [WASM Devnet Explorer](https://custom.xrpl.org/wasm.devnet.rippletest.net).
+
+### Accounts
+
+| Role | Address | Explorer |
+|------|---------|----------|
+| **Vault Owner (Broker)** | `rD23UrNGyZYdmYD8J5QHYVWoQgKm2yrEKD` | [View](https://custom.xrpl.org/wasm.devnet.rippletest.net/accounts/rD23UrNGyZYdmYD8J5QHYVWoQgKm2yrEKD) |
+| **Borrower** | `rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv` | [View](https://custom.xrpl.org/wasm.devnet.rippletest.net/accounts/rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv) |
+| **Watcher Bot** | `rJMcmkMxWYXae6wKy3iQVx6v9gN7p2BRFZ` | [View](https://custom.xrpl.org/wasm.devnet.rippletest.net/accounts/rJMcmkMxWYXae6wKy3iQVx6v9gN7p2BRFZ) |
+
+### Vaults (XLS-65)
+
+| Vault | Ledger ID | Explorer |
+|-------|-----------|----------|
+| **Fresh Vault** (50 XRP deposited) | `8A84591D...E109C62E` | [View](https://custom.xrpl.org/wasm.devnet.rippletest.net/accounts/8A84591D49EF8D1A25ABF2CE1E28DE5AA8899484392EFEDE84FA3304E109C62E) |
+| **Active Lending** (80 XRP, active loan) | `6087666E...D36C66E2` | [View](https://custom.xrpl.org/wasm.devnet.rippletest.net/accounts/6087666E82509EFA5922ED57E87E647A78063378686195620F6445B0D36C66E2) |
+| **Yield Earned** (50 XRP, full lifecycle) | `AD7E1DB3...BA53C8A4` | [View](https://custom.xrpl.org/wasm.devnet.rippletest.net/accounts/AD7E1DB393F73284E52F90C8B960FB8FC051399521E7FC9BAE30FFCBA53C8A44) |
+
+### Loan Brokers (XLS-66)
+
+| Broker | Ledger ID |
+|--------|-----------|
+| Fresh Vault Broker | `D3DDC472215038795DB31E12BBF1274847AC4A06BF3175BED25B24AE317F0256` |
+| Active Lending Broker | `1C767A5D27DA709451EFD264A17717BD78144CA73A4939DABB2C9BD872BCB47F` |
+| Yield Earned Broker | `613A9F5C12DF3D44CE85E2924E778B30AE6BD65424D7050C17161365E6ED4B7F` |
+
+### Sample Transactions
+
+Check the borrower account (`rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv`) on the explorer to see real `LoanSet`, `LoanPay`, and `LoanManage` transactions executed from the Pyramid UI during the hackathon.
+
+**What you'll find:**
+- `VaultCreate` / `VaultDeposit` — vaults created with real XRP
+- `LoanBrokerSet` / `LoanBrokerCoverDeposit` — brokers configured on-chain
+- `LoanSet` with `CounterpartySignature` — real XLS-66 cosigned loans
+- `LoanPay` — real loan repayments with interest
+- `LoanManage` — broker management actions
+
 ## Network
 
 | | |
@@ -249,7 +288,7 @@ pnpm dev
 | **WebSocket** | `wss://wasm.devnet.rippletest.net:51233` |
 | **Network ID** | 2002 |
 | **Faucet** | https://wasmfaucet.devnet.rippletest.net/accounts |
-| **Explorer** | https://devnet.xrpl.org |
+| **Explorer** | https://custom.xrpl.org/wasm.devnet.rippletest.net |
 
 
 ## License
