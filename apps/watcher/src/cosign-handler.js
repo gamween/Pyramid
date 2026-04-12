@@ -130,9 +130,8 @@ export class CosignHandler {
    * Browser wallets can't sign XLS-66, so the watcher signs with the borrower key.
    */
   async repayLoan({ loanId, amountDrops, flags = 0 }) {
-    const borrower = this.borrowerWallet
-    if (!borrower) throw new Error("Borrower wallet not configured (set BORROWER_SEED)")
-    return this._signAndSubmitAsBorrower({
+    if (!this.borrowerWallet) throw new Error("Borrower wallet not configured (set BORROWER_SEED)")
+    return this._signAndSubmitRaw(this.borrowerWallet, {
       TransactionType: "LoanPay",
       LoanID: loanId,
       Amount: String(amountDrops),
@@ -142,9 +141,10 @@ export class CosignHandler {
 
   /**
    * Manage a loan server-side (LoanManage).
+   * LoanManage is a BROKER action (default/impair/unimpair) → uses owner wallet.
    */
   async manageLoan({ loanId, flags }) {
-    return this._signAndSubmitAsBorrower({
+    return this._signAndSubmitRaw(this.getOwnerWallet(), {
       TransactionType: "LoanManage",
       LoanID: loanId,
       Flags: flags,
@@ -153,37 +153,37 @@ export class CosignHandler {
 
   /**
    * Close/delete a loan server-side (LoanDelete).
+   * LoanDelete can be called by the broker after loan is fully repaid.
    */
   async closeLoan({ loanId }) {
-    return this._signAndSubmitAsBorrower({
+    return this._signAndSubmitRaw(this.getOwnerWallet(), {
       TransactionType: "LoanDelete",
       LoanID: loanId,
     })
   }
 
   /**
-   * Sign and submit a tx as the borrower (single-signer XLS-66).
+   * Sign and submit a tx with the given wallet (single-signer XLS-66).
    */
-  async _signAndSubmitAsBorrower(tx) {
+  async _signAndSubmitRaw(wallet, tx) {
+    if (!wallet) throw new Error("Signing wallet not configured")
     const client = this.connections.getClient()
-    const borrower = this.borrowerWallet
-    if (!borrower) throw new Error("Borrower wallet not configured")
 
-    const acctInfo = await client.request({ command: "account_info", account: borrower.address })
+    const acctInfo = await client.request({ command: "account_info", account: wallet.address })
     const ledgerInfo = await client.request({ command: "ledger_current" })
     const fee = await getCurrentFee(client)
 
     const prepared = {
       ...tx,
-      Account: borrower.address,
+      Account: wallet.address,
       Fee: fee,
       Sequence: acctInfo.result.account_data.Sequence,
       LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
       NetworkID: 2002,
-      SigningPubKey: borrower.publicKey,
+      SigningPubKey: wallet.publicKey,
     }
 
-    prepared.TxnSignature = rawSign(encodeForSigning(prepared), borrower.privateKey)
+    prepared.TxnSignature = rawSign(encodeForSigning(prepared), wallet.privateKey)
     const tx_blob = encode(prepared)
     const result = await client.request({ command: "submit", tx_blob })
     if (result.result.engine_result !== "tesSUCCESS") {
