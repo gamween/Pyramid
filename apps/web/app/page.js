@@ -13,7 +13,6 @@ import { ProtocolStats } from "../components/ProtocolStats";
 import { LandingPresentation } from "../components/LandingPresentation";
 import { ZkPrivacy } from "../components/ZkPrivacy";
 import { ActivePositions } from "../components/ActivePositions";
-import { LoanInteraction } from "../components/LoanInteraction";
 import { LendingShowcase } from "../components/LendingShowcase";
 import { LoansPage } from "../components/LoansPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -28,12 +27,17 @@ export default function Home() {
       {/* Background track for all tabs */}
       <div className="absolute inset-0 bg-[#02040a]/40 border border-white/5 pointer-events-none" />
       
-      {["dashboard", "lending", "loans", "trading"].map((tab, i) => {
+      {[
+        { value: "dashboard", label: "dashboard" },
+        { value: "lending", label: "earn yield" },
+        { value: "loans", label: "loans" },
+        { value: "trading", label: "trading" },
+      ].map(({ value: tab, label }, i) => {
         const isActive = activeTab === tab;
         return (
-          <TabsTrigger 
+          <TabsTrigger
             key={tab}
-            value={tab} 
+            value={tab}
             onClick={() => setActiveTab(tab)}
             className={`relative flex-1 rounded-none border-none bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:shadow-none hover:bg-transparent hover:text-white/90 py-4 px-2 md:px-6 text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] transition-colors z-10 group/tab ${isActive ? "text-white" : "text-white/40"}`}
           >
@@ -42,7 +46,7 @@ export default function Home() {
               <span className={`transition-colors duration-500 font-bold ${isActive ? "text-white focus:text-white" : "text-white/10 group-hover/tab:text-white/40"}`}>
                 [{String(i + 1).padStart(2, "0")}]
               </span>
-              <span>{tab.replace("-", " ")}</span>
+              <span>{label}</span>
             </div>
 
             {/* Hover Teaser Box */}
@@ -142,23 +146,15 @@ export default function Home() {
                 <ActivePositions />
               </TabsContent>
 
-              {/* LENDING TAB */}
+              {/* EARN YIELD TAB — Liquidity Provider Side */}
               <TabsContent value="lending" className="animate-in fade-in duration-500">
-                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1 max-w-3xl mx-auto">
                   <div className="border border-white/20 bg-black/40 backdrop-blur-xl">
                     <div className="p-4 border-b border-white/20 bg-white/5">
-                      <h2 className="text-xs font-mono uppercase tracking-widest text-slate-400">Vault Interaction (XLS-65)</h2>
+                      <h2 className="text-xs font-mono uppercase tracking-widest text-slate-400">Provide Liquidity — Vault Deposit / Withdraw (XLS-65)</h2>
                     </div>
                     <div className="p-4">
                       <VaultInteraction />
-                    </div>
-                  </div>
-                  <div className="border border-white/20 bg-black/40 backdrop-blur-xl">
-                    <div className="p-4 border-b border-white/20 bg-white/5">
-                      <h2 className="text-xs font-mono uppercase tracking-widest text-slate-400">Loan Interface (XLS-66)</h2>
-                    </div>
-                    <div className="p-4">
-                      <LoanInteraction />
                     </div>
                   </div>
                 </div>
