@@ -14,6 +14,7 @@ import { LandingPresentation } from "../components/LandingPresentation";
 import { ZkPrivacy } from "../components/ZkPrivacy";
 import { ActivePositions } from "../components/ActivePositions";
 import { LoanInteraction } from "../components/LoanInteraction";
+import { LendingShowcase } from "../components/LendingShowcase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 export default function Home() {
@@ -160,6 +161,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                <LendingShowcase />
               </TabsContent>
 
               {/* TRADING TAB */}
