@@ -1,6 +1,6 @@
 # Pyramid
 
-Lending-first DeFi protocol built entirely on XRPL's native primitives. Built at [PBW Hackathon 2026](https://github.com/XRPL-Commons/2026-PBW-Hackathon) by **DeVinci Blockchain** (Paris), three hackers, 36 hours: [Sofiane Ben Taleb](https://github.com/gamween), [Bilfrux](https://github.com/bilfrux), [Mehdi Mtazi](https://github.com/MehdiMtazi).
+Lending-first DeFi protocol built entirely on XRPL's native primitives. Built at [PBW Hackathon 2026](https://github.com/XRPL-Commons/2026-PBW-Hackathon) by **DeVinci Blockchain** (Paris), three hackers, 36 hours: [Sofiane Ben Taleb](https://github.com/gamween), [Florian Gallot](https://github.com/bilfrux) and [Mehdi Tazi](https://github.com/MehdiMtazi).
 
 ---
 
@@ -251,19 +251,6 @@ pnpm dev
 | **Faucet** | https://wasmfaucet.devnet.rippletest.net/accounts |
 | **Explorer** | https://devnet.xrpl.org |
 
-## Bounty Tracks
-
-### Boundless: Best Use of ZK Proofs on XRPL
-
-Pyramid uses RISC0 zkVM to generate Groth16 proofs that verify trading conditions without revealing them on-chain. When a user places a private order:
-
-- A **Smart Escrow** (XLS-0100) locks funds with a `FinishFunction` that requires a valid ZK proof
-- The trigger price, direction, and amount are committed as hashes, invisible on the ledger
-- When the condition is met, the Watcher Bot generates a RISC0 proof via the **Boundless Market**
-- The proof is submitted to `EscrowFinish` and the ledger verifies it natively, then releases the funds
-- No one on-chain can see what the trigger price was, only that a valid proof was provided
-
-This prevents front-running and protects trading strategies from being reverse-engineered.
 
 ## License
 
