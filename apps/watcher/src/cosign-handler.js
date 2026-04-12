@@ -1,4 +1,4 @@
-import { encode, encodeForSigning } from "xrpl"
+import { encode, encodeForSigning, Wallet } from "xrpl"
 import { config } from "./config.js"
 
 // Raw signing — bypasses xrpl.js validation for tx types it doesn't know (XLS-66 loans)
@@ -20,6 +20,15 @@ try {
 export class CosignHandler {
   constructor(connections) {
     this.connections = connections
+    // Vault owner wallet for cosigning — separate from the watcher's trading wallet
+    this.vaultOwnerWallet = config.vaultOwnerSeed
+      ? Wallet.fromSeed(config.vaultOwnerSeed)
+      : null
+  }
+
+  /** Get the vault owner wallet (broker). Falls back to watcher wallet if no separate owner configured. */
+  getOwnerWallet() {
+    return this.vaultOwnerWallet || this.connections.getWallet()
   }
 
   /**
@@ -45,8 +54,8 @@ export class CosignHandler {
     }
 
     const client = this.connections.getClient()
-    const wallet = this.connections.getWallet()
-    if (!wallet) throw new Error("Watcher wallet not configured")
+    const wallet = this.getOwnerWallet()
+    if (!wallet) throw new Error("Vault owner wallet not configured (set VAULT_OWNER_SEED)")
 
     // Check vault liquidity
     const vaultEntry = await client.request({
@@ -101,12 +110,12 @@ export class CosignHandler {
     }
 
     const client = this.connections.getClient()
-    const wallet = this.connections.getWallet()
-    if (!wallet) throw new Error("Watcher wallet not configured")
+    const wallet = this.getOwnerWallet()
+    if (!wallet) throw new Error("Vault owner wallet not configured (set VAULT_OWNER_SEED)")
 
-    // Validate Account matches watcher wallet
+    // Validate Account matches vault owner wallet
     if (preparedTx.Account !== wallet.address) {
-      throw new Error(`Tx Account ${preparedTx.Account} does not match watcher wallet ${wallet.address}`)
+      throw new Error(`Tx Account ${preparedTx.Account} does not match vault owner ${wallet.address}`)
     }
 
     // Use the Sequence and LastLedgerSequence from the prepare phase.
@@ -163,11 +172,16 @@ export class CosignHandler {
           command: "ledger_entry",
           index: vaultId,
         })
+        const node = vaultEntry.result.node
         vaults.push({
           vaultId,
           loanBrokerId: vaultConfig.loanBrokerId,
           name: vaultConfig.name,
-          ledgerData: vaultEntry.result.node,
+          asset: node.Asset || "XRP",
+          availableLiquidity: node.AssetsAvailable || "0",
+          totalAssets: node.AssetsTotal || "0",
+          owner: node.Owner,
+          brokerAccount: node.Owner,
         })
       } catch (err) {
         console.warn(`[cosign] Failed to fetch vault ${vaultId}: ${err.message}`)
