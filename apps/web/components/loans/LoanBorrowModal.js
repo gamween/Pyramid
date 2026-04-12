@@ -30,8 +30,13 @@ export function LoanBorrowModal({ vault, open, onOpenChange, onBorrow }) {
       await onBorrow(vault.vaultId, amountDrops);
       setResult({ success: true });
       setIsSubmitting(false);
+      setTimeout(() => handleOpenChange(false), 1500);
     } catch (err) {
-      setResult({ success: false, error: err.message || "Borrow request failed" });
+      const msg = err.message || "Borrow request failed";
+      let friendly = msg;
+      if (msg.includes("Insufficient liquidity")) friendly = msg;
+      else if (msg.includes("telINSUF_FEE")) friendly = "Network fee too high, try again in a moment.";
+      setResult({ success: false, error: friendly });
       setIsSubmitting(false);
     }
   };

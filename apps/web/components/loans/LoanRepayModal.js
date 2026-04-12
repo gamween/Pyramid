@@ -43,8 +43,17 @@ export function LoanRepayModal({ loan, open, onOpenChange, onRepay }) {
       await onRepay(loanId, amountDrops, flags);
       setResult({ success: true });
       setIsSubmitting(false);
+      // Auto-close modal after success
+      setTimeout(() => handleOpenChange(false), 1500);
     } catch (err) {
-      setResult({ success: false, error: err.message || "Repayment failed" });
+      const msg = err.message || "Repayment failed";
+      // Map XRPL error codes to friendly messages
+      let friendly = msg;
+      if (msg.includes("tecKILLED")) friendly = "Loan already closed or fully repaid.";
+      else if (msg.includes("tecINSUFFICIENT_PAYMENT")) friendly = `Payment too low. Minimum is ${periodicPaymentXRP.toFixed(6)} XRP per period.`;
+      else if (msg.includes("telINSUF_FEE")) friendly = "Network fee too high, try again in a moment.";
+      else if (msg.includes("tecINSUFFICIENT_FUNDS")) friendly = "Borrower account has insufficient XRP balance.";
+      setResult({ success: false, error: friendly });
       setIsSubmitting(false);
     }
   };
