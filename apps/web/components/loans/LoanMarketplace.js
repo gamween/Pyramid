@@ -67,8 +67,8 @@ export function LoanMarketplace({ vaults, loading, onBorrow }) {
                       </div>
                       <div className="flex items-center gap-4 text-xs font-mono text-white/50">
                         <span>Rate: {interestRate}%</span>
-                        {vault.liquidity !== undefined && (
-                          <span>Liquidity: {(vault.liquidity / 1_000_000).toFixed(2)} XRP</span>
+                        {vault.availableLiquidity && (
+                          <span>Liquidity: {(parseInt(vault.availableLiquidity, 10) / 1_000_000).toFixed(2)} XRP</span>
                         )}
                       </div>
                       <p className="text-white/30 font-mono text-xs truncate">

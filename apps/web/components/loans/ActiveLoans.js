@@ -51,11 +51,11 @@ export function ActiveLoans({ loans, loading, onRepay, onManage, onClose }) {
             <div className="space-y-3">
               {loans.map((loan, i) => {
                 const loanId = getLoanId(loan);
-                const principal = loan.Principal
-                  ? (parseInt(loan.Principal) / 1_000_000).toFixed(6)
+                const principal = loan.PrincipalOutstanding || loan.Principal
+                  ? (parseInt(loan.PrincipalOutstanding || loan.Principal) / 1_000_000).toFixed(6)
                   : "0.000000";
-                const outstanding = loan.OutstandingBalance
-                  ? (parseInt(loan.OutstandingBalance) / 1_000_000).toFixed(6)
+                const outstanding = loan.TotalValueOutstanding || loan.OutstandingBalance
+                  ? (parseInt(loan.TotalValueOutstanding || loan.OutstandingBalance) / 1_000_000).toFixed(6)
                   : principal;
 
                 return (
