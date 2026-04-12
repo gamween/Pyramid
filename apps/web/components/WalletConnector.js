@@ -54,16 +54,31 @@ export function WalletConnector() {
   }
 
   return (
-    <xrpl-wallet-connector
-      ref={walletConnectorRef}
-      id="wallet-connector"
-      style={{
-        ...THEMES[currentTheme],
-        "--xc-font-family": "'Courier New', Courier, monospace",
-        "--xc-border-radius": "0px",
-        "--xc-modal-box-shadow": "8px 8px 0 rgba(255, 255, 255, 0.2)",
-      }}
-      primary-wallet="xaman"
-    />
+    <div className="relative group/wallet inline-block">
+      {/* HUD Border Box */}
+      <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-white/5 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:bg-white/10 group-hover/wallet:border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]" />
+      
+      {/* Corners */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+
+      {/* Wrapping the connector, trying to strip out default button BG via styles to let HUD shine through */}
+      <div className="relative z-10 p-[1px]">
+        <xrpl-wallet-connector
+          ref={walletConnectorRef}
+          id="wallet-connector"
+          style={{
+             ...THEMES[currentTheme],
+            "--xc-font-family": "'Bitcount Grid', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "--xc-border-radius": "0px",
+            "--xc-modal-box-shadow": "8px 8px 0 rgba(255, 255, 255, 0.05)",
+            opacity: 0.9,
+          }}
+          primary-wallet="xaman"
+        />
+      </div>
+    </div>
   );
 }
