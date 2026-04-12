@@ -161,9 +161,14 @@ async function main() {
   await client.connect()
   console.log("Connected to devnet\n")
 
-  // 1. Fund protocol owner account
+  // 1. Fund protocol owner account (multiple faucet calls for enough XRP)
   console.log("1. Funding protocol owner...")
   const { wallet: owner, seed: ownerSeed } = await fundWallet(client, "owner")
+  console.log("  Topping up owner (need ~200 XRP for vaults + DEX)...")
+  for (let i = 0; i < 3; i++) {
+    await client.fundWallet(owner, { faucetHost: FAUCET_HOST })
+    console.log(`  Top-up ${i + 1}/3 complete`)
+  }
 
   // 2. Fund RLUSD issuer account
   console.log("\n2. Funding RLUSD issuer...")
@@ -219,7 +224,7 @@ async function main() {
   // ── Vault 1: Fresh Vault (ready to lend, no loans) ──
   let vault1 = { vaultId: null, loanBrokerId: null }
   try {
-    vault1 = await createVaultWithBroker(client, owner, "Vault 1: Fresh Vault", 500_000_000, 50_000_000)
+    vault1 = await createVaultWithBroker(client, owner, "Vault 1: Fresh Vault", 50_000_000, 5_000_000)
   } catch (err) {
     console.log(`  Vault 1 failed: ${err.message}`)
   }
@@ -228,14 +233,14 @@ async function main() {
   let vault2 = { vaultId: null, loanBrokerId: null }
   let vault2LoanId = null
   try {
-    vault2 = await createVaultWithBroker(client, owner, "Vault 2: Active Lending", 1_000_000_000, 100_000_000)
+    vault2 = await createVaultWithBroker(client, owner, "Vault 2: Active Lending", 80_000_000, 10_000_000)
 
     // Fund borrower
     console.log(`\n  Funding borrower for Vault 2...`)
     const { wallet: borrower2 } = await fundWallet(client, "borrower2")
 
-    vault2LoanId = await createLoanOnVault(client, owner, borrower2, vault2.loanBrokerId, 300_000_000)
-    await payLoanPartial(client, borrower2, vault2LoanId, 50_000_000)
+    vault2LoanId = await createLoanOnVault(client, owner, borrower2, vault2.loanBrokerId, 30_000_000)
+    await payLoanPartial(client, borrower2, vault2LoanId, 5_000_000)
   } catch (err) {
     console.log(`  Vault 2 failed: ${err.message}`)
   }
@@ -243,15 +248,15 @@ async function main() {
   // ── Vault 3: Yield Earned (loan fully repaid, share price > 1) ──
   let vault3 = { vaultId: null, loanBrokerId: null }
   try {
-    vault3 = await createVaultWithBroker(client, owner, "Vault 3: Yield Earned", 500_000_000, 50_000_000)
+    vault3 = await createVaultWithBroker(client, owner, "Vault 3: Yield Earned", 50_000_000, 5_000_000)
 
     // Fund borrower
     console.log(`\n  Funding borrower for Vault 3...`)
     const { wallet: borrower3 } = await fundWallet(client, "borrower3")
 
-    const vault3LoanId = await createLoanOnVault(client, owner, borrower3, vault3.loanBrokerId, 200_000_000)
+    const vault3LoanId = await createLoanOnVault(client, owner, borrower3, vault3.loanBrokerId, 20_000_000)
     // Full repayment — overpay slightly to cover interest
-    await payLoanFull(client, borrower3, vault3LoanId, 210_000_000)
+    await payLoanFull(client, borrower3, vault3LoanId, 21_000_000)
     await deleteLoan(client, owner, vault3LoanId)
   } catch (err) {
     console.log(`  Vault 3 failed: ${err.message}`)
@@ -263,8 +268,8 @@ async function main() {
     const sellOffer = {
       TransactionType: "OfferCreate",
       Account: owner.address,
-      TakerPays: { currency: "USD", issuer: issuer.address, value: "2340" },
-      TakerGets: "1000000000",
+      TakerPays: { currency: "USD", issuer: issuer.address, value: "23.40" },
+      TakerGets: "10000000",
     }
     const sellResult = await client.submitAndWait(sellOffer, { wallet: owner })
     console.log(`  Sell offer: ${sellResult.result.meta.TransactionResult}`)
@@ -272,8 +277,8 @@ async function main() {
     const buyOffer = {
       TransactionType: "OfferCreate",
       Account: owner.address,
-      TakerPays: "1000000000",
-      TakerGets: { currency: "USD", issuer: issuer.address, value: "2300" },
+      TakerPays: "10000000",
+      TakerGets: { currency: "USD", issuer: issuer.address, value: "23.00" },
     }
     const buyResult = await client.submitAndWait(buyOffer, { wallet: owner })
     console.log(`  Buy offer: ${buyResult.result.meta.TransactionResult}`)
