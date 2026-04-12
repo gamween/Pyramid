@@ -92,6 +92,39 @@ app.post("/api/loans/borrow", async (req, res) => {
   }
 })
 
+app.post("/api/loans/repay", async (req, res) => {
+  try {
+    const { loanId, amountDrops, flags } = req.body
+    if (!loanId || !amountDrops) return res.status(400).json({ success: false, error: "Missing loanId or amountDrops" })
+    const result = await cosignHandler.repayLoan({ loanId, amountDrops: parseInt(amountDrops, 10), flags: flags || 0 })
+    res.json({ success: true, ...result })
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message })
+  }
+})
+
+app.post("/api/loans/manage", async (req, res) => {
+  try {
+    const { loanId, flags } = req.body
+    if (!loanId || flags === undefined) return res.status(400).json({ success: false, error: "Missing loanId or flags" })
+    const result = await cosignHandler.manageLoan({ loanId, flags })
+    res.json({ success: true, ...result })
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message })
+  }
+})
+
+app.post("/api/loans/close", async (req, res) => {
+  try {
+    const { loanId } = req.body
+    if (!loanId) return res.status(400).json({ success: false, error: "Missing loanId" })
+    const result = await cosignHandler.closeLoan({ loanId })
+    res.json({ success: true, ...result })
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message })
+  }
+})
+
 app.post("/api/loans/prepare", async (req, res) => {
   try {
     const preparedTx = await cosignHandler.prepareLoanTx(req.body)
