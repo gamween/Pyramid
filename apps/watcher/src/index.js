@@ -3,6 +3,7 @@ import { ConnectionManager } from "./connections.js"
 import { OrderCache } from "./order-cache.js"
 import { DevnetLoop } from "./devnet-loop.js"
 import { ZkProver } from "./zk-prover.js"
+import { CosignHandler } from "./cosign-handler.js"
 import { config } from "./config.js"
 
 const app = express()
@@ -19,6 +20,7 @@ const connections = new ConnectionManager()
 const orderCache = new OrderCache()
 
 let devnetLoop = null
+let cosignHandler = null
 
 // --- API Routes ---
 
@@ -58,10 +60,67 @@ app.get("/api/health", (req, res) => {
   })
 })
 
+// --- Loan / Cosign Routes ---
+
+app.get("/api/loans/available", async (req, res) => {
+  try {
+    const vaults = await cosignHandler.getAvailableVaults()
+    res.json(vaults)
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message })
+  }
+})
+
+app.post("/api/loans/prepare", async (req, res) => {
+  try {
+    const prepared = await cosignHandler.prepareLoanTx(req.body)
+    res.json(prepared)
+  } catch (err) {
+    res.status(400).json({ status: "error", message: err.message })
+  }
+})
+
+app.post("/api/loans/cosign", async (req, res) => {
+  try {
+    if (req.body.singleSigner && req.body.tx_blob) {
+      const client = connections.getClient()
+      const result = await client.request({
+        command: "submit",
+        tx_blob: req.body.tx_blob,
+      })
+      res.json(result.result)
+    } else {
+      const { preparedTx, borrowerSignature, borrowerPubKey } = req.body
+      const result = await cosignHandler.cosignAndSubmit({
+        preparedTx,
+        borrowerSignature,
+        borrowerPubKey,
+      })
+      res.json(result)
+    }
+  } catch (err) {
+    res.status(400).json({ status: "error", message: err.message })
+  }
+})
+
+app.get("/api/loans/status", async (req, res) => {
+  try {
+    if (!req.query.account) {
+      return res.status(400).json({ status: "error", message: "account query param required" })
+    }
+    const loans = await cosignHandler.getLoansForAccount(req.query.account)
+    res.json(loans)
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message })
+  }
+})
+
 // --- Startup ---
 
 async function main() {
   await connections.connect()
+
+  cosignHandler = new CosignHandler(connections)
 
   const zkProver = new ZkProver(connections)
   devnetLoop = new DevnetLoop(connections, orderCache, zkProver)
