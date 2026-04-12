@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useWallet } from "./providers/WalletProvider";
 import { useEscrow } from "@/hooks/useEscrow";
-import { WATCHER_ACCOUNT } from "@/lib/constants";
+import { WATCHER_ACCOUNT, ADDRESSES } from "@/lib/constants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -60,24 +60,58 @@ export function AdvancedTradingForm() {
       const { preimageHex, preimage } = generateCondition();
       const conditionHash = await hashPreimage(preimage);
 
-      // Build XRPL crypto-condition (SHA-256 preimage condition)
-      // Format: A0 25 80 20 <32-byte-hash> 81 01 20
       const conditionHex = "A0258020" + conditionHash + "810120";
       const fulfillmentHex = "A0228020" + preimageHex;
 
-      // Cancel after 24 hours (XRPL Ripple epoch offset)
       const rippleEpoch = 946684800;
       const cancelAfter = Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
 
-      // Convert XRP to drops (user enters XRP, protocol uses drops)
+      // ── DCA / TWAP: one escrow for total, watcher splits into N trades ──
+      const isDca = type === "DCA" || type === "TWAP";
       let amountInDrops;
-      if (type === "DCA") {
-        amountInDrops = String(Math.floor(parseFloat(amountPerBuy) * 1000000));
+      let slices, perSliceDrops, intervalMs;
+
+      if (isDca) {
+        const count = parseInt(numBuys);
+        const intervalSec = parseInt(ticketInterval);
+        if (!count || count < 1 || !intervalSec || intervalSec < 1) {
+          showStatus("Enter valid # slices and interval", "error");
+          return;
+        }
+
+        // Ensure user has USD trustline to receive proceeds from SELL trades
+        if (side === "SELL") {
+          showStatus("Setting up USD trustline...", "info");
+          await walletManager.signAndSubmit({
+            TransactionType: "TrustSet",
+            LimitAmount: { currency: "USD", issuer: ADDRESSES.RLUSD_ISSUER, value: "100000" },
+          });
+        }
+
+        let totalXrp;
+        if (type === "DCA") {
+          const perBuy = parseFloat(amountPerBuy);
+          totalXrp = perBuy * count;
+          perSliceDrops = String(Math.floor(perBuy * 1000000));
+        } else {
+          totalXrp = parseFloat(amount);
+          perSliceDrops = String(Math.floor((totalXrp / count) * 1000000));
+        }
+        amountInDrops = String(Math.floor(totalXrp * 1000000));
+        slices = count;
+        intervalMs = intervalSec * 1000;
       } else {
         amountInDrops = String(Math.floor(parseFloat(amount) * 1000000));
+
+        // Ensure user has USD trustline for SELL orders (to receive USD proceeds)
+        if (side === "SELL") {
+          await walletManager.signAndSubmit({
+            TransactionType: "TrustSet",
+            LimitAmount: { currency: "USD", issuer: ADDRESSES.RLUSD_ISSUER, value: "100000" },
+          });
+        }
       }
 
-      // Create the escrow on-ledger
       const result = await createEscrow(
         WATCHER_ACCOUNT,
         amountInDrops,
@@ -85,38 +119,67 @@ export function AdvancedTradingForm() {
         cancelAfter
       );
 
-      // Build the order payload for the watcher (must match watcher API format)
-      const typeMap = { SL: "STOP_LOSS", TP: "TAKE_PROFIT", TRAILING: "TRAILING_STOP", OCO: "OCO", DCA: "DCA", TWAP: "TWAP" };
-      const orderPayload = {
-        orderType: typeMap[type] || type,
-        side,
-        amount: amountInDrops,
-        escrowSequence: result.sequence,
-        owner: walletManager.account.address,
-        condition: conditionHex,
-        preimage: fulfillmentHex,
-        isPrivate,
-      };
+      if (isDca) {
+        // Register DCA/TWAP schedule with watcher
+        const resp = await fetch("http://localhost:3001/api/dca", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner: walletManager.account.address,
+            escrowSequence: result.sequence,
+            condition: conditionHex,
+            preimage: fulfillmentHex,
+            side,
+            totalAmount: amountInDrops,
+            perSliceAmount: perSliceDrops,
+            slices,
+            intervalMs,
+          }),
+        });
+        if (!resp.ok) throw new Error("Watcher registration failed");
+        showStatus(`${type} scheduled: ${slices} trades every ${intervalMs / 1000}s`, "success");
+        setAmountPerBuy("");
+        setAmount("");
+        setNumBuys("");
+        setTicketInterval("");
+      } else {
+        // Register trigger order with watcher
+        const typeMap = { SL: "STOP_LOSS", TP: "TAKE_PROFIT", TRAILING: "TRAILING_STOP", OCO: "OCO" };
+        const orderPayload = {
+          orderType: typeMap[type] || type,
+          side,
+          amount: amountInDrops,
+          escrowSequence: result.sequence,
+          owner: walletManager.account.address,
+          condition: conditionHex,
+          preimage: fulfillmentHex,
+          isPrivate,
+        };
 
-      // Add type-specific fields
-      if (type === "SL" || type === "TP") {
-        orderPayload.triggerPrice = parseFloat(triggerPrice);
-      } else if (type === "TRAILING") {
-        orderPayload.trailingPct = parseInt(trailingPct, 10);
-      } else if (type === "OCO") {
-        orderPayload.triggerPrice = parseFloat(tpPrice);
+        if (type === "SL" || type === "TP") {
+          orderPayload.triggerPrice = parseFloat(triggerPrice);
+        } else if (type === "TRAILING") {
+          orderPayload.trailingPct = parseInt(trailingPct, 10);
+        } else if (type === "OCO") {
+          orderPayload.tpPrice = parseFloat(tpPrice);
+          orderPayload.slPrice = parseFloat(slPrice);
+        }
+
+        if (isPrivate) {
+          orderPayload.nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+            .map(b => b.toString(16).padStart(2, "0")).join("");
+        }
+
+        const resp = await fetch("http://localhost:3001/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
+        });
+        if (!resp.ok) throw new Error("Watcher registration failed — escrow created but order not tracked");
+        showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
+        setAmount("");
+        setTriggerPrice("");
       }
-
-      // Register with the watcher bot
-      await fetch("http://localhost:3001/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
-      });
-
-      showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
-      setAmount("");
-      setTriggerPrice("");
     } catch (err) {
       showStatus(err.message || "Failed to create order", "error");
     } finally {
@@ -166,7 +229,7 @@ export function AdvancedTradingForm() {
                 
                 <div className="space-y-2">
                   <Label className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
-                  <Input type="number" placeholder="500000000" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
+                  <Input type="number" placeholder="100" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                 </div>
 
                 <div className="space-y-2">
@@ -212,7 +275,7 @@ export function AdvancedTradingForm() {
               
               <div className="space-y-2">
                 <Label className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
-                <Input type="number" placeholder="500000000" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
+                <Input type="number" placeholder="100" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
               </div>
 
               <div className="space-y-2">
@@ -256,7 +319,7 @@ export function AdvancedTradingForm() {
               
               <div className="space-y-2">
                 <Label className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
-                <Input type="number" placeholder="500000000" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
+                <Input type="number" placeholder="100" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -306,8 +369,8 @@ export function AdvancedTradingForm() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-white/70 font-mono text-xs">{tabInfo === "dca" ? "Amount per buy (drops)" : "Total Amount (drops)"}</Label>
-                  <Input type="number" placeholder="50000000" value={tabInfo === "dca" ? amountPerBuy : amount} onChange={e => tabInfo === "dca" ? setAmountPerBuy(e.target.value) : setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
+                  <Label className="text-white/70 font-mono text-xs">{tabInfo === "dca" ? "Amount per buy (XRP)" : "Total Amount (XRP)"}</Label>
+                  <Input type="number" placeholder="50" value={tabInfo === "dca" ? amountPerBuy : amount} onChange={e => tabInfo === "dca" ? setAmountPerBuy(e.target.value) : setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

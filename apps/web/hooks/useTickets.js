@@ -74,6 +74,11 @@ export function useTickets() {
     if (!walletManager) throw new Error("Wallet not connected")
     const signedBlobs = []
     for (const tx of txs) {
+      // Set required fields manually — skip autofill to avoid
+      // LastLedgerSequence (these are submitted later by watcher)
+      tx.Account = walletManager.account.address
+      tx.Fee = "12"
+      tx.NetworkID = 2002 // WASM devnet
       const signed = await walletManager.sign(tx)
       signedBlobs.push(signed.tx_blob)
     }

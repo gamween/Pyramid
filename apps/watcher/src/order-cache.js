@@ -15,6 +15,7 @@ export class OrderCache {
     }
     if (params.orderType === "TRAILING_STOP" && params.trailingPct) {
       order.highestPrice = 0
+      order.lowestPrice = 0
       order.computedTrigger = 0
     }
     this.orders.set(key, order)
@@ -26,15 +27,22 @@ export class OrderCache {
     const id = params.id || randomUUID()
     const schedule = {
       id,
-      signedBlobs: params.signedBlobs,
+      owner: params.owner,
+      escrowSequence: params.escrowSequence,
+      condition: params.condition,
+      preimage: params.preimage,
+      side: params.side,
+      totalAmount: params.totalAmount,
+      perSliceAmount: params.perSliceAmount,
       intervalMs: params.intervalMs,
-      nextSubmitTime: Date.now() + params.intervalMs,
+      nextSubmitTime: Date.now(),
       completed: 0,
-      total: params.signedBlobs.length,
+      total: params.slices,
+      escrowFinished: false,
       status: "ACTIVE",
     }
     this.dcaSchedules.set(id, schedule)
-    console.log(`[order-cache] Added DCA ${id} (${schedule.total} orders, ${params.intervalMs}ms interval)`)
+    console.log(`[order-cache] Added DCA ${id} (${schedule.total} slices, ${params.intervalMs}ms interval)`)
     return id
   }
 
