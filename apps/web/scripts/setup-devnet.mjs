@@ -162,7 +162,8 @@ async function createLoanOnVault(client, owner, borrower, loanBrokerId, principa
   // Step 1: Broker (owner) signs — standard TxnSignature
   const encoded = encode(prepared)
   prepared.TxnSignature = rawSign("53545800" + encoded, owner.privateKey)
-  // Step 2: Borrower cosigns — CounterpartySignature
+  // Step 2: Borrower cosigns — CounterpartySignature + CounterpartySigningPubKey
+  prepared.CounterpartySigningPubKey = borrower.publicKey
   prepared.CounterpartySignature = rawSign("53545800" + encoded, borrower.privateKey)
 
   const tx_blob = encode(prepared)
