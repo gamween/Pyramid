@@ -1,5 +1,19 @@
 "use client"
 
+/**
+ * Loan hook for XLS-66 Lending Protocol.
+ *
+ * NOTE: xrpl@4.5.0-smartescrow.4 doesn't support XLS-66 transaction types
+ * (LoanBrokerSet, LoanSet, LoanPay, etc.) in its validate() function.
+ * Write operations will fail in the browser via wallet adapters.
+ *
+ * For the hackathon:
+ * - Write operations (createLoan, payLoan, etc.) are admin/server-side only
+ *   (use the raw signing approach from setup-devnet.mjs)
+ * - Read operations (getLoanInfo) work fine via ledger_entry RPC
+ * - The frontend displays loan status; the backend manages lifecycle
+ */
+
 import { useCallback } from "react"
 import { getClient } from "@/lib/xrplClient"
 import { useWallet } from "@/components/providers/WalletProvider"
