@@ -12,7 +12,7 @@ xrpl.js@4.5.0-smartescrow.4 rejects XLS-66 transaction types (LoanSet, LoanPay, 
 
 Three-layer architecture:
 
-1. **XLS-66 Signing Patch** — client-side wrapper that bypasses xrpl.js validation for loan tx types, using `ripple-binary-codec` (already bundled) to produce signing data directly
+1. **Native Transaction Signing Service** — standalone signing pipeline built on `ripple-binary-codec` and `ripple-keypairs` directly, type-agnostic, works with any XRPL transaction including XLS-66 and future amendments
 2. **Cosign API + Watcher Bot** — API routes relay borrower signatures to the watcher bot, which cosigns as vault broker and submits to XRPL
 3. **Loans Marketplace UI** — full-featured page for browsing vaults, borrowing, repaying, managing, and closing loans
 
@@ -21,8 +21,8 @@ Three-layer architecture:
 ```
 Browser (Borrower)
   └─ Loans Page → useLoanMarket hook
-       └─ XLS-66 Signing Patch (bypasses validate())
-            └─ Wallet Adapter signs tx
+       └─ Native Signing Service (ripple-binary-codec + ripple-keypairs)
+            └─ Wallet Adapter signs hash
                  └─ POST /api/loans/cosign (borrower signature)
                           │
 Next.js API Routes        │
@@ -42,39 +42,60 @@ Watcher Bot (Broker)      │
 
 ## Component Design
 
-### 1. XLS-66 Signing Patch
+### 1. Native Transaction Signing Service
 
-**File:** `apps/web/lib/xls66-signing.js`
+**File:** `apps/web/lib/xrpl-signing.js`
 
-**Purpose:** Wrap wallet signing to handle XLS-66 types that xrpl.js rejects.
+**Purpose:** A standalone, scalable signing service built directly on `ripple-binary-codec` and `ripple-keypairs` — the same primitives that xrpl.js itself uses internally. This is not a patch or wrapper around xrpl.js; it is an independent signing pipeline that works with any XRPL transaction type, including XLS-66 and any future amendments.
 
-**XLS-66 types:**
-- `LoanBrokerSet`
-- `LoanSet` (requires cosign)
-- `LoanPay`
-- `LoanManage`
-- `LoanDelete`
+**Why not xrpl.js?** The higher-level `xrpl` package bundles a `validate()` step that hardcodes known transaction types. Rather than patching or bypassing this, we use the lower-level codec and keypairs packages directly — the same approach the XRPL node software uses. This is the correct, forward-compatible way to handle new transaction types before xrpl.js adds formal support.
 
-**Flow:**
-1. Check if `tx.TransactionType` is in the XLS-66 set
-2. If standard type → pass through to `walletManager.signAndSubmit(tx)` unchanged
-3. If XLS-66 type:
-   a. Auto-fill tx fields (Sequence, Fee, LastLedgerSequence, NetworkID) via XRPL RPC
-   b. Import `ripple-binary-codec` → `encodeForSigning(tx)` to get signing data
-   c. Bypass xrpl.js validation, call the wallet adapter's signing method with the pre-encoded data
-   d. Return `{ tx_json, signature, pubkey }` for cosign flow, or submit directly for single-signer txs (LoanPay, LoanManage, LoanDelete)
+**Design principles:**
+- **Type-agnostic:** The service signs any valid XRPL transaction JSON. No hardcoded transaction type list. If the codec can encode it, the service can sign it.
+- **Composable:** Separate functions for auto-fill, encode, sign, submit, and poll. Each can be used independently.
+- **Stateless:** No singletons or caches. Pass in the RPC client and wallet context per call.
+
+**Public API:**
+
+```js
+// Auto-fill required tx fields from the ledger
+async function autofill(client, tx, signerAccount) → filledTx
+
+// Produce the signing hash for a transaction
+function getSigningData(tx) → Buffer
+
+// Sign a transaction (single signer)
+function sign(tx, privateKey) → { tx_blob, hash, tx_json }
+
+// Sign and submit in one call
+async function signAndSubmit(client, tx, privateKey) → { hash, result, validated }
+
+// Submit a pre-signed tx_blob and poll until validated
+async function submitAndWait(client, tx_blob) → { hash, result, validated }
+```
 
 **Auto-fill details:**
 - `Sequence`: from `account_info` RPC for the signing account
 - `Fee`: "12" for single-signer, "24" for cosigned (12 per signer)
 - `LastLedgerSequence`: current ledger index + 20
-- `NetworkID`: 2002 (WASM devnet)
-- `SigningPubKey`: from connected wallet
+- `NetworkID`: 2002 (WASM devnet, configurable)
+- `SigningPubKey`: derived from the signing wallet
+
+**Browser integration:**
+The wallet adapter (Xaman, Crossmark, etc.) is responsible for holding the private key and producing signatures. The signing service handles everything else:
+1. `autofill()` prepares the tx
+2. `getSigningData()` produces the hash to sign
+3. The wallet adapter signs the hash (via its native signing API)
+4. The service assembles the final `tx_blob` with the returned signature
+
+For wallets that don't expose raw hash signing, the service can serialize the tx as a payload the wallet understands (e.g., Xaman's custom payload format).
 
 **Single-signer vs cosigned:**
-- `LoanPay`, `LoanManage`, `LoanDelete` → single signer (borrower signs and submits directly)
-- `LoanSet` → cosigned (borrower signs, sends to API, watcher bot cosigns and submits)
-- `LoanBrokerSet` → single signer but broker-only (watcher bot handles this server-side during vault setup)
+- `LoanPay`, `LoanManage`, `LoanDelete` → single signer (borrower signs via wallet, service submits)
+- `LoanSet` → cosigned (borrower signs via wallet, signature sent to watcher bot, bot cosigns as broker and submits)
+- `LoanBrokerSet` → single signer, broker-only (watcher bot uses this service server-side)
+
+**Scalability:** Adding support for a new transaction type (e.g., future XLS amendments) requires zero code changes to this service. If `ripple-binary-codec` can encode it, it just works.
 
 ### 2. API Routes
 
@@ -174,7 +195,7 @@ GET /api/loans/status?account=<address>
 - Displays: required collateral, estimated interest, repayment info
 - "Confirm Borrow" button:
   1. Builds `LoanSet` tx JSON
-  2. Signs via XLS-66 patch (wallet prompt)
+  2. Signs via native signing service (wallet prompt)
   3. Sends borrower signature to `POST /api/loans/cosign`
   4. Shows success/error result
   5. Refreshes active loans list
@@ -188,7 +209,7 @@ GET /api/loans/status?account=<address>
 - Input: repay amount (partial or full)
 - "Confirm Repay" button:
   1. Builds `LoanPay` tx
-  2. Signs via XLS-66 patch (single-signer, no cosign needed)
+  2. Signs via native signing service (single-signer, no cosign needed)
   3. Submits directly to XRPL
   4. Refreshes loan status
 
@@ -200,7 +221,7 @@ GET /api/loans/status?account=<address>
 **Hook:** `useLoanMarket.js`
 - Replaces current `useLoan.js` for browser-side operations
 - Methods: `fetchAvailableVaults()`, `borrowFromVault()`, `repayLoan()`, `manageLoan()`, `closeLoan()`
-- Uses XLS-66 signing patch for all tx signing
+- Uses native signing service for all tx signing
 - Handles cosign flow for `LoanSet`, direct submit for others
 - Polls loan status on interval
 
@@ -224,7 +245,7 @@ Add "Loans" link to the app's main navigation, alongside existing Vaults/Trading
 ## Files Created/Modified
 
 **New files:**
-- `apps/web/lib/xls66-signing.js` — signing patch
+- `apps/web/lib/xrpl-signing.js` — native transaction signing service
 - `apps/web/hooks/useLoanMarket.js` — marketplace hook
 - `apps/web/app/loans/page.js` — loans page
 - `apps/web/components/loans/LoanMarketplace.js` — vault listing
@@ -240,11 +261,11 @@ Add "Loans" link to the app's main navigation, alongside existing Vaults/Trading
 **Modified files:**
 - `apps/web/components/Navigation.js` (or equivalent) — add Loans link
 - `apps/watcher/index.js` (or main entry) — register cosign HTTP endpoint
-- `apps/web/lib/submitRaw.js` — may extend with browser-compatible utilities
+- `apps/web/lib/submitRaw.js` — replaced by xrpl-signing.js (can be removed)
 
 ## Testing
 
-- Verify XLS-66 patch correctly signs all 5 tx types in browser
+- Verify native signing service correctly signs all 5 XLS-66 tx types in browser
 - Verify cosign round-trip: browser sign → API → watcher cosign → XRPL submission → success
 - Verify single-signer txs (LoanPay, LoanManage, LoanDelete) submit directly from browser
 - Verify marketplace shows real vault data from XRPL
