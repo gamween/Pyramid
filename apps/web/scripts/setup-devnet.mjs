@@ -7,7 +7,7 @@
  * Usage: node apps/web/scripts/setup-devnet.mjs
  */
 
-import { Client, Wallet, encode, decodeAccountID } from "xrpl"
+import { Client, Wallet, encode, encodeForSigning, decodeAccountID } from "xrpl"
 import { writeFileSync } from "fs"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
@@ -27,8 +27,7 @@ async function submitRawTx(client, wallet, tx) {
     NetworkID: 2002,
     SigningPubKey: wallet.publicKey,
   }
-  const encoded = encode(prepared)
-  prepared.TxnSignature = rawSign("53545800" + encoded, wallet.privateKey)
+  prepared.TxnSignature = rawSign(encodeForSigning(prepared), wallet.privateKey)
   const tx_blob = encode(prepared)
   const result = await client.request({ command: "submit", tx_blob })
   if (result.result.engine_result !== "tesSUCCESS") {
@@ -159,13 +158,15 @@ async function createLoanOnVault(client, owner, borrower, loanBrokerId, principa
     NetworkID: 2002,
     SigningPubKey: owner.publicKey,
   }
+  // Both parties sign the same data: encodeForSigning(tx) which prepends 0x53545800
+  // and only includes signing fields (strips TxnSignature, CounterpartySignature etc.)
+  const signingData = encodeForSigning(prepared)
   // Step 1: Broker (owner) signs — standard TxnSignature
-  const encoded = encode(prepared)
-  prepared.TxnSignature = rawSign("53545800" + encoded, owner.privateKey)
-  // Step 2: Borrower cosigns — CounterpartySignature is an STObject containing their pubkey + signature
+  prepared.TxnSignature = rawSign(signingData, owner.privateKey)
+  // Step 2: Borrower cosigns — CounterpartySignature STObject with their pubkey + signature
   prepared.CounterpartySignature = {
     SigningPubKey: borrower.publicKey,
-    TxnSignature: rawSign("53545800" + encoded, borrower.privateKey),
+    TxnSignature: rawSign(signingData, borrower.privateKey),
   }
 
   const tx_blob = encode(prepared)
