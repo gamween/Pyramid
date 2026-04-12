@@ -46,21 +46,21 @@ export const ADDRESSES = {
 
 export const SHOWCASE_VAULTS = [
   {
-    id: "",
+    id: "72C167718588C416D229B2BFEE15926A5CBF389598474E8552C746861684B104",
     name: "Fresh Vault",
     tagline: "Ready to Lend",
     status: "ready",
     primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit"],
   },
   {
-    id: "",
+    id: "290F56264EEDDD7FBC2229C9172594B0914C3BC82878E21462E1EE7721F39C8A",
     name: "Active Lending",
     tagline: "Loans Outstanding",
     status: "active",
     primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit", "LoanSet", "LoanPay"],
   },
   {
-    id: "",
+    id: "ED783F7BF48A8C365C4E071F549E8D4320E491D8873171A323702D3B4995CF10",
     name: "Yield Earned",
     tagline: "Full Lifecycle Complete",
     status: "yield",
