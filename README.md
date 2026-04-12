@@ -241,6 +241,35 @@ pnpm dev
 5. **Place a Stop-Loss** so the Watcher Bot monitors prices and executes automatically
 6. **Set up a DCA**: sign once, the bot handles the rest
 
+## Verify On-Chain (Not Mocked)
+
+Every transaction Pyramid makes is a real, validated XRPL transaction on the WASM Devnet. You can verify them on the explorer:
+
+**Explorer:** https://custom.xrpl.org/wasm.devnet.rippletest.net
+
+### Accounts
+
+| Role | Address | Description |
+|------|---------|-------------|
+| **Vault Owner (Broker)** | `rD23UrNGyZYdmYD8J5QHYVWoQgKm2yrEKD` | Creates vaults, configures loan brokers, cosigns loans |
+| **Borrower** | `rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv` | Server-managed borrower account for the loans marketplace |
+| **Watcher Bot** | `rJMcmkMxWYXae6wKy3iQVx6v9gN7p2BRFZ` | Monitors prices, executes trades, manages DCA strategies |
+
+### Vaults (XLS-65)
+
+| Vault | Vault ID | Loan Broker ID |
+|-------|----------|----------------|
+| **Fresh Vault** | `8A84591D49EF8D1A25ABF2CE1E28DE5AA8899484392EFEDE84FA3304E109C62E` | `D3DDC472215038795DB31E12BBF1274847AC4A06BF3175BED25B24AE317F0256` |
+| **Active Lending** | `6087666E82509EFA5922ED57E87E647A78063378686195620F6445B0D36C66E2` | `1C767A5D27DA709451EFD264A17717BD78144CA73A4939DABB2C9BD872BCB47F` |
+| **Yield Earned** | `AD7E1DB393F73284E52F90C8B960FB8FC051399521E7FC9BAE30FFCBA53C8A44` | `613A9F5C12DF3D44CE85E2924E778B30AE6BD65424D7050C17161365E6ED4B7F` |
+
+### How to Verify
+
+1. Go to https://custom.xrpl.org/wasm.devnet.rippletest.net
+2. Paste any account address or vault ID above into the search bar
+3. You'll see real `VaultCreate`, `VaultDeposit`, `LoanBrokerSet`, `LoanSet`, `LoanPay` transactions
+4. Every transaction has a validated ledger index and hash — nothing is simulated
+
 ## Network
 
 | | |
@@ -249,7 +278,7 @@ pnpm dev
 | **WebSocket** | `wss://wasm.devnet.rippletest.net:51233` |
 | **Network ID** | 2002 |
 | **Faucet** | https://wasmfaucet.devnet.rippletest.net/accounts |
-| **Explorer** | https://devnet.xrpl.org |
+| **Explorer** | https://custom.xrpl.org/wasm.devnet.rippletest.net |
 
 
 ## License

@@ -14,6 +14,10 @@ export class DevnetLoop {
     const client = this.connections.getClient()
     if (!client) throw new Error("DevNet client not connected")
 
+    if (!config.rlusdIssuer) {
+      console.error("[devnet-loop] RLUSD_ISSUER not set — price feed disabled, no orders will trigger")
+    }
+
     client.on("ledgerClosed", () => this.onLedger())
     await client.request({ command: "subscribe", streams: ["ledger"] })
     console.log("[devnet-loop] Subscribed to ledger stream")
@@ -62,15 +66,32 @@ export class DevnetLoop {
   }
 
   async onLedger() {
+    if (this._processing) return
+    this._processing = true
+    try {
+      await this._processLedger()
+    } finally {
+      this._processing = false
+    }
+  }
+
+  async _processLedger() {
     await this.fetchPrice()
     if (this.currentPrice === null) return
 
     const activeOrders = this.orderCache.getActiveOrders()
     for (const order of activeOrders) {
       if (order.orderType === "TRAILING_STOP") {
-        if (this.currentPrice > order.highestPrice) {
-          order.highestPrice = this.currentPrice
-          order.computedTrigger = order.highestPrice * (1 - order.trailingPct / 10000)
+        if (order.side === "SELL") {
+          if (this.currentPrice > order.highestPrice) {
+            order.highestPrice = this.currentPrice
+            order.computedTrigger = order.highestPrice * (1 - order.trailingPct / 10000)
+          }
+        } else {
+          if (order.lowestPrice === 0 || this.currentPrice < order.lowestPrice) {
+            order.lowestPrice = this.currentPrice
+            order.computedTrigger = order.lowestPrice * (1 + order.trailingPct / 10000)
+          }
         }
       }
 
@@ -90,8 +111,9 @@ export class DevnetLoop {
 
     const dueSchedules = this.orderCache.getDueSchedules()
     const client = this.connections.getClient()
+    const wallet = this.connections.getWallet()
     for (const schedule of dueSchedules) {
-      await this.dcaScheduler.submitNext(schedule, client)
+      await this.dcaScheduler.submitNext(schedule, client, wallet)
     }
   }
 
@@ -103,7 +125,17 @@ export class DevnetLoop {
       case "TAKE_PROFIT":
         return order.side === "SELL" ? price >= order.triggerPrice : price <= order.triggerPrice
       case "TRAILING_STOP":
-        return order.computedTrigger > 0 && price <= order.computedTrigger
+        if (order.side === "SELL") {
+          return order.computedTrigger > 0 && price <= order.computedTrigger
+        } else {
+          return order.computedTrigger > 0 && price >= order.computedTrigger
+        }
+      case "OCO":
+        if (order.side === "SELL") {
+          return price >= order.tpPrice || price <= order.slPrice
+        } else {
+          return price <= order.tpPrice || price >= order.slPrice
+        }
       default:
         return false
     }
@@ -128,63 +160,59 @@ export class DevnetLoop {
       console.log(`[devnet-loop] EscrowFinish: ${finishResult.result.meta.TransactionResult}`)
 
       const amountXrp = Number(order.amount) / 1e6
-      const estimatedUsd = String(amountXrp * this.currentPrice)
+      const estimatedUsd = (amountXrp * this.currentPrice).toFixed(6)
 
       console.log(`[devnet-loop] OfferCreate (${order.side}) — ${amountXrp} XRP ≈ ${estimatedUsd} USD @ ${this.currentPrice}`)
+
+      // Snapshot balances BEFORE trade to compute exact received amount
+      const preUsdLines = await client.request({ command: "account_lines", account: wallet.address })
+      const preUsd = Number(preUsdLines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0)
+      const preXrpInfo = await client.request({ command: "account_info", account: wallet.address })
+      const preXrp = Number(preXrpInfo.result.account_data.Balance)
+
       const offerTx = {
         TransactionType: "OfferCreate",
         Account: wallet.address,
         Flags: 0x00020000, // tfImmediateOrCancel
       }
       if (order.side === "SELL") {
-        // Selling XRP for USD: offer XRP, want USD
         offerTx.TakerGets = order.amount
         offerTx.TakerPays = { currency: "USD", issuer: config.rlusdIssuer, value: estimatedUsd }
       } else {
-        // Buying XRP with USD: offer USD, want XRP
         offerTx.TakerPays = order.amount
         offerTx.TakerGets = { currency: "USD", issuer: config.rlusdIssuer, value: estimatedUsd }
       }
       const offerResult = await client.submitAndWait(offerTx, { wallet, autofill: true })
       console.log(`[devnet-loop] OfferCreate: ${offerResult.result.meta.TransactionResult}`)
 
+      // Snapshot balances AFTER trade — send only the difference
       if (order.side === "SELL") {
-        // SELL: watcher received USD from DEX → send USD to user
-        const balances = await client.request({
-          command: "account_lines",
-          account: wallet.address,
-        })
-        const usdLine = balances.result.lines?.find(
-          (l) => l.currency === "USD" && l.account === config.rlusdIssuer
-        )
-        if (usdLine && Number(usdLine.balance) > 0) {
-          console.log(`[devnet-loop] Payment → ${order.owner} (${usdLine.balance} USD)`)
+        const postUsdLines = await client.request({ command: "account_lines", account: wallet.address })
+        const postUsd = Number(postUsdLines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0)
+        const receivedUsd = postUsd - preUsd
+        if (receivedUsd > 0) {
+          const usdValue = receivedUsd.toFixed(6)
+          console.log(`[devnet-loop] Payment → ${order.owner} (${usdValue} USD)`)
           const payTx = {
             TransactionType: "Payment",
             Account: wallet.address,
             Destination: order.owner,
-            Amount: { currency: "USD", issuer: config.rlusdIssuer, value: usdLine.balance },
+            Amount: { currency: "USD", issuer: config.rlusdIssuer, value: usdValue },
           }
           const payResult = await client.submitAndWait(payTx, { wallet, autofill: true })
           console.log(`[devnet-loop] Payment: ${payResult.result.meta.TransactionResult}`)
         }
       } else {
-        // BUY: watcher received XRP from DEX → send XRP to user
-        const info = await client.request({
-          command: "account_info",
-          account: wallet.address,
-        })
-        const balance = Number(info.result.account_data.Balance)
-        const reserve = 10_000_000 // 10 XRP base reserve in drops
-        const available = balance - reserve
-        if (available > 0) {
-          const sendDrops = String(available)
-          console.log(`[devnet-loop] Payment → ${order.owner} (${sendDrops} drops XRP)`)
+        const postXrpInfo = await client.request({ command: "account_info", account: wallet.address })
+        const postXrp = Number(postXrpInfo.result.account_data.Balance)
+        const receivedXrp = Math.floor(postXrp - preXrp)
+        if (receivedXrp > 0) {
+          console.log(`[devnet-loop] Payment → ${order.owner} (${receivedXrp} drops XRP)`)
           const payTx = {
             TransactionType: "Payment",
             Account: wallet.address,
             Destination: order.owner,
-            Amount: sendDrops,
+            Amount: String(receivedXrp),
           }
           const payResult = await client.submitAndWait(payTx, { wallet, autofill: true })
           console.log(`[devnet-loop] Payment: ${payResult.result.meta.TransactionResult}`)
