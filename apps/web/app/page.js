@@ -7,7 +7,7 @@ import LEDPyramid from "../components/three/LEDPyramid";
 import { Header } from "../components/Header";
 import { AccountInfo } from "../components/AccountInfo";
 import { TransactionForm } from "../components/TransactionForm";
-import { VaultInteraction } from "../components/VaultInteraction";
+import { EarnYieldPage } from "../components/EarnYieldPage";
 import { AdvancedTradingForm } from "../components/AdvancedTradingForm";
 import { ProtocolStats } from "../components/ProtocolStats";
 import { LandingPresentation } from "../components/LandingPresentation";
@@ -148,16 +148,7 @@ export default function Home() {
 
               {/* EARN YIELD TAB — Liquidity Provider Side */}
               <TabsContent value="lending" className="animate-in fade-in duration-500">
-                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1 max-w-3xl mx-auto">
-                  <div className="border border-white/20 bg-black/40 backdrop-blur-xl">
-                    <div className="p-4 border-b border-white/20 bg-white/5">
-                      <h2 className="text-xs font-mono uppercase tracking-widest text-slate-400">Provide Liquidity — Vault Deposit / Withdraw (XLS-65)</h2>
-                    </div>
-                    <div className="p-4">
-                      <VaultInteraction />
-                    </div>
-                  </div>
-                </div>
+                <EarnYieldPage />
                 <LendingShowcase />
               </TabsContent>
 
