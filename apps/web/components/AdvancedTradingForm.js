@@ -85,31 +85,26 @@ export function AdvancedTradingForm() {
         cancelAfter
       );
 
-      // Build the order payload for the watcher
+      // Build the order payload for the watcher (must match watcher API format)
+      const typeMap = { SL: "STOP_LOSS", TP: "TAKE_PROFIT", TRAILING: "TRAILING_STOP", OCO: "OCO", DCA: "DCA", TWAP: "TWAP" };
       const orderPayload = {
-        type,
-        pair,
+        orderType: typeMap[type] || type,
         side,
         amount: amountInDrops,
-        escrowId: result.escrowId,
         escrowSequence: result.sequence,
-        owner: walletManager.account,
-        conditionHex,
-        fulfillmentHex,
+        owner: walletManager.account.address,
+        condition: conditionHex,
+        preimage: fulfillmentHex,
         isPrivate,
       };
 
       // Add type-specific fields
       if (type === "SL" || type === "TP") {
-        orderPayload.triggerPrice = triggerPrice;
+        orderPayload.triggerPrice = parseFloat(triggerPrice);
       } else if (type === "TRAILING") {
-        orderPayload.trailingPct = trailingPct;
+        orderPayload.trailingPct = parseInt(trailingPct, 10);
       } else if (type === "OCO") {
-        orderPayload.tpPrice = tpPrice;
-        orderPayload.slPrice = slPrice;
-      } else if (type === "DCA" || type === "TWAP") {
-        orderPayload.numBuys = numBuys;
-        orderPayload.ticketInterval = ticketInterval;
+        orderPayload.triggerPrice = parseFloat(tpPrice);
       }
 
       // Register with the watcher bot
