@@ -40,6 +40,105 @@ async function submitRawTx(client, wallet, tx) {
   return txResult.result
 }
 
+async function createVaultWithBroker(client, owner, label, depositDrops, coverDrops) {
+  console.log(`\n--- Creating ${label} ---`)
+
+  // VaultCreate
+  console.log(`  VaultCreate...`)
+  const vaultResult = await submitRawTx(client, owner, {
+    TransactionType: "VaultCreate",
+    Account: owner.address,
+    Asset: { currency: "XRP" },
+  })
+  const vaultId = vaultResult.meta?.AffectedNodes?.find(
+    (n) => n.CreatedNode?.LedgerEntryType === "Vault"
+  )?.CreatedNode?.LedgerIndex
+  console.log(`  Vault ID: ${vaultId}`)
+
+  // VaultDeposit
+  console.log(`  VaultDeposit (${depositDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, owner, {
+    TransactionType: "VaultDeposit",
+    Account: owner.address,
+    VaultID: vaultId,
+    Amount: String(depositDrops),
+  })
+
+  // LoanBrokerSet
+  console.log(`  LoanBrokerSet...`)
+  const brokerResult = await submitRawTx(client, owner, {
+    TransactionType: "LoanBrokerSet",
+    Account: owner.address,
+    VaultID: vaultId,
+    ManagementFeeRate: 1000,
+  })
+  const loanBrokerId = brokerResult.meta?.AffectedNodes?.find(
+    (n) => n.CreatedNode?.LedgerEntryType === "LoanBroker"
+  )?.CreatedNode?.LedgerIndex
+  console.log(`  LoanBroker ID: ${loanBrokerId}`)
+
+  // LoanBrokerCoverDeposit
+  console.log(`  LoanBrokerCoverDeposit (${coverDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, owner, {
+    TransactionType: "LoanBrokerCoverDeposit",
+    Account: owner.address,
+    LoanBrokerID: loanBrokerId,
+    Amount: String(coverDrops),
+  })
+
+  return { vaultId, loanBrokerId }
+}
+
+async function createLoanOnVault(client, owner, borrower, loanBrokerId, principalDrops) {
+  console.log(`  LoanSet (${principalDrops / 1_000_000} XRP to ${borrower.address})...`)
+  const loanResult = await submitRawTx(client, owner, {
+    TransactionType: "LoanSet",
+    Account: owner.address,
+    LoanBrokerID: loanBrokerId,
+    Counterparty: borrower.address,
+    PrincipalRequested: String(principalDrops),
+    InterestRate: 500,
+    PaymentTotal: 12,
+    PaymentInterval: 2592000,
+    GracePeriod: 604800,
+  })
+  const loanId = loanResult.meta?.AffectedNodes?.find(
+    (n) => n.CreatedNode?.LedgerEntryType === "Loan"
+  )?.CreatedNode?.LedgerIndex
+  console.log(`  Loan ID: ${loanId}`)
+  return loanId
+}
+
+async function payLoanPartial(client, borrower, loanId, amountDrops) {
+  console.log(`  LoanPay partial (${amountDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, borrower, {
+    TransactionType: "LoanPay",
+    Account: borrower.address,
+    LoanID: loanId,
+    Amount: String(amountDrops),
+  })
+}
+
+async function payLoanFull(client, borrower, loanId, amountDrops) {
+  console.log(`  LoanPay full (${amountDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, borrower, {
+    TransactionType: "LoanPay",
+    Account: borrower.address,
+    LoanID: loanId,
+    Amount: String(amountDrops),
+    Flags: 0x00020000, // tfLoanFullPayment
+  })
+}
+
+async function deleteLoan(client, owner, loanId) {
+  console.log(`  LoanDelete...`)
+  await submitRawTx(client, owner, {
+    TransactionType: "LoanDelete",
+    Account: owner.address,
+    LoanID: loanId,
+  })
+}
+
 const WSS = "wss://wasm.devnet.rippletest.net:51233"
 const FAUCET_HOST = "wasmfaucet.devnet.rippletest.net"
 
@@ -117,48 +216,45 @@ async function main() {
   const payResult = await client.submitAndWait(paymentTx, { wallet: issuer })
   console.log(`  Payment: ${payResult.result.meta.TransactionResult}`)
 
-  // 7. Create Vault
-  console.log("\n7. Creating Vault...")
-  let vaultId = null
+  // ── Vault 1: Fresh Vault (ready to lend, no loans) ──
+  let vault1 = { vaultId: null, loanBrokerId: null }
   try {
-    const vaultTx = {
-      TransactionType: "VaultCreate",
-      Account: owner.address,
-      Asset: { currency: "XRP" },
-    }
-    const vaultResult = await client.submitAndWait(vaultTx, { wallet: owner })
-    console.log(`  VaultCreate: ${vaultResult.result.meta.TransactionResult}`)
-
-    const vaultNode = vaultResult.result.meta.AffectedNodes?.find(
-      (n) => n.CreatedNode?.LedgerEntryType === "Vault"
-    )
-    vaultId = vaultNode?.CreatedNode?.LedgerIndex || null
-    console.log(`  Vault ID: ${vaultId}`)
+    vault1 = await createVaultWithBroker(client, owner, "Vault 1: Fresh Vault", 500_000_000, 50_000_000)
   } catch (err) {
-    console.log(`  VaultCreate failed: ${err.message}`)
-    console.log("  (XLS-65 may not be enabled on this devnet build)")
+    console.log(`  Vault 1 failed: ${err.message}`)
   }
 
-  // 8. Create LoanBroker (uses raw signing — xrpl.js doesn't know XLS-66 tx types)
-  console.log("\n8. Creating LoanBroker...")
-  let loanBrokerId = null
-  if (vaultId) {
-    try {
-      const brokerTxResult = await submitRawTx(client, owner, {
-        TransactionType: "LoanBrokerSet",
-        Account: owner.address,
-        VaultID: vaultId,
-        ManagementFeeRate: 1000,
-      })
-      console.log(`  LoanBrokerSet: ${brokerTxResult.meta?.TransactionResult}`)
-      const brokerNode = brokerTxResult.meta?.AffectedNodes?.find(
-        (n) => n.CreatedNode?.LedgerEntryType === "LoanBroker"
-      )
-      loanBrokerId = brokerNode?.CreatedNode?.LedgerIndex || null
-      console.log(`  LoanBroker ID: ${loanBrokerId}`)
-    } catch (err) {
-      console.log(`  LoanBrokerSet failed: ${err.message}`)
-    }
+  // ── Vault 2: Active Lending (outstanding loan + partial payment) ──
+  let vault2 = { vaultId: null, loanBrokerId: null }
+  let vault2LoanId = null
+  try {
+    vault2 = await createVaultWithBroker(client, owner, "Vault 2: Active Lending", 1_000_000_000, 100_000_000)
+
+    // Fund borrower
+    console.log(`\n  Funding borrower for Vault 2...`)
+    const { wallet: borrower2 } = await fundWallet(client, "borrower2")
+
+    vault2LoanId = await createLoanOnVault(client, owner, borrower2, vault2.loanBrokerId, 300_000_000)
+    await payLoanPartial(client, borrower2, vault2LoanId, 50_000_000)
+  } catch (err) {
+    console.log(`  Vault 2 failed: ${err.message}`)
+  }
+
+  // ── Vault 3: Yield Earned (loan fully repaid, share price > 1) ──
+  let vault3 = { vaultId: null, loanBrokerId: null }
+  try {
+    vault3 = await createVaultWithBroker(client, owner, "Vault 3: Yield Earned", 500_000_000, 50_000_000)
+
+    // Fund borrower
+    console.log(`\n  Funding borrower for Vault 3...`)
+    const { wallet: borrower3 } = await fundWallet(client, "borrower3")
+
+    const vault3LoanId = await createLoanOnVault(client, owner, borrower3, vault3.loanBrokerId, 200_000_000)
+    // Full repayment — overpay slightly to cover interest
+    await payLoanFull(client, borrower3, vault3LoanId, 210_000_000)
+    await deleteLoan(client, owner, vault3LoanId)
+  } catch (err) {
+    console.log(`  Vault 3 failed: ${err.message}`)
   }
 
   // 9. Seed DEX with XRP/USD offers
@@ -187,15 +283,17 @@ async function main() {
 
   await client.disconnect()
 
-  // Write results to JSON
   const results = {
     timestamp: new Date().toISOString(),
     network: WSS,
     owner: { address: owner.address, seed: ownerSeed },
     issuer: { address: issuer.address, seed: issuerSeed },
     watcher: { address: watcher.address, seed: watcherSeed },
-    vaultId: vaultId || "",
-    loanBrokerId: loanBrokerId || "",
+    showcaseVaults: [
+      { id: vault1.vaultId || "", loanBrokerId: vault1.loanBrokerId || "", name: "Fresh Vault" },
+      { id: vault2.vaultId || "", loanBrokerId: vault2.loanBrokerId || "", name: "Active Lending", loanId: vault2LoanId || "" },
+      { id: vault3.vaultId || "", loanBrokerId: vault3.loanBrokerId || "", name: "Yield Earned" },
+    ],
   }
 
   const outputPath = join(__dirname, "devnet-addresses.json")
@@ -206,15 +304,31 @@ async function main() {
   console.log("SETUP COMPLETE")
   console.log("=".repeat(60))
   console.log(`
-Copy into apps/web/lib/constants.js:
+Copy SHOWCASE_VAULTS into apps/web/lib/constants.js:
 
-export const WATCHER_ACCOUNT = "${watcher.address}"
-
-export const ADDRESSES = {
-  VAULT_ID: "${vaultId || ""}",
-  LOAN_BROKER_ID: "${loanBrokerId || ""}",
-  RLUSD_ISSUER: "${issuer.address}",
-}
+export const SHOWCASE_VAULTS = [
+  {
+    id: "${vault1.vaultId || ""}",
+    name: "Fresh Vault",
+    tagline: "Ready to Lend",
+    status: "ready",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit"],
+  },
+  {
+    id: "${vault2.vaultId || ""}",
+    name: "Active Lending",
+    tagline: "Loans Outstanding",
+    status: "active",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit", "LoanSet", "LoanPay"],
+  },
+  {
+    id: "${vault3.vaultId || ""}",
+    name: "Yield Earned",
+    tagline: "Full Lifecycle Complete",
+    status: "yield",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit", "LoanSet", "LoanPay", "LoanDelete"],
+  },
+]
 
 Copy into apps/watcher/.env:
 
