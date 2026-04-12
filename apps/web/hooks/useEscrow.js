@@ -25,7 +25,8 @@ export function useEscrow() {
     }
     const submitted = await walletManager.signAndSubmit(tx)
     const txResult = await getTxMeta(submitted.hash)
-    const sequence = txResult.Sequence
+    const txJson = txResult.tx_json ?? txResult
+    const sequence = txJson.Sequence
     const escrowId = txResult.meta?.AffectedNodes?.find(
       (n) => n.CreatedNode?.LedgerEntryType === "Escrow"
     )?.CreatedNode?.LedgerIndex
