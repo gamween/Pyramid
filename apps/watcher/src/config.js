@@ -4,6 +4,7 @@ export const config = {
   },
   watcherSeed: process.env.WATCHER_SEED || "",
   vaultOwnerSeed: process.env.VAULT_OWNER_SEED || "",
+  borrowerSeed: process.env.BORROWER_SEED || "",
   rlusdIssuer: process.env.RLUSD_ISSUER || "",
   port: parseInt(process.env.PORT || "3001", 10),
   managedVaults: {

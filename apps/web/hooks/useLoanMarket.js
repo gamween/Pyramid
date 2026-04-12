@@ -42,6 +42,7 @@ export function useLoanMarket() {
 
   const [availableVaults, setAvailableVaults] = useState([])
   const [activeLoans, setActiveLoans] = useState([])
+  const [borrowerAddress, setBorrowerAddress] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -53,6 +54,7 @@ export function useLoanMarket() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to fetch vaults")
       setAvailableVaults(data.vaults || [])
+      if (data.borrowerAddress) setBorrowerAddress(data.borrowerAddress)
       return data.vaults || []
     } catch (err) {
       console.error("[useLoanMarket] fetchAvailableVaults:", err)
@@ -61,9 +63,10 @@ export function useLoanMarket() {
   }, [])
 
   const fetchActiveLoans = useCallback(async () => {
-    if (!walletManager?.account?.address) return []
+    // Query by server-managed borrower address (browser wallets can't sign XLS-66)
+    const address = borrowerAddress || walletManager?.account?.address
+    if (!address) return []
     try {
-      const address = walletManager.account.address
       const res = await fetch(`/api/loans/status?account=${address}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to fetch loans")
@@ -73,17 +76,17 @@ export function useLoanMarket() {
       console.error("[useLoanMarket] fetchActiveLoans:", err)
       return []
     }
-  }, [walletManager])
+  }, [borrowerAddress, walletManager])
 
   // ── Polling ─────────────────────────────────────────────────────
 
   useEffect(() => {
     fetchAvailableVaults()
-    if (isConnected) fetchActiveLoans()
+    fetchActiveLoans()
 
     const interval = setInterval(() => {
       fetchAvailableVaults()
-      if (isConnected) fetchActiveLoans()
+      fetchActiveLoans()
     }, 30_000)
 
     return () => clearInterval(interval)
@@ -92,68 +95,36 @@ export function useLoanMarket() {
   // ── Write helpers ───────────────────────────────────────────────
 
   /**
-   * borrowFromVault — two-phase cosign flow:
-   *  1. POST /api/loans/prepare  → preparedTx
-   *  2. signWithWallet           → borrower signature
-   *  3. POST /api/loans/cosign   → broker cosigns & submits
+   * borrowFromVault — server-side cosign flow:
+   *  POST /api/loans/borrow → watcher bot signs both broker + borrower, submits.
+   *  Browser wallets can't sign XLS-66 types (LoanSet), so the watcher handles
+   *  both signatures using server-managed keys.
    */
   const borrowFromVault = useCallback(async (vaultId, principalDrops, opts = {}) => {
-    if (!walletManager) throw new Error("Wallet not connected")
     setLoading(true)
     setError(null)
     try {
-      // Phase 1 — prepare
-      const prepRes = await fetch("/api/loans/prepare", {
+      const res = await fetch("/api/loans/borrow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           vaultId,
-          principalDrops,
-          borrowerAddress: walletManager.account.address,
+          principalDrops: String(principalDrops),
           ...opts,
         }),
       })
-      const prepData = await prepRes.json()
-      if (!prepRes.ok) throw new Error(prepData.error || "Failed to prepare loan")
-      const { preparedTx } = prepData
+      const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || "Borrow failed")
 
-      // Phase 2 — borrower signs
-      const signResult = await signWithWallet(walletManager, preparedTx)
-
-      // Extract the borrower's signature
-      const borrowerSignature =
-        signResult.tx_json?.TxnSignature || signResult.TxnSignature
-      const borrowerPubKey =
-        signResult.tx_json?.SigningPubKey || signResult.SigningPubKey
-
-      if (!borrowerSignature) {
-        throw new Error("Could not extract borrower signature from wallet response")
-      }
-
-      // Phase 3 — cosign
-      const cosignRes = await fetch("/api/loans/cosign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          preparedTx,
-          borrowerSignature,
-          borrowerPubKey,
-        }),
-      })
-      const cosignData = await cosignRes.json()
-      if (!cosignRes.ok) throw new Error(cosignData.error || "Cosign failed")
-
-      // Refresh active loans after successful borrow
       await fetchActiveLoans()
-
-      return cosignData
+      return data
     } catch (err) {
       setError(err.message)
       throw err
     } finally {
       setLoading(false)
     }
-  }, [walletManager, fetchActiveLoans])
+  }, [fetchActiveLoans])
 
   /**
    * repayLoan — single-signer cosign flow:

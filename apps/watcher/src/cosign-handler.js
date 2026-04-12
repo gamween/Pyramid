@@ -24,11 +24,90 @@ export class CosignHandler {
     this.vaultOwnerWallet = config.vaultOwnerSeed
       ? Wallet.fromSeed(config.vaultOwnerSeed)
       : null
+    // Borrower wallet for server-side cosigning (browser wallets can't sign XLS-66 types)
+    this.borrowerWallet = config.borrowerSeed
+      ? Wallet.fromSeed(config.borrowerSeed)
+      : null
   }
 
   /** Get the vault owner wallet (broker). Falls back to watcher wallet if no separate owner configured. */
   getOwnerWallet() {
     return this.vaultOwnerWallet || this.connections.getWallet()
+  }
+
+  /**
+   * Full server-side borrow: prepare, sign both sides, submit.
+   * Browser wallets can't sign XLS-66 types, so the watcher handles
+   * both broker (TxnSignature) and borrower (CounterpartySignature).
+   */
+  async borrowFromVault({ vaultId, principalDrops, interestRate, paymentTotal, paymentInterval, gracePeriod }) {
+    const client = this.connections.getClient()
+    const broker = this.getOwnerWallet()
+    const borrower = this.borrowerWallet
+    if (!broker) throw new Error("Vault owner wallet not configured (set VAULT_OWNER_SEED)")
+    if (!borrower) throw new Error("Borrower wallet not configured (set BORROWER_SEED)")
+
+    // Validate vault
+    const vaultConfig = config.managedVaults[vaultId]
+    if (!vaultConfig) throw new Error(`Vault ${vaultId} not managed by this watcher`)
+    if (!vaultConfig.loanBrokerId) throw new Error(`Vault ${vaultId} has no loan broker`)
+
+    // Check liquidity
+    const vaultEntry = await client.request({ command: "ledger_entry", index: vaultId })
+    const available = parseInt(vaultEntry.result.node?.AssetsAvailable || "0", 10)
+    if (available < principalDrops) {
+      throw new Error(`Insufficient liquidity: ${(available / 1_000_000).toFixed(2)} XRP available`)
+    }
+
+    // Auto-fill LoanSet
+    const acctInfo = await client.request({ command: "account_info", account: broker.address })
+    const ledgerInfo = await client.request({ command: "ledger_current" })
+    const prepared = {
+      TransactionType: "LoanSet",
+      Account: broker.address,
+      LoanBrokerID: vaultConfig.loanBrokerId,
+      Counterparty: borrower.address,
+      PrincipalRequested: String(principalDrops),
+      InterestRate: interestRate || 500,
+      PaymentTotal: paymentTotal || 12,
+      PaymentInterval: paymentInterval || 2592000,
+      GracePeriod: gracePeriod || 604800,
+      Fee: "24",
+      Sequence: acctInfo.result.account_data.Sequence,
+      LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
+      NetworkID: 2002,
+      SigningPubKey: broker.publicKey,
+    }
+
+    // Both parties sign the same data
+    const signingData = encodeForSigning(prepared)
+    prepared.TxnSignature = rawSign(signingData, broker.privateKey)
+    prepared.CounterpartySignature = {
+      SigningPubKey: borrower.publicKey,
+      TxnSignature: rawSign(signingData, borrower.privateKey),
+    }
+
+    // Submit
+    const tx_blob = encode(prepared)
+    const result = await client.request({ command: "submit", tx_blob })
+    if (result.result.engine_result !== "tesSUCCESS") {
+      throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
+    }
+
+    const txHash = result.result.tx_json?.hash
+    for (let i = 0; i < 10; i++) {
+      await new Promise((r) => setTimeout(r, 2000))
+      try {
+        const txResult = await client.request({ command: "tx", transaction: txHash })
+        if (txResult.result.validated) {
+          const loanId = txResult.result.meta?.AffectedNodes?.find(
+            (n) => n.CreatedNode?.LedgerEntryType === "Loan"
+          )?.CreatedNode?.LedgerIndex
+          return { hash: txHash, loanId, borrowerAddress: borrower.address, result: "tesSUCCESS" }
+        }
+      } catch {}
+    }
+    return { hash: txHash, loanId: null, borrowerAddress: borrower.address, result: "pending" }
   }
 
   /**
