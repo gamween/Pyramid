@@ -29,7 +29,7 @@ We did not build a layer on top of XRPL. We composed the chain's own transaction
 ## Links
 
 - **GitHub Repository**: https://github.com/DVB-ESILV/Pyramid
-- **Live App**: pyramid-web.vercel.app
+- **Live App**: https://pyramid-web.vercel.app/
 - **Video Demo**: https://youtu.be/5LYctLnQ9tI
 
 ## How It Works
