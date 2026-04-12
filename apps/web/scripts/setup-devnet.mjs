@@ -140,35 +140,54 @@ async function createVaultWithBroker(client, owner, label, depositDrops, coverDr
 
 async function createLoanOnVault(client, owner, borrower, loanBrokerId, principalDrops) {
   console.log(`  LoanSet (${principalDrops / 1_000_000} XRP to ${borrower.address})...`)
-  // Try borrower as Account first (borrower requests loan from broker)
-  // If that fails, try owner as Account with borrower as Counterparty
-  let loanResult
-  try {
-    loanResult = await submitRawTx(client, borrower, {
-      TransactionType: "LoanSet",
-      Account: borrower.address,
-      LoanBrokerID: loanBrokerId,
-      PrincipalRequested: String(principalDrops),
-      InterestRate: 500,
-      PaymentTotal: 12,
-      PaymentInterval: 2592000,
-      GracePeriod: 604800,
-    })
-  } catch (err) {
-    console.log(`  LoanSet (borrower-signed) failed: ${err.message}, trying owner-signed...`)
-    loanResult = await submitRawTx(client, owner, {
-      TransactionType: "LoanSet",
-      Account: owner.address,
-      LoanBrokerID: loanBrokerId,
-      Counterparty: borrower.address,
-      PrincipalRequested: String(principalDrops),
-      InterestRate: 500,
-      PaymentTotal: 12,
-      PaymentInterval: 2592000,
-      GracePeriod: 604800,
-    })
+  // XLS-66 cosigning: broker signs (TxnSignature), borrower adds CounterpartySignature
+  const acctInfo = await client.request({ command: "account_info", account: owner.address })
+  const ledgerInfo = await client.request({ command: "ledger_current" })
+  const prepared = {
+    TransactionType: "LoanSet",
+    Account: owner.address,
+    LoanBrokerID: loanBrokerId,
+    Counterparty: borrower.address,
+    PrincipalRequested: String(principalDrops),
+    InterestRate: 500,
+    PaymentTotal: 12,
+    PaymentInterval: 2592000,
+    GracePeriod: 604800,
+    Fee: "12",
+    Sequence: acctInfo.result.account_data.Sequence,
+    LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
+    NetworkID: 2002,
+    SigningPubKey: owner.publicKey,
   }
-  const loanId = loanResult.meta?.AffectedNodes?.find(
+  // Step 1: Broker (owner) signs — standard TxnSignature
+  const encoded = encode(prepared)
+  prepared.TxnSignature = rawSign("53545800" + encoded, owner.privateKey)
+  // Step 2: Borrower cosigns — CounterpartySignature
+  prepared.CounterpartySignature = rawSign("53545800" + encoded, borrower.privateKey)
+
+  const tx_blob = encode(prepared)
+  const result = await client.request({ command: "submit", tx_blob })
+  if (result.result.engine_result !== "tesSUCCESS") {
+    throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
+  }
+  const txHash = result.result.tx_json?.hash
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 2000))
+    try {
+      const txResult = await client.request({ command: "tx", transaction: txHash })
+      if (txResult.result.validated) {
+        const loanResult = txResult.result
+        // extract loan ID below
+        return extractLoanId(loanResult)
+      }
+    } catch {}
+  }
+  const txResult = await client.request({ command: "tx", transaction: txHash })
+  return extractLoanId(txResult.result)
+}
+
+function extractLoanId(txResult) {
+  const loanId = txResult.meta?.AffectedNodes?.find(
     (n) => n.CreatedNode?.LedgerEntryType === "Loan"
   )?.CreatedNode?.LedgerIndex
   console.log(`  Loan ID: ${loanId}`)
