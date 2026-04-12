@@ -17,6 +17,20 @@ try {
   rawSign = mod.sign || mod.default?.sign
 }
 
+/** Get the current open-ledger fee from the server (in drops). */
+async function getCurrentFee(client, signerCount = 1) {
+  try {
+    const info = await client.request({ command: "server_info" })
+    const baseFee = parseInt(info.result.info.validated_ledger?.base_fee_xrp * 1_000_000 || "10", 10)
+    const loadFactor = info.result.info.load_factor || 1
+    const fee = Math.max(baseFee * loadFactor * signerCount, 12 * signerCount)
+    return String(Math.ceil(fee))
+  } catch {
+    // Fallback: safe default
+    return String(120 * signerCount)
+  }
+}
+
 export class CosignHandler {
   constructor(connections) {
     this.connections = connections
@@ -62,6 +76,7 @@ export class CosignHandler {
     // Auto-fill LoanSet
     const acctInfo = await client.request({ command: "account_info", account: broker.address })
     const ledgerInfo = await client.request({ command: "ledger_current" })
+    const fee = await getCurrentFee(client, 2)
     const prepared = {
       TransactionType: "LoanSet",
       Account: broker.address,
@@ -72,7 +87,7 @@ export class CosignHandler {
       PaymentTotal: paymentTotal || 12,
       PaymentInterval: paymentInterval || 2592000,
       GracePeriod: gracePeriod || 604800,
-      Fee: "24",
+      Fee: fee,
       Sequence: acctInfo.result.account_data.Sequence,
       LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
       NetworkID: 2002,
@@ -156,11 +171,12 @@ export class CosignHandler {
 
     const acctInfo = await client.request({ command: "account_info", account: borrower.address })
     const ledgerInfo = await client.request({ command: "ledger_current" })
+    const fee = await getCurrentFee(client)
 
     const prepared = {
       ...tx,
       Account: borrower.address,
-      Fee: "12",
+      Fee: fee,
       Sequence: acctInfo.result.account_data.Sequence,
       LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
       NetworkID: 2002,
@@ -229,6 +245,7 @@ export class CosignHandler {
     const ledgerInfo = await client.request({
       command: "ledger_current",
     })
+    const fee = await getCurrentFee(client, 2)
 
     const prepared = {
       TransactionType: "LoanSet",
@@ -240,7 +257,7 @@ export class CosignHandler {
       PaymentTotal: paymentTotal,
       PaymentInterval: paymentInterval,
       GracePeriod: gracePeriod,
-      Fee: "24",
+      Fee: fee,
       Sequence: acctInfo.result.account_data.Sequence,
       LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
       NetworkID: 2002,
