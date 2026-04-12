@@ -1,8 +1,12 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Empty turbopack config to allow webpack config to work with Next.js 16+
-  turbopack: {},
+  transpilePackages: ["three", "@react-three/fiber", "@react-three/drei"],
+  turbopack: {
+    root: path.join(__dirname, "../.."),
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Add polyfills for Node.js modules
@@ -22,9 +26,12 @@ const nextConfig = {
         os: false,
       };
 
-      // Add alias to resolve modules
+      // Add alias to resolve modules — force single React instance for R3F compatibility
       config.resolve.alias = {
         ...config.resolve.alias,
+        react: path.resolve(__dirname, "node_modules/react"),
+        "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+        three: path.resolve(__dirname, "node_modules/three"),
         events: require.resolve("events/"),
         crypto: require.resolve("crypto-browserify"),
         stream: require.resolve("stream-browserify"),

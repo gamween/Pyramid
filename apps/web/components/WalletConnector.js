@@ -6,35 +6,27 @@ import { useWalletConnector } from "../hooks/useWalletConnector";
 
 const THEMES = {
   dark: {
-    "--xc-background-color": "#1a202c",
-    "--xc-background-secondary": "#2d3748",
-    "--xc-background-tertiary": "#4a5568",
-    "--xc-text-color": "#F5F4E7",
-    "--xc-text-muted-color": "rgba(245, 244, 231, 0.6)",
-    "--xc-primary-color": "#3b99fc",
+    "--xc-background-color": "#000000",
+    "--xc-background-secondary": "#111111",
+    "--xc-background-tertiary": "#222222",
+    "--xc-text-color": "#ffffff",
+    "--xc-text-muted-color": "rgba(255, 255, 255, 0.5)",
+    "--xc-primary-color": "#ffffff",
   },
-  light: {
-    "--xc-background-color": "#ffffff",
-    "--xc-background-secondary": "#f5f5f5",
-    "--xc-background-tertiary": "#eeeeee",
-    "--xc-text-color": "#111111",
-    "--xc-text-muted-color": "rgba(17, 17, 17, 0.6)",
-    "--xc-primary-color": "#2563eb",
-  },
-  purple: {
-    "--xc-background-color": "#1e1b4b",
-    "--xc-background-secondary": "#2d2659",
-    "--xc-background-tertiary": "#3d3261",
-    "--xc-text-color": "#f3e8ff",
-    "--xc-text-muted-color": "rgba(243, 232, 255, 0.6)",
-    "--xc-primary-color": "#a78bfa",
+  sleek: {
+    "--xc-background-color": "rgba(0, 0, 0, 0.8)",
+    "--xc-background-secondary": "rgba(20, 20, 20, 0.8)",
+    "--xc-background-tertiary": "rgba(40, 40, 40, 0.8)",
+    "--xc-text-color": "#ffffff",
+    "--xc-text-muted-color": "rgba(255, 255, 255, 0.6)",
+    "--xc-primary-color": "#e5e5e5",
   },
 };
 
 export function WalletConnector() {
   const { walletManager } = useWallet();
   const walletConnectorRef = useWalletConnector(walletManager);
-  const [currentTheme] = useState("dark");
+  const [currentTheme] = useState("sleek");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -62,16 +54,31 @@ export function WalletConnector() {
   }
 
   return (
-    <xrpl-wallet-connector
-      ref={walletConnectorRef}
-      id="wallet-connector"
-      style={{
-        ...THEMES[currentTheme],
-        "--xc-font-family": "inherit",
-        "--xc-border-radius": "12px",
-        "--xc-modal-box-shadow": "0 10px 40px rgba(0, 0, 0, 0.3)",
-      }}
-      primary-wallet="xaman"
-    />
+    <div className="relative group/wallet inline-block">
+      {/* HUD Border Box */}
+      <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-white/5 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:bg-white/10 group-hover/wallet:border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]" />
+      
+      {/* Corners */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/10 z-0 pointer-events-none transition-all duration-300 group-hover/wallet:w-3 group-hover/wallet:h-3 group-hover/wallet:border-white/30" />
+
+      {/* Wrapping the connector, trying to strip out default button BG via styles to let HUD shine through */}
+      <div className="relative z-10 p-[1px]">
+        <xrpl-wallet-connector
+          ref={walletConnectorRef}
+          id="wallet-connector"
+          style={{
+             ...THEMES[currentTheme],
+            "--xc-font-family": "'Bitcount Grid', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "--xc-border-radius": "0px",
+            "--xc-modal-box-shadow": "8px 8px 0 rgba(255, 255, 255, 0.05)",
+            opacity: 0.9,
+          }}
+          primary-wallet="xaman"
+        />
+      </div>
+    </div>
   );
 }

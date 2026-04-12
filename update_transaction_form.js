@@ -1,70 +1,11 @@
-"use client";
+const fs = require('fs');
+const filePath = 'apps/web/components/TransactionForm.js';
+let content = fs.readFileSync(filePath, 'utf8');
 
-import { useState } from "react";
-import { useWallet } from "./providers/WalletProvider";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { CheckCircle2, XCircle } from "lucide-react";
+const startIdx = content.indexOf('  return (');
+const oldReturn = content.substring(startIdx);
 
-export function TransactionForm() {
-  const { walletManager, isConnected, addEvent, showStatus } = useWallet();
-  const [destination, setDestination] = useState("");
-  const [amount, setAmount] = useState("");
-  const [result, setResult] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!walletManager || !walletManager.account) {
-      showStatus("Please connect a wallet first", "error");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setResult(null);
-
-      const transaction = {
-        TransactionType: "Payment",
-        Account: walletManager.account.address,
-        Destination: destination,
-        Amount: amount,
-      };
-
-      const txResult = await walletManager.signAndSubmit(transaction);
-
-      setResult({
-        success: true,
-        hash: txResult.hash || "Pending",
-        id: txResult.id,
-      });
-
-      showStatus("Transaction submitted successfully!", "success");
-      addEvent("Transaction Submitted", txResult);
-
-      setDestination("");
-      setAmount("");
-    } catch (error) {
-      setResult({
-        success: false,
-        error: error.message,
-      });
-      showStatus(`Transaction failed: ${error.message}`, "error");
-      addEvent("Transaction Failed", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (!isConnected) {
-    return null;
-  }
-
-  return (
+const newReturn = `  return (
     <Card className="border-white/20 bg-black/60 backdrop-blur-md rounded-none">
       <CardHeader className="border-b border-white/20 bg-white/5 pb-3">
         <CardTitle className="text-xl font-mono uppercase tracking-widest text-white">Send XRP</CardTitle>
@@ -107,7 +48,7 @@ export function TransactionForm() {
         </form>
 
         {result && (
-          <Alert className={`rounded-none mt-4 font-mono ${result.success ? "border-green-500/50 bg-green-500/10 text-green-400" : "border-red-500/50 bg-red-500/10 text-red-400"}`}>
+          <Alert className={\`rounded-none mt-4 font-mono \${result.success ? "border-green-500/50 bg-green-500/10 text-green-400" : "border-red-500/50 bg-red-500/10 text-red-400"}\`}>
             {result.success ? (
               <CheckCircle2 className="h-4 w-4 text-green-400" />
             ) : (
@@ -130,3 +71,8 @@ export function TransactionForm() {
     </Card>
   );
 }
+`;
+
+const updatedContent = content.substring(0, startIdx) + newReturn;
+fs.writeFileSync(filePath, updatedContent);
+console.log("Updated TransactionForm.js");

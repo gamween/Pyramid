@@ -54,5 +54,14 @@
 
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+      radial-gradient(circle at top, rgba(18, 35, 62, 0.75), rgba(2, 4, 10, 0.95) 60%),
+      #02040a;
+  }
+
+  canvas {
+    display: block;
   }
 }
