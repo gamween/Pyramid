@@ -7,7 +7,7 @@
  * Usage: node apps/web/scripts/setup-devnet.mjs
  */
 
-import { Client, Wallet, encode } from "xrpl"
+import { Client, Wallet, encode, encodeForSigning, decodeAccountID } from "xrpl"
 import { writeFileSync } from "fs"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
@@ -27,17 +27,205 @@ async function submitRawTx(client, wallet, tx) {
     NetworkID: 2002,
     SigningPubKey: wallet.publicKey,
   }
-  const encoded = encode(prepared)
-  prepared.TxnSignature = rawSign("53545800" + encoded, wallet.privateKey)
+  prepared.TxnSignature = rawSign(encodeForSigning(prepared), wallet.privateKey)
   const tx_blob = encode(prepared)
   const result = await client.request({ command: "submit", tx_blob })
   if (result.result.engine_result !== "tesSUCCESS") {
     throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
   }
-  // Wait for validation
+  // Wait for validation with retry
+  const txHash = result.result.tx_json?.hash
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 2000))
+    try {
+      const txResult = await client.request({ command: "tx", transaction: txHash })
+      if (txResult.result.validated) return txResult.result
+    } catch {}
+  }
+  // Final attempt
+  const txResult = await client.request({ command: "tx", transaction: txHash })
+  return txResult.result
+}
+
+// Multisigned submission — for XLS-66 LoanSet which requires broker + borrower cosigning
+async function submitCosignedTx(client, signerWallets, tx) {
+  const acctInfo = await client.request({ command: "account_info", account: tx.Account })
+  const ledgerInfo = await client.request({ command: "ledger_current" })
+  const prepared = {
+    ...tx,
+    Fee: String(12 * (signerWallets.length + 1)),
+    Sequence: acctInfo.result.account_data.Sequence,
+    LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
+    NetworkID: 2002,
+    SigningPubKey: "", // empty = multisigned
+  }
+  const encoded = encode(prepared)
+
+  // Each signer signs: multisign prefix (534D5400) + encoded_tx + account_id_hex
+  const signers = signerWallets.map((wallet) => {
+    const accountIdHex = Buffer.from(decodeAccountID(wallet.address)).toString("hex").toUpperCase()
+    const signature = rawSign("534D5400" + encoded + accountIdHex, wallet.privateKey)
+    return {
+      Signer: {
+        Account: wallet.address,
+        SigningPubKey: wallet.publicKey,
+        TxnSignature: signature,
+      },
+    }
+  })
+
+  // XRPL requires signers sorted by account address
+  signers.sort((a, b) => a.Signer.Account.localeCompare(b.Signer.Account))
+
+  prepared.Signers = signers
+  const tx_blob = encode(prepared)
+  const result = await client.request({ command: "submit", tx_blob })
+  if (result.result.engine_result !== "tesSUCCESS") {
+    throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
+  }
   await new Promise((r) => setTimeout(r, 5000))
   const txResult = await client.request({ command: "tx", transaction: result.result.tx_json?.hash })
   return txResult.result
+}
+
+async function createVaultWithBroker(client, owner, label, depositDrops, coverDrops) {
+  console.log(`\n--- Creating ${label} ---`)
+
+  // VaultCreate
+  console.log(`  VaultCreate...`)
+  const vaultResult = await submitRawTx(client, owner, {
+    TransactionType: "VaultCreate",
+    Account: owner.address,
+    Asset: { currency: "XRP" },
+  })
+  const vaultId = vaultResult.meta?.AffectedNodes?.find(
+    (n) => n.CreatedNode?.LedgerEntryType === "Vault"
+  )?.CreatedNode?.LedgerIndex
+  console.log(`  Vault ID: ${vaultId}`)
+
+  // VaultDeposit
+  console.log(`  VaultDeposit (${depositDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, owner, {
+    TransactionType: "VaultDeposit",
+    Account: owner.address,
+    VaultID: vaultId,
+    Amount: String(depositDrops),
+  })
+
+  // LoanBrokerSet
+  console.log(`  LoanBrokerSet...`)
+  const brokerResult = await submitRawTx(client, owner, {
+    TransactionType: "LoanBrokerSet",
+    Account: owner.address,
+    VaultID: vaultId,
+    ManagementFeeRate: 1000,
+  })
+  const loanBrokerId = brokerResult.meta?.AffectedNodes?.find(
+    (n) => n.CreatedNode?.LedgerEntryType === "LoanBroker"
+  )?.CreatedNode?.LedgerIndex
+  console.log(`  LoanBroker ID: ${loanBrokerId}`)
+
+  // LoanBrokerCoverDeposit
+  console.log(`  LoanBrokerCoverDeposit (${coverDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, owner, {
+    TransactionType: "LoanBrokerCoverDeposit",
+    Account: owner.address,
+    LoanBrokerID: loanBrokerId,
+    Amount: String(coverDrops),
+  })
+
+  return { vaultId, loanBrokerId }
+}
+
+async function createLoanOnVault(client, owner, borrower, loanBrokerId, principalDrops) {
+  console.log(`  LoanSet (${principalDrops / 1_000_000} XRP to ${borrower.address})...`)
+  // XLS-66 cosigning: broker signs (TxnSignature), borrower adds CounterpartySignature
+  const acctInfo = await client.request({ command: "account_info", account: owner.address })
+  const ledgerInfo = await client.request({ command: "ledger_current" })
+  const prepared = {
+    TransactionType: "LoanSet",
+    Account: owner.address,
+    LoanBrokerID: loanBrokerId,
+    Counterparty: borrower.address,
+    PrincipalRequested: String(principalDrops),
+    InterestRate: 500,
+    PaymentTotal: 12,
+    PaymentInterval: 2592000,
+    GracePeriod: 604800,
+    Fee: "24",
+    Sequence: acctInfo.result.account_data.Sequence,
+    LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
+    NetworkID: 2002,
+    SigningPubKey: owner.publicKey,
+  }
+  // Both parties sign the same data: encodeForSigning(tx) which prepends 0x53545800
+  // and only includes signing fields (strips TxnSignature, CounterpartySignature etc.)
+  const signingData = encodeForSigning(prepared)
+  // Step 1: Broker (owner) signs — standard TxnSignature
+  prepared.TxnSignature = rawSign(signingData, owner.privateKey)
+  // Step 2: Borrower cosigns — CounterpartySignature STObject with their pubkey + signature
+  prepared.CounterpartySignature = {
+    SigningPubKey: borrower.publicKey,
+    TxnSignature: rawSign(signingData, borrower.privateKey),
+  }
+
+  const tx_blob = encode(prepared)
+  const result = await client.request({ command: "submit", tx_blob })
+  if (result.result.engine_result !== "tesSUCCESS") {
+    throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
+  }
+  const txHash = result.result.tx_json?.hash
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 2000))
+    try {
+      const txResult = await client.request({ command: "tx", transaction: txHash })
+      if (txResult.result.validated) {
+        const loanResult = txResult.result
+        // extract loan ID below
+        return extractLoanId(loanResult)
+      }
+    } catch {}
+  }
+  const txResult = await client.request({ command: "tx", transaction: txHash })
+  return extractLoanId(txResult.result)
+}
+
+function extractLoanId(txResult) {
+  const loanId = txResult.meta?.AffectedNodes?.find(
+    (n) => n.CreatedNode?.LedgerEntryType === "Loan"
+  )?.CreatedNode?.LedgerIndex
+  console.log(`  Loan ID: ${loanId}`)
+  return loanId
+}
+
+async function payLoanPartial(client, borrower, loanId, amountDrops) {
+  console.log(`  LoanPay partial (${amountDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, borrower, {
+    TransactionType: "LoanPay",
+    Account: borrower.address,
+    LoanID: loanId,
+    Amount: String(amountDrops),
+  })
+}
+
+async function payLoanFull(client, borrower, loanId, amountDrops) {
+  console.log(`  LoanPay full (${amountDrops / 1_000_000} XRP)...`)
+  await submitRawTx(client, borrower, {
+    TransactionType: "LoanPay",
+    Account: borrower.address,
+    LoanID: loanId,
+    Amount: String(amountDrops),
+    Flags: 0x00020000, // tfLoanFullPayment
+  })
+}
+
+async function deleteLoan(client, owner, loanId) {
+  console.log(`  LoanDelete...`)
+  await submitRawTx(client, owner, {
+    TransactionType: "LoanDelete",
+    Account: owner.address,
+    LoanID: loanId,
+  })
 }
 
 const WSS = "wss://wasm.devnet.rippletest.net:51233"
@@ -62,9 +250,14 @@ async function main() {
   await client.connect()
   console.log("Connected to devnet\n")
 
-  // 1. Fund protocol owner account
+  // 1. Fund protocol owner account (multiple faucet calls for enough XRP)
   console.log("1. Funding protocol owner...")
   const { wallet: owner, seed: ownerSeed } = await fundWallet(client, "owner")
+  console.log("  Topping up owner (need ~200 XRP for vaults + DEX)...")
+  for (let i = 0; i < 3; i++) {
+    await client.fundWallet(owner, { faucetHost: FAUCET_HOST })
+    console.log(`  Top-up ${i + 1}/3 complete`)
+  }
 
   // 2. Fund RLUSD issuer account
   console.log("\n2. Funding RLUSD issuer...")
@@ -117,48 +310,45 @@ async function main() {
   const payResult = await client.submitAndWait(paymentTx, { wallet: issuer })
   console.log(`  Payment: ${payResult.result.meta.TransactionResult}`)
 
-  // 7. Create Vault
-  console.log("\n7. Creating Vault...")
-  let vaultId = null
+  // ── Vault 1: Fresh Vault (ready to lend, no loans) ──
+  let vault1 = { vaultId: null, loanBrokerId: null }
   try {
-    const vaultTx = {
-      TransactionType: "VaultCreate",
-      Account: owner.address,
-      Asset: { currency: "XRP" },
-    }
-    const vaultResult = await client.submitAndWait(vaultTx, { wallet: owner })
-    console.log(`  VaultCreate: ${vaultResult.result.meta.TransactionResult}`)
-
-    const vaultNode = vaultResult.result.meta.AffectedNodes?.find(
-      (n) => n.CreatedNode?.LedgerEntryType === "Vault"
-    )
-    vaultId = vaultNode?.CreatedNode?.LedgerIndex || null
-    console.log(`  Vault ID: ${vaultId}`)
+    vault1 = await createVaultWithBroker(client, owner, "Vault 1: Fresh Vault", 50_000_000, 5_000_000)
   } catch (err) {
-    console.log(`  VaultCreate failed: ${err.message}`)
-    console.log("  (XLS-65 may not be enabled on this devnet build)")
+    console.log(`  Vault 1 failed: ${err.message}`)
   }
 
-  // 8. Create LoanBroker (uses raw signing — xrpl.js doesn't know XLS-66 tx types)
-  console.log("\n8. Creating LoanBroker...")
-  let loanBrokerId = null
-  if (vaultId) {
-    try {
-      const brokerTxResult = await submitRawTx(client, owner, {
-        TransactionType: "LoanBrokerSet",
-        Account: owner.address,
-        VaultID: vaultId,
-        ManagementFeeRate: 1000,
-      })
-      console.log(`  LoanBrokerSet: ${brokerTxResult.meta?.TransactionResult}`)
-      const brokerNode = brokerTxResult.meta?.AffectedNodes?.find(
-        (n) => n.CreatedNode?.LedgerEntryType === "LoanBroker"
-      )
-      loanBrokerId = brokerNode?.CreatedNode?.LedgerIndex || null
-      console.log(`  LoanBroker ID: ${loanBrokerId}`)
-    } catch (err) {
-      console.log(`  LoanBrokerSet failed: ${err.message}`)
-    }
+  // ── Vault 2: Active Lending (outstanding loan + partial payment) ──
+  let vault2 = { vaultId: null, loanBrokerId: null }
+  let vault2LoanId = null
+  try {
+    vault2 = await createVaultWithBroker(client, owner, "Vault 2: Active Lending", 80_000_000, 10_000_000)
+
+    // Fund borrower
+    console.log(`\n  Funding borrower for Vault 2...`)
+    const { wallet: borrower2 } = await fundWallet(client, "borrower2")
+
+    vault2LoanId = await createLoanOnVault(client, owner, borrower2, vault2.loanBrokerId, 30_000_000)
+    await payLoanPartial(client, borrower2, vault2LoanId, 5_000_000)
+  } catch (err) {
+    console.log(`  Vault 2 failed: ${err.message}`)
+  }
+
+  // ── Vault 3: Yield Earned (loan fully repaid, share price > 1) ──
+  let vault3 = { vaultId: null, loanBrokerId: null }
+  try {
+    vault3 = await createVaultWithBroker(client, owner, "Vault 3: Yield Earned", 50_000_000, 5_000_000)
+
+    // Fund borrower
+    console.log(`\n  Funding borrower for Vault 3...`)
+    const { wallet: borrower3 } = await fundWallet(client, "borrower3")
+
+    const vault3LoanId = await createLoanOnVault(client, owner, borrower3, vault3.loanBrokerId, 20_000_000)
+    // Full repayment — overpay slightly to cover interest
+    await payLoanFull(client, borrower3, vault3LoanId, 21_000_000)
+    await deleteLoan(client, owner, vault3LoanId)
+  } catch (err) {
+    console.log(`  Vault 3 failed: ${err.message}`)
   }
 
   // 9. Seed DEX with XRP/USD offers
@@ -167,8 +357,8 @@ async function main() {
     const sellOffer = {
       TransactionType: "OfferCreate",
       Account: owner.address,
-      TakerPays: { currency: "USD", issuer: issuer.address, value: "2340" },
-      TakerGets: "1000000000",
+      TakerPays: { currency: "USD", issuer: issuer.address, value: "23.40" },
+      TakerGets: "10000000",
     }
     const sellResult = await client.submitAndWait(sellOffer, { wallet: owner })
     console.log(`  Sell offer: ${sellResult.result.meta.TransactionResult}`)
@@ -176,8 +366,8 @@ async function main() {
     const buyOffer = {
       TransactionType: "OfferCreate",
       Account: owner.address,
-      TakerPays: "1000000000",
-      TakerGets: { currency: "USD", issuer: issuer.address, value: "2300" },
+      TakerPays: "10000000",
+      TakerGets: { currency: "USD", issuer: issuer.address, value: "23.00" },
     }
     const buyResult = await client.submitAndWait(buyOffer, { wallet: owner })
     console.log(`  Buy offer: ${buyResult.result.meta.TransactionResult}`)
@@ -187,15 +377,17 @@ async function main() {
 
   await client.disconnect()
 
-  // Write results to JSON
   const results = {
     timestamp: new Date().toISOString(),
     network: WSS,
     owner: { address: owner.address, seed: ownerSeed },
     issuer: { address: issuer.address, seed: issuerSeed },
     watcher: { address: watcher.address, seed: watcherSeed },
-    vaultId: vaultId || "",
-    loanBrokerId: loanBrokerId || "",
+    showcaseVaults: [
+      { id: vault1.vaultId || "", loanBrokerId: vault1.loanBrokerId || "", name: "Fresh Vault" },
+      { id: vault2.vaultId || "", loanBrokerId: vault2.loanBrokerId || "", name: "Active Lending", loanId: vault2LoanId || "" },
+      { id: vault3.vaultId || "", loanBrokerId: vault3.loanBrokerId || "", name: "Yield Earned" },
+    ],
   }
 
   const outputPath = join(__dirname, "devnet-addresses.json")
@@ -206,15 +398,31 @@ async function main() {
   console.log("SETUP COMPLETE")
   console.log("=".repeat(60))
   console.log(`
-Copy into apps/web/lib/constants.js:
+Copy SHOWCASE_VAULTS into apps/web/lib/constants.js:
 
-export const WATCHER_ACCOUNT = "${watcher.address}"
-
-export const ADDRESSES = {
-  VAULT_ID: "${vaultId || ""}",
-  LOAN_BROKER_ID: "${loanBrokerId || ""}",
-  RLUSD_ISSUER: "${issuer.address}",
-}
+export const SHOWCASE_VAULTS = [
+  {
+    id: "${vault1.vaultId || ""}",
+    name: "Fresh Vault",
+    tagline: "Ready to Lend",
+    status: "ready",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit"],
+  },
+  {
+    id: "${vault2.vaultId || ""}",
+    name: "Active Lending",
+    tagline: "Loans Outstanding",
+    status: "active",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit", "LoanSet", "LoanPay"],
+  },
+  {
+    id: "${vault3.vaultId || ""}",
+    name: "Yield Earned",
+    tagline: "Full Lifecycle Complete",
+    status: "yield",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit", "LoanSet", "LoanPay", "LoanDelete"],
+  },
+]
 
 Copy into apps/watcher/.env:
 

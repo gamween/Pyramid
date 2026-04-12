@@ -14,6 +14,8 @@ import { LandingPresentation } from "../components/LandingPresentation";
 import { ZkPrivacy } from "../components/ZkPrivacy";
 import { ActivePositions } from "../components/ActivePositions";
 import { LoanInteraction } from "../components/LoanInteraction";
+import { LendingShowcase } from "../components/LendingShowcase";
+import { LoansPage } from "../components/LoansPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 export default function Home() {
@@ -26,7 +28,7 @@ export default function Home() {
       {/* Background track for all tabs */}
       <div className="absolute inset-0 bg-[#02040a]/40 border border-white/5 pointer-events-none" />
       
-      {["dashboard", "lending", "trading"].map((tab, i) => {
+      {["dashboard", "lending", "loans", "trading"].map((tab, i) => {
         const isActive = activeTab === tab;
         return (
           <TabsTrigger 
@@ -160,6 +162,12 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                <LendingShowcase />
+              </TabsContent>
+
+              {/* LOANS TAB */}
+              <TabsContent value="loans" className="animate-in fade-in duration-500">
+                <LoansPage />
               </TabsContent>
 
               {/* TRADING TAB */}

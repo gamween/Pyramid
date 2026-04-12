@@ -43,3 +43,27 @@ export const ADDRESSES = {
   LOAN_BROKER_ID: "356E1FF36205377B8C6074489708A9B602CCB349A910305F25CC57AE7A930432",
   RLUSD_ISSUER: "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
 }
+
+export const SHOWCASE_VAULTS = [
+  {
+    id: "8A84591D49EF8D1A25ABF2CE1E28DE5AA8899484392EFEDE84FA3304E109C62E",
+    name: "Fresh Vault",
+    tagline: "Ready to Lend",
+    status: "ready",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit"],
+  },
+  {
+    id: "6087666E82509EFA5922ED57E87E647A78063378686195620F6445B0D36C66E2",
+    name: "Active Lending",
+    tagline: "Loans Outstanding",
+    status: "active",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit", "LoanSet", "LoanPay"],
+  },
+  {
+    id: "AD7E1DB393F73284E52F90C8B960FB8FC051399521E7FC9BAE30FFCBA53C8A44",
+    name: "Yield Earned",
+    tagline: "Full Lifecycle Complete",
+    status: "yield",
+    primitives: ["VaultCreate", "VaultDeposit", "LoanBrokerSet", "LoanBrokerCoverDeposit", "LoanSet", "LoanPay", "LoanDelete"],
+  },
+]
