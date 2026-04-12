@@ -4,10 +4,12 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import FeatureShowcase from "./FeatureShowcase";
 import Waves from "./Waves";
+import TechStats from "./TechStats";
 
 
 export function LandingPresentation({ onLaunch }) {
   const containerRef = useRef(null);
+  const showcaseRef = useRef(null);
   
   // Track scroll progress relative to this container
   const { scrollYProgress } = useScroll({
@@ -18,6 +20,14 @@ export function LandingPresentation({ onLaunch }) {
   // Map scroll progress (0 to 1) to opacity (0 to 1) for the black background
   // Black background fades in quickly
   const bgOpacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
+
+  // Fades in the Waves exactly when scrolling down to the cards
+  const { scrollYProgress: showcaseScroll } = useScroll({
+    target: showcaseRef,
+    offset: ["start end", "start start"]
+  });
+  
+  const wavesOpacity = useTransform(showcaseScroll, [0, 1], [0, 1]);
 
   const features = [
     {
@@ -56,8 +66,28 @@ export function LandingPresentation({ onLaunch }) {
         className="fixed top-0 left-0 right-0 h-48 bg-gradient-to-b from-[#02040a] via-[#02040a]/90 to-transparent z-40 pointer-events-none"
       />
       
-      <div ref={containerRef} className="w-full mt-[60vh] pb-32 text-left relative z-20 font-mono">
-        <div className="max-w-6xl mx-auto px-6 relative z-20">
+      <div ref={containerRef} className="w-full mt-[60vh] text-left relative z-20 font-mono">
+        
+        <motion.div 
+          style={{ opacity: wavesOpacity }} 
+          className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
+        >
+          <Waves
+            lineColor="rgba(0, 184, 255, 0.4)"
+            backgroundColor="transparent"
+            waveSpeedX={0.0125}
+            waveSpeedY={0.01}
+            waveAmpX={40}
+            waveAmpY={20}
+            friction={0.9}
+            tension={0.01}
+            maxCursorMove={200}
+            xGap={12}
+            yGap={36}
+          />
+        </motion.div>
+
+        <div className="max-w-6xl mx-auto px-6 relative z-20 pb-32 pt-20">
           
           {/* Abstract Statement */}
           <motion.div 
@@ -79,73 +109,20 @@ export function LandingPresentation({ onLaunch }) {
 
           {/* Brutalist Architecture Rows - Interactive Gallery */}
           <motion.div 
+            ref={showcaseRef}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
             className="flex flex-col w-full mt-24 shadow-2xl relative"
           >
-            <div className="absolute inset-x-0 -top-40 bottom-0 pointer-events-none z-0" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' }}>
-              <Waves
-                lineColor="rgba(0, 184, 255, 0.3)"
-                backgroundColor="transparent"
-                waveSpeedX={0.0125}
-                waveSpeedY={0.01}
-                waveAmpX={40}
-                waveAmpY={20}
-                friction={0.9}
-                tension={0.01}
-                maxCursorMove={200}
-                xGap={12}
-                yGap={36}
-              />
-            </div>
             <div className="relative z-10 w-full">
               <FeatureShowcase features={features} onLaunch={onLaunch} />
             </div>
           </motion.div>
 
           {/* Tech Stats - Monolithic Serious Effect */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="mt-40 grid grid-cols-2 md:grid-cols-4 border border-white/20 bg-black/40 backdrop-blur-md relative overflow-hidden group cursor-default"
-          >
-            {/* Glossy Scanline Effect on hover */}
-            <motion.div 
-              initial={{ x: "-100%" }}
-              whileInView={{ x: "200%" }}
-              viewport={{ once: true }}
-              transition={{ duration: 2, ease: "easeInOut", delay: 0.5 }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 w-1/2 pointer-events-none z-0" 
-            />
-            
-            {[
-              { label: "NETWORK", val: "DEVNET", col: "md:border-r border-b md:border-b-0", accent: "text-white group-hover:opacity-100 text-white/70 transition-opacity duration-500" },
-              { label: "LATENCY", val: "~300ms", col: "md:border-r border-b md:border-b-0", accent: "text-emerald-400" },
-              { label: "SMART CONTRACTS", val: "ZERO", col: "md:border-r border-b border-r-0 md:border-b-0", accent: "text-red-500" },
-              { label: "ZKP SYSTEM", val: "RISC0 zkVM", col: "", accent: "text-white group-hover:opacity-100 text-white/70 transition-opacity duration-500" }
-            ].map((stat, i) => (
-              <div key={i} className={`p-8 md:p-10 border-white/20 ${stat.col} flex flex-col justify-center items-center text-center relative overflow-hidden`}>
-                <span className="text-[10px] text-white/30 mb-2 uppercase tracking-[0.3em] z-10 transition-colors duration-500 group-hover:text-white/50">{stat.label}</span>
-                
-                {/* Blur reveal text on view */}
-                <motion.div 
-                  initial={{ opacity: 0, filter: "blur(10px)", y: 10 }}
-                  whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: 0.3 + (i * 0.15) }}
-                  className="z-10"
-                >
-                  <span className={`text-2xl md:text-3xl font-bold tracking-widest ${stat.accent || "text-white"}`} style={{ fontFamily: "'Bitcount Grid', monospace" }}>
-                    {stat.val}
-                  </span>
-                </motion.div>
-              </div>
-            ))}
-          </motion.div>
+          <TechStats />
 
         </div>
       </div>
