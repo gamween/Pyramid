@@ -4,30 +4,6 @@ import { useCallback, useState, useEffect } from "react"
 import { useWallet } from "@/components/providers/WalletProvider"
 
 /**
- * Helper: sign a transaction via xrpl-connect's walletManager,
- * falling back to the raw adapter when the wallet SDK doesn't
- * recognise a native XLS-66 transaction type.
- */
-async function signWithWallet(walletManager, tx) {
-  try {
-    const result = await walletManager.sign(tx)
-    return result
-  } catch (err) {
-    const msg = err.message || ""
-    // If the error is NOT about an unknown / invalid TransactionType, re-throw
-    if (!msg.includes("valid") && !msg.includes("TransactionType") && !msg.includes("Unknown")) {
-      throw err
-    }
-    // Fallback: access the underlying adapter directly
-    const adapter = walletManager._adapter || walletManager.adapter
-    if (adapter && typeof adapter.sign === "function") {
-      return await adapter.sign(tx)
-    }
-    throw new Error(`Wallet adapter does not support signing ${tx.TransactionType}. ${msg}`)
-  }
-}
-
-/**
  * useLoanMarket — browser-side hook for all loan marketplace operations.
  *
  * Provides:
@@ -127,118 +103,76 @@ export function useLoanMarket() {
   }, [fetchActiveLoans])
 
   /**
-   * repayLoan — single-signer cosign flow:
-   *  Build LoanPay tx → sign → POST cosign with singleSigner flag
+   * repayLoan — server-side (LoanPay is XLS-66, wallet can't sign).
    */
   const repayLoan = useCallback(async (loanId, amountDrops, flags = 0) => {
-    if (!walletManager) throw new Error("Wallet not connected")
     setLoading(true)
     setError(null)
     try {
-      const tx = {
-        TransactionType: "LoanPay",
-        Account: walletManager.account.address,
-        LoanID: loanId,
-        Amount: String(amountDrops),
-        Flags: flags,
-      }
-      const signResult = await signWithWallet(walletManager, tx)
-
-      const cosignRes = await fetch("/api/loans/cosign", {
+      const res = await fetch("/api/loans/repay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tx_blob: signResult.tx_blob,
-          singleSigner: true,
-        }),
+        body: JSON.stringify({ loanId, amountDrops: String(amountDrops), flags }),
       })
-      const cosignData = await cosignRes.json()
-      if (!cosignRes.ok) throw new Error(cosignData.error || "Repay cosign failed")
-
+      const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || "Repay failed")
       await fetchActiveLoans()
-      return cosignData
+      return data
     } catch (err) {
       setError(err.message)
       throw err
     } finally {
       setLoading(false)
     }
-  }, [walletManager, fetchActiveLoans])
+  }, [fetchActiveLoans])
 
   /**
-   * manageLoan — single-signer cosign flow:
-   *  Build LoanManage tx → sign → POST cosign with singleSigner flag
+   * manageLoan — server-side (LoanManage is XLS-66).
    */
   const manageLoan = useCallback(async (loanId, flags) => {
-    if (!walletManager) throw new Error("Wallet not connected")
     setLoading(true)
     setError(null)
     try {
-      const tx = {
-        TransactionType: "LoanManage",
-        Account: walletManager.account.address,
-        LoanID: loanId,
-        Flags: flags,
-      }
-      const signResult = await signWithWallet(walletManager, tx)
-
-      const cosignRes = await fetch("/api/loans/cosign", {
+      const res = await fetch("/api/loans/manage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tx_blob: signResult.tx_blob,
-          singleSigner: true,
-        }),
+        body: JSON.stringify({ loanId, flags }),
       })
-      const cosignData = await cosignRes.json()
-      if (!cosignRes.ok) throw new Error(cosignData.error || "Manage cosign failed")
-
+      const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || "Manage failed")
       await fetchActiveLoans()
-      return cosignData
+      return data
     } catch (err) {
       setError(err.message)
       throw err
     } finally {
       setLoading(false)
     }
-  }, [walletManager, fetchActiveLoans])
+  }, [fetchActiveLoans])
 
   /**
-   * closeLoan — single-signer cosign flow:
-   *  Build LoanDelete tx → sign → POST cosign with singleSigner flag
+   * closeLoan — server-side (LoanDelete is XLS-66).
    */
   const closeLoan = useCallback(async (loanId) => {
-    if (!walletManager) throw new Error("Wallet not connected")
     setLoading(true)
     setError(null)
     try {
-      const tx = {
-        TransactionType: "LoanDelete",
-        Account: walletManager.account.address,
-        LoanID: loanId,
-      }
-      const signResult = await signWithWallet(walletManager, tx)
-
-      const cosignRes = await fetch("/api/loans/cosign", {
+      const res = await fetch("/api/loans/close", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tx_blob: signResult.tx_blob,
-          singleSigner: true,
-        }),
+        body: JSON.stringify({ loanId }),
       })
-      const cosignData = await cosignRes.json()
-      if (!cosignRes.ok) throw new Error(cosignData.error || "Close cosign failed")
-
+      const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || "Close failed")
       await fetchActiveLoans()
-      return cosignData
+      return data
     } catch (err) {
       setError(err.message)
       throw err
     } finally {
       setLoading(false)
     }
-  }, [walletManager, fetchActiveLoans])
+  }, [fetchActiveLoans])
 
   return {
     availableVaults,

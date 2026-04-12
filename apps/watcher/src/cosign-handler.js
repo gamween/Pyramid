@@ -111,6 +111,81 @@ export class CosignHandler {
   }
 
   /**
+   * Repay a loan server-side (LoanPay).
+   * Browser wallets can't sign XLS-66, so the watcher signs with the borrower key.
+   */
+  async repayLoan({ loanId, amountDrops, flags = 0 }) {
+    const borrower = this.borrowerWallet
+    if (!borrower) throw new Error("Borrower wallet not configured (set BORROWER_SEED)")
+    return this._signAndSubmitAsBorrower({
+      TransactionType: "LoanPay",
+      LoanID: loanId,
+      Amount: String(amountDrops),
+      Flags: flags,
+    })
+  }
+
+  /**
+   * Manage a loan server-side (LoanManage).
+   */
+  async manageLoan({ loanId, flags }) {
+    return this._signAndSubmitAsBorrower({
+      TransactionType: "LoanManage",
+      LoanID: loanId,
+      Flags: flags,
+    })
+  }
+
+  /**
+   * Close/delete a loan server-side (LoanDelete).
+   */
+  async closeLoan({ loanId }) {
+    return this._signAndSubmitAsBorrower({
+      TransactionType: "LoanDelete",
+      LoanID: loanId,
+    })
+  }
+
+  /**
+   * Sign and submit a tx as the borrower (single-signer XLS-66).
+   */
+  async _signAndSubmitAsBorrower(tx) {
+    const client = this.connections.getClient()
+    const borrower = this.borrowerWallet
+    if (!borrower) throw new Error("Borrower wallet not configured")
+
+    const acctInfo = await client.request({ command: "account_info", account: borrower.address })
+    const ledgerInfo = await client.request({ command: "ledger_current" })
+
+    const prepared = {
+      ...tx,
+      Account: borrower.address,
+      Fee: "12",
+      Sequence: acctInfo.result.account_data.Sequence,
+      LastLedgerSequence: ledgerInfo.result.ledger_current_index + 20,
+      NetworkID: 2002,
+      SigningPubKey: borrower.publicKey,
+    }
+
+    prepared.TxnSignature = rawSign(encodeForSigning(prepared), borrower.privateKey)
+    const tx_blob = encode(prepared)
+    const result = await client.request({ command: "submit", tx_blob })
+    if (result.result.engine_result !== "tesSUCCESS") {
+      throw new Error(`${result.result.engine_result}: ${result.result.engine_result_message}`)
+    }
+
+    const txHash = result.result.tx_json?.hash
+    for (let i = 0; i < 10; i++) {
+      await new Promise((r) => setTimeout(r, 2000))
+      try {
+        const txResult = await client.request({ command: "tx", transaction: txHash })
+        if (txResult.result.validated) return { hash: txHash, result: "tesSUCCESS" }
+      } catch {}
+    }
+    return { hash: txHash, result: "pending" }
+  }
+
+  /**
    * Prepare a LoanSet transaction for cosigning.
    * The watcher (broker) is the Account; the borrower will add CounterpartySignature.
    */
