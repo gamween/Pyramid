@@ -48,7 +48,7 @@ export function LoanInteraction() {
       
       setResult({
         success: true,
-        hash: response.tx ? response.tx.hash : "MOCK_HASH",
+        hash: response.result?.hash || response.hash || response.tx_json?.hash || "submitted (hash unavailable)",
         action: action
       });
       setIsSubmitting(false);

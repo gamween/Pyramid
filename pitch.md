@@ -1,4 +1,4 @@
-# Tellement-French — 1-Minute Pitch
+# Pyramid — 1-Minute Pitch
 
 ## One-liner
 

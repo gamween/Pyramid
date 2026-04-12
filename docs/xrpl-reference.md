@@ -1,4 +1,4 @@
-# XRPL API Quick Reference — Tellement-French
+# XRPL API Quick Reference — Pyramid
 
 All fields verified against official docs as of 2026-04-11.
 

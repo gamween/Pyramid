@@ -1,13 +1,13 @@
-# Contributing to Tellement-French
+# Contributing to Pyramid
 
 Thank you for your interest in contributing! This document provides guidelines and instructions.
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/yourusername/tellement-french.git`
+2. Clone your fork: `git clone https://github.com/DVB-ESILV/Pyramid.git`
 3. Install dependencies: `pnpm install`
-4. Create a branch from `sofiane`: `git checkout -b feature/your-feature-name`
+4. Create a branch from `develop`: `git checkout -b feature/your-feature-name`
 
 ## Development Workflow
 
@@ -56,7 +56,7 @@ pnpm format
 
 ### Adding New Features
 
-1. Create a new branch from `sofiane`
+1. Create a new branch from `develop`
 2. Implement your feature
 3. Test thoroughly on Devnet
 4. Submit a pull request

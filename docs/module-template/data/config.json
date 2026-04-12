@@ -1,9 +1,0 @@
-{
-  "exampleConfig": {
-    "enabled": true,
-    "options": {
-      "feature1": true,
-      "feature2": false
-    }
-  }
-}

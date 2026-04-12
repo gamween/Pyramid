@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get started with Tellement-French in 5 minutes.
+Get started with Pyramid in 5 minutes.
 
 ## Prerequisites
 
@@ -11,8 +11,8 @@ Get started with Tellement-French in 5 minutes.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/tellement-french.git
-cd tellement-french
+git clone https://github.com/DVB-ESILV/Pyramid.git
+cd Pyramid
 
 # Install dependencies
 pnpm install
@@ -36,10 +36,9 @@ Click the "Connect Wallet" button in the header and choose:
 
 ### 2. Get Test XRP
 
-1. Make sure you're on **Devnet** (check the network indicator in the header)
-2. Scroll to the "Faucet" section
-3. Click "Request Test XRP"
-4. Wait a few seconds for your balance to update
+1. Make sure you're on **WASM Devnet** (check the network indicator in the header)
+2. Visit the WASM Devnet faucet at https://wasmfaucet.devnet.rippletest.net/accounts to fund your account, or use the setup script (`pnpm --filter web run setup-devnet`)
+3. Wait a few seconds for your balance to update
 
 ### 3. Deposit into a Vault
 
@@ -71,7 +70,7 @@ Click the "Connect Wallet" button in the header and choose:
 
 The dashboard shows:
 - **Vault TVL** — Total assets in the lending vault
-- **Active Loans** — Current loan count
+- **Vault Shares** — Your share balance
 - **Active Orders** — Your pending trading orders
 - **XRP Price** — Live from the native DEX
 
@@ -91,7 +90,7 @@ All operations use native XRPL transaction types — no smart contracts, no Hook
 ## What's Next?
 
 - Read the [full README](README.md) for detailed documentation
-- Check the [design spec](docs/specs/2026-04-11-tellement-french-design.md) for architecture details
+- Check the [design spec](docs/specs/2026-04-11-pyramid-design.md) for architecture details
 - Review [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines
 
 ## Common Issues
@@ -101,7 +100,7 @@ Make sure you have the wallet extension installed and unlocked.
 
 ### Transaction Failed
 - Check you have sufficient XRP balance
-- Verify you're on **Devnet** (not Testnet or AlphaNet)
+- Verify you're on **WASM Devnet** (not Testnet)
 - Try refreshing your balance
 
 ### Build Errors

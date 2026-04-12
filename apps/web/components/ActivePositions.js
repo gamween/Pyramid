@@ -70,8 +70,8 @@ export function ActivePositions() {
     status: o.status || "ACTIVE",
   }));
 
-  // Loans: no real-time source yet, show empty
-  const loans = [];
+  // Loans: XLS-66 has no `account_loans` RPC, so we cannot enumerate loans client-side.
+  // Loan positions are tracked server-side by the watcher/protocol admin.
 
   return (
     <div className="border border-white/20 bg-black/40 backdrop-blur-xl mt-6">
@@ -93,7 +93,7 @@ export function ActivePositions() {
               Vaults (XLS-65) ({vaults.length})
             </TabsTrigger>
             <TabsTrigger value="loans" className="rounded-none border-transparent data-[state=active]:border-white/20 data-[state=active]:bg-white data-[state=active]:text-black py-2 text-xs font-mono uppercase tracking-widest">
-              Loans (XLS-66) ({loans.length})
+              Loans (XLS-66)
             </TabsTrigger>
           </TabsList>
 
@@ -176,37 +176,15 @@ export function ActivePositions() {
 
           {/* LOANS TAB */}
           <TabsContent value="loans" className="animate-in fade-in duration-500">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm font-mono text-left border-collapse">
-                <thead className="bg-white/5 text-slate-400 text-xs uppercase">
-                  <tr>
-                    <th className="p-3 border-b border-white/20 font-normal">Loan ID</th>
-                    <th className="p-3 border-b border-white/20 font-normal">Principal</th>
-                    <th className="p-3 border-b border-white/20 font-normal">Accrued Interest</th>
-                    <th className="p-3 border-b border-white/20 font-normal text-center">Health Factor</th>
-                    <th className="p-3 border-b border-white/20 font-normal text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loans.map((loan, idx) => (
-                    <tr key={idx} className="border-b border-white/10 hover:bg-white/5 transition-colors text-white">
-                      <td className="p-3 font-bold">{loan.id}</td>
-                      <td className="p-3">{loan.principal}</td>
-                      <td className="p-3 text-red-400">{loan.accrued}</td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2 py-1 text-xs ${parseFloat(loan.health) > 1.5 ? 'text-green-400 border border-green-400/30' : 'text-amber-400 border border-amber-400/30'}`}>
-                          {loan.health}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-1">
-                          {loan.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="border border-white/10 bg-white/5 p-6 text-center">
+              <AlertTriangle className="h-5 w-5 text-amber-400 mx-auto mb-3" />
+              <p className="text-sm font-mono text-slate-300 mb-2">
+                XLS-66 does not expose an <code className="text-amber-400">account_loans</code> RPC method.
+              </p>
+              <p className="text-xs font-mono text-slate-500 max-w-md mx-auto">
+                Loan positions are tracked server-side by the watcher bot.
+                Contact the protocol admin or check the watcher logs for your loan status.
+              </p>
             </div>
           </TabsContent>
           

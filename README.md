@@ -1,4 +1,4 @@
-# Tellement-French
+# Pyramid
 
 First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Composes Vaults, Loans, and the native DEX into a complete trading + yield platform. No smart contracts, no Hooks — pure native XRPL primitives.
 
@@ -22,8 +22,8 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/tellement-french.git
-cd tellement-french
+git clone https://github.com/DVB-ESILV/Pyramid.git
+cd Pyramid
 
 # Install dependencies
 pnpm install
@@ -57,13 +57,15 @@ Trading → volume → more depositors → deeper liquidity
 ## Project Structure
 
 ```
-tellement-french/
+Pyramid/
 ├── apps/
 │   ├── web/                     # Next.js 14 frontend
 │   │   ├── app/                 # App Router pages
-│   │   ├── components/          # React components (lending/, trading/, dashboard/)
+│   │   ├── components/          # React components
+│   │   │   ├── ui/             # shadcn/ui primitives
+│   │   │   ├── three/          # Three.js 3D background
+│   │   │   └── providers/      # WalletProvider context
 │   │   ├── hooks/               # useVault, useLoan, useEscrow, useTickets, usePrice
-│   │   ├── providers/           # LendingProvider, OrderProvider
 │   │   └── lib/                 # xrplClient, networks, constants
 │   └── watcher/                 # Node.js watcher bot
 │       └── src/                 # devnet-loop, dca-scheduler, order-cache, zk-prover
@@ -86,9 +88,9 @@ tellement-french/
 
 ### Getting Test XRP
 
-1. Connect your wallet on **WASM Devnet**
-2. Go to the "Faucet" section
-3. Click "Request Test XRP"
+1. Visit the WASM Devnet faucet at https://wasmfaucet.devnet.rippletest.net/accounts
+2. Generate or fund an account with test XRP
+3. Import the funded account into your wallet on **WASM Devnet**
 
 ### Lending
 
@@ -159,7 +161,7 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id_here
 - [XRPL Documentation](https://xrpl.org/)
 - [XLS-65 Vault Spec](https://github.com/XRPLF/XRPL-Standards/discussions/182)
 - [XLS-66 Lending Spec](https://github.com/XRPLF/XRPL-Standards/discussions/183)
-- [Design Specification](docs/specs/2026-04-11-tellement-french-design.md)
+- [Design Specification](docs/specs/2026-04-11-pyramid-design.md)
 
 ## Contributing
 
