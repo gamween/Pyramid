@@ -368,13 +368,13 @@ export function AdvancedTradingForm() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-white/70 font-mono text-xs">{tabInfo === "dca" ? "Amount per buy (XRP)" : "Total Amount (XRP)"}</Label>
+                  <Label className="text-white/70 font-mono text-xs">{tabInfo === "dca" ? "Amount per slice (XRP)" : "Total Amount (XRP)"}</Label>
                   <Input type="number" placeholder="50" value={tabInfo === "dca" ? amountPerBuy : amount} onChange={e => tabInfo === "dca" ? setAmountPerBuy(e.target.value) : setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-white/70 font-mono text-xs"># Slices/Buys</Label>
+                    <Label className="text-white/70 font-mono text-xs">Number of slices</Label>
                     <Input type="number" placeholder="10" value={numBuys} onChange={e => setNumBuys(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                   </div>
                   <div className="space-y-2">
