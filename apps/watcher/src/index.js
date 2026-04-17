@@ -63,7 +63,7 @@ app.get("/api/health", (req, res) => {
   })
 })
 
-// --- Loan / Cosign Routes ---
+// --- Loan Routes ---
 
 app.get("/api/loans/available", async (req, res) => {
   try {
