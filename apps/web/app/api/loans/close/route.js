@@ -1,4 +1,4 @@
-import { WATCHER_URL } from "../watcher-url"
+import { WATCHER_URL } from "../../watcher-url"
 
 export async function POST(request) {
   try {
