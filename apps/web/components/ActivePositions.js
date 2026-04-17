@@ -209,7 +209,7 @@ export function ActivePositions() {
                           <div className="text-[10px] text-slate-500">{item.type}</div>
                         </td>
                         <td className="p-3 text-slate-300">
-                          {item.kind === "schedule" ? "Legacy schedule" : "Tracked order"}
+                          {item.kind === "schedule" ? "DCA schedule" : "Tracked order"}
                         </td>
                         <td className="p-3">{item.amountLabel ?? "—"}</td>
                         <td className="p-3 text-amber-400 text-xs">

@@ -237,7 +237,7 @@ export function LandingPresentation({ onLaunch }) {
                   <div className="flex flex-wrap gap-2">
                     <span className="px-2 py-1 border border-white/20 text-[10px] uppercase tracking-widest text-white/50">XRPL.js v3</span>
                     <span className="px-2 py-1 border border-white/20 text-[10px] uppercase tracking-widest text-white/50">Websockets</span>
-                    <span className="px-2 py-1 border border-white/20 text-[10px] uppercase tracking-widest text-white/50">Parked Scheduler Code</span>
+                    <span className="px-2 py-1 border border-white/20 text-[10px] uppercase tracking-widest text-white/50">DCA/TWAP Scheduler</span>
                   </div>
                 </div>
 

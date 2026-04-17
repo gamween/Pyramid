@@ -1,7 +1,46 @@
-function scheduledTradingUnavailableResponse() {
-  return Response.json({ error: "Scheduled trading is not currently available" }, { status: 503 })
+import { WATCHER_URL } from "../watcher-url.js"
+
+function watcherUnavailableResponse() {
+  return Response.json({ error: "Watcher service unavailable" }, { status: 503 })
 }
 
-export async function POST() {
-  return scheduledTradingUnavailableResponse()
+async function proxyWatcherResponse(response) {
+  const text = await response.text()
+  const trimmedText = text.trim()
+
+  if (trimmedText.length > 0) {
+    try {
+      return Response.json(JSON.parse(text), { status: response.status })
+    } catch (_error) {
+      return Response.json(
+        {
+          error: "Watcher response was not valid JSON",
+          upstreamText: text,
+        },
+        { status: response.status }
+      )
+    }
+  }
+
+  return Response.json({ error: "Watcher response was not valid JSON" }, { status: response.status })
+}
+
+export async function POST(request) {
+  let body
+  try {
+    body = await request.json()
+  } catch (_error) {
+    return Response.json({ error: "Invalid request body" }, { status: 400 })
+  }
+
+  try {
+    const response = await fetch(`${WATCHER_URL}/api/dca`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    return proxyWatcherResponse(response)
+  } catch (_error) {
+    return watcherUnavailableResponse()
+  }
 }

@@ -17,7 +17,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 |---|---|---|
 | **Lending** | WASM Devnet | VaultCreate/Deposit/Withdraw, LoanBrokerSet, LoanSet/Pay/Manage |
 | **Trading** | WASM Devnet | EscrowCreate/Finish/Cancel, OfferCreate (SELL-side execution via app proxy routes) |
-| **Scheduled Trading** | WASM Devnet | Watcher scheduler code remains parked for redesign; no app-supported creation flow is exposed |
+| **Scheduled Trading** | WASM Devnet | `/api/dca` proxy + watcher execution |
 | **Privacy** | WASM Devnet | Smart Escrows (XLS-0100) + RISC0 ZK proofs via Boundless |
 | **Prices** | WASM Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
 

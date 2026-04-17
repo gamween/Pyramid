@@ -13,14 +13,14 @@ Pyramid is the first DeFi protocol built on XRPL's new native lending protocol (
 1. **EARN** — Deposit XRP/tokens into a Vault, earn yield from loan interest
 2. **BORROW** — Take a loan from Vault liquidity for trading
 3. **TRADE** — Advanced SELL-side orders (SL, TP, trailing, OCO) via Escrow + watcher + DEX; BUY/short flows are deferred
-4. **ACCUMULATE** — DCA/TWAP scheduler logic exists behind the scenes, but app-side creation is disabled pending a safe lifecycle redesign
+4. **ACCUMULATE** — DCA/TWAP via the app's `/api/dca` proxy and watcher execution
 5. **PRIVATE** — ZK-hidden trigger prices via Smart Escrows (XLS-0100) + RISC0/Boundless on WASM Devnet
 
 ### Networks
 
 | Network | Purpose | xrpl.js |
 |---------|---------|---------|
-| **WASM Devnet** (`wss://wasm.devnet.rippletest.net:51233`) | Lending, trading, parked scheduler internals, price monitoring, ZK private orders via Smart Escrows (XLS-0100) | `xrpl@4.5.0-smartescrow.4` |
+| **WASM Devnet** (`wss://wasm.devnet.rippletest.net:51233`) | Lending, trading, scheduled order execution, price monitoring, ZK private orders via Smart Escrows (XLS-0100) | `xrpl@4.5.0-smartescrow.4` |
 
 ### Price Source
 
@@ -143,7 +143,7 @@ Same as SL/TP but:
 
 ### DCA (Dollar-Cost Averaging) / TWAP
 
-Watcher-side scheduler code remains parked for a later redesign. The current app surface does not expose DCA/TWAP creation because it lacks a safe stop/refund lifecycle.
+Scheduled order batches are registered through the app and executed by the watcher at the configured intervals. The active surface does not expose a Ticket-based flow.
 
 ---
 
@@ -242,14 +242,14 @@ Node.js service connected to WASM Devnet. Monitors prices and executes orders.
 
 ### Devnet Loop
 
-Handles: SL, TP, trailing stop, OCO, plus parked scheduler internals that are not part of the supported app surface.
+Handles: SL, TP, trailing stop, OCO, DCA, TWAP.
 
 Each ledger close on WASM Devnet:
 1. Query `book_offers` via xrpl.js (native, no oracle; `amm_info` not yet integrated)
 2. For each active escrow order: check trigger condition
 3. For trailing stops: update high watermark
 4. If triggered → EscrowFinish + OfferCreate + Payment back to user
-5. For parked scheduler internals: check whether any redesign-only schedule work is due
+5. For DCA/TWAP: check if next interval is due → submit next pre-signed tx
 
 ### ZK Prover (WASM Devnet)
 
@@ -262,13 +262,13 @@ Called by the ledger loop when a private order triggers:
 
 ### Connection Manager
 
-- WASM Devnet: `wss://wasm.devnet.rippletest.net:51233` (lending, trading, parked scheduler internals, price monitoring, ZK smart escrows) — `xrpl@4.5.0-smartescrow.4`
+- WASM Devnet: `wss://wasm.devnet.rippletest.net:51233` (lending, trading, DCA, price monitoring, ZK smart escrows) — `xrpl@4.5.0-smartescrow.4`
 - Auto-reconnect + health checks
 
 ### State
 
 - Active escrow orders: cached from on-chain data, rebuilt on restart
-- Parked scheduler state: pre-signed tx blobs held in memory for redesign work only
+- DCA schedules: pre-signed tx blobs held in memory
 - Trailing stop watermarks: in-memory, reset on restart
 - Private order secrets: trigger_price + nonce, encrypted local file
 
@@ -292,14 +292,17 @@ Clean dashboard. Next.js 16.1.6 + shadcn/ui.
 - Vault stats: total assets, share price, yield rate
 
 **Create Order:**
-- Order type tabs: SL / TP / Trailing / OCO
+- Order type tabs: SL / TP / Trailing / OCO / DCA / TWAP
 - SL/TP: pair, side, amount, trigger_price → EscrowCreate
 - Trailing: pair, side, amount, trailing_pct → EscrowCreate
 - OCO: pair, side, amount, tp_price, sl_price → 2× EscrowCreate
+- DCA: pair, amount_per_buy, num_buys, interval → `/api/dca`
+- TWAP: pair, total_amount, num_slices, interval → `/api/dca`
 - Private toggle: "Hide trigger price (ZK)" → EscrowCreate on WASM Devnet with FinishFunction (WASM) + commitment in Data
 
 **Order Detail:**
 - Status, condition, network badge
+- DCA/TWAP: progress bar (N/total), execution history with fill prices
 - Cancel button
 
 ### Technical
@@ -462,8 +465,8 @@ const { createEscrow, finishEscrow, cancelEscrow, getEscrow } = useEscrow()
 **Watcher API** (REST endpoint on watcher bot):
 ```
 POST   /api/orders                  — Register order after frontend creates escrow
-POST   /api/dca                     — Returns 503; scheduled trading is not currently available from the app surface
-GET    /api/orders                  — List active orders and any watcher-side parked scheduler records
+POST   /api/dca                     — Register structured DCA/TWAP schedule payload
+GET    /api/orders                  — List all orders and DCA schedules
 DELETE /api/orders/:owner/:sequence — Remove order from cache
 GET    /api/health                  — Health check
 ```
@@ -471,7 +474,25 @@ Note: per-user filtering (`GET /api/orders/:owner`) is not yet implemented.
 
 ### DCA / TWAP
 
-The app intentionally does not expose DCA/TWAP creation in the current stabilization pass. Any remaining watcher-side schedule payloads or cached records are redesign-only internals and should not be treated as a supported user flow.
+Scheduled order batches are created through the app proxy and registered as structured schedules:
+
+```json
+{
+  "owner": "r...",
+  "escrowSequence": 123,
+  "condition": "A0258020...",
+  "preimage": "A0228020...",
+  "side": "SELL",
+  "totalAmount": "500000000",
+  "perSliceAmount": "50000000",
+  "slices": 10,
+  "intervalMs": 60000
+}
+```
+
+The watcher stores the same schedule shape in its order cache and submits each slice on schedule.
+
+**TWAP** — Same submission surface as DCA, with a different `totalAmount`, `perSliceAmount`, `slices`, and `intervalMs` combination. The supported surface remains SELL-only.
 
 ### Constants & Addresses (`lib/constants.js`)
 
@@ -484,15 +505,17 @@ These must be filled before the frontend works:
 | `ADDRESSES.RLUSD_ISSUER` | WASM Devnet RLUSD gateway address (from faucet or trust line setup) | Price feed, offers |
 | `WATCHER_ACCOUNT` | Watcher bot's funded WASM Devnet r-address | Escrow destination |
 
-### Supported Order Types & Status Enums
+### Order Types & Status Enums
 
 ```js
-SUPPORTED_ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO }
+import { ORDER_TYPES, ORDER_STATUS, SIDES } from "@/lib/constants"
+
+ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO, DCA, TWAP }
 ORDER_STATUS: { ACTIVE, TRIGGERED, EXECUTED, CANCELLED, EXPIRED }
 SIDES: { BUY, SELL }
 ```
 
-`apps/web/lib/constants.js` still contains legacy scheduler order types plus `SIDES = { BUY, SELL }`, but the supported app surface only exposes SELL-side SL/TP/Trailing/OCO orders.
+`apps/web/lib/constants.js` still exports `SIDES = { BUY, SELL }`, but the supported trading surface exposed by the app is SELL-only.
 
 ### Error Handling
 
@@ -522,7 +545,7 @@ Common errors:
 - LoanBrokerSet, LoanBrokerCoverDeposit, LoanSet, LoanPay, LoanManage, LoanDelete (XLS-66)
 - EscrowCreate, EscrowFinish, EscrowCancel (conditional fund locking)
 - OfferCreate with ImmediateOrCancel (DEX execution)
-- App proxy routes for watcher-backed advanced orders; `/api/dca` is intentionally disabled
+- App proxy routes for watcher-backed scheduled trading
 - Payment (settlement)
 - book_offers (native price discovery; amm_info planned)
 - Smart Escrows with FinishFunction (XLS-0100) on WASM Devnet
@@ -534,7 +557,7 @@ Per active user:
 - Each vault deposit/withdraw: 1 tx
 - Each loan: 3+ txs (create + N payments + delete)
 - Each SL/TP order: 4 txs (escrow create + finish + offer + payment)
-- Scheduled trading remains out of the supported app surface until its lifecycle is redesigned
+- Each DCA/TWAP batch: 1 proxy submission per slice + watcher execution
 - Each private order: 4 txs on WASM Devnet (escrow create + finish w/ proof + offer + payment)
 
 10 users × 5 actions = 200+ transactions on WASM Devnet.
