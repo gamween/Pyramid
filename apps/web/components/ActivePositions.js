@@ -29,7 +29,6 @@ export function ActivePositions() {
   const [ordersError, setOrdersError] = useState("")
   const [actionKey, setActionKey] = useState("")
   const fetchRequestIdRef = useRef(0)
-  const appliedRequestIdRef = useRef(0)
   const isMountedRef = useRef(true)
 
   useEffect(() => {
@@ -48,24 +47,22 @@ export function ActivePositions() {
       }
 
       const data = await response.json()
-      if (!isMountedRef.current || signal?.aborted || requestId < appliedRequestIdRef.current) {
+      if (!isMountedRef.current || signal?.aborted || requestId !== fetchRequestIdRef.current) {
         return
       }
 
-      appliedRequestIdRef.current = requestId
       setWatcherState(normalizeWatcherState(data))
       setOrdersError("")
     } catch (error) {
       if (error?.name === "AbortError") return
-      if (!isMountedRef.current || requestId < appliedRequestIdRef.current) {
+      if (!isMountedRef.current || requestId !== fetchRequestIdRef.current) {
         return
       }
 
-      appliedRequestIdRef.current = requestId
       setWatcherState({ orders: [], schedules: [] })
       setOrdersError("Watcher data unavailable")
     } finally {
-      if (isMountedRef.current && !signal?.aborted && requestId >= appliedRequestIdRef.current) {
+      if (isMountedRef.current && !signal?.aborted && requestId === fetchRequestIdRef.current) {
         setOrdersLoading(false)
       }
     }
