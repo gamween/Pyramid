@@ -17,17 +17,17 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 | Layer | Network | Primitives |
 |---|---|---|
 | **Lending** | WASM Devnet | VaultCreate/Deposit/Withdraw, LoanBrokerSet, LoanSet/Pay/Manage |
-| **Trading** | WASM Devnet | EscrowCreate/Finish/Cancel, OfferCreate (ImmediateOrCancel) |
-| **DCA/TWAP** | WASM Devnet | TicketCreate + pre-signed OfferCreate |
+| **Trading** | WASM Devnet | EscrowCreate/Finish/Cancel, OfferCreate (SELL-side execution via app proxy routes) |
+| **Scheduled Trading** | WASM Devnet | `/api/dca` proxy + watcher execution |
 | **Privacy** | WASM Devnet | Smart Escrows (XLS-0100) + RISC0 ZK proofs via Boundless |
 | **Prices** | WASM Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 / React 18 / Tailwind CSS / shadcn/ui
+- **Frontend:** Next.js 16.1.6 / React 19 / Tailwind CSS / shadcn/ui
 - **Watcher Bot:** Node.js + xrpl.js v4 (smartescrow fork)
 - **ZK Proofs:** RISC0 zkVM (Groth16) + Boundless Market
-- **Wallet:** xrpl-connect (Xaman, Crossmark, GemWallet)
+- **Wallet:** xrpl-connect (Xaman, Crossmark, GemWallet, Otsu, WalletConnect)
 - **Monorepo:** pnpm workspaces + Turborepo
 
 ## Key Directories

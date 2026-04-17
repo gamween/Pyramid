@@ -38,7 +38,7 @@ pnpm format
 
 ## Project Structure
 
-- `apps/web` — Next.js 14 frontend (lending, trading, dashboard)
+- `apps/web` — Next.js 16.1.6 / React 19 frontend (lending, watcher-proxied trading, dashboard)
 - `apps/watcher` — Node.js watcher bot (price monitoring, order execution)
 - `packages/zkp` — RISC0 ZK guest program + CLI prover
 - `docs/specs` — Design specification
