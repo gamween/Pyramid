@@ -302,7 +302,7 @@ Called by the ledger loop when a private order triggers:
 
 ## Frontend
 
-Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
+Clean dashboard. Next.js 14 + shadcn/ui.
 
 ### Views
 
@@ -333,8 +333,8 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 
 ### Technical
 
-- WalletProvider (existing scaffold)
-- Hooks: `usePrice`, `useVault`, `useLoan`, `useEscrow`, `useTickets`, `useWalletManager`
+- WalletProvider (React context)
+- Hooks: `usePrice`, `useVault`, `useLoanMarket`, `useEscrow`, `useTickets`, `useWalletManager`
 - xrpl.js for all network interactions
 - shadcn/ui: Card, Button, Input, Label, Badge, Tabs
 

@@ -1,6 +1,7 @@
 import { execFileSync } from "child_process"
 import { join } from "path"
 import { config } from "./config.js"
+import { getUsdBalance, getXrpBalance, sendProceeds } from "./trade-utils.js"
 
 export class ZkProver {
   constructor(connections) {
@@ -48,10 +49,8 @@ export class ZkProver {
       console.log(`[zk-prover] EscrowFinish: ${finishResult.result.meta.TransactionResult}`)
 
       // Snapshot balances before trade
-      const preUsdLines = await client.request({ command: "account_lines", account: wallet.address })
-      const preUsd = Number(preUsdLines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0)
-      const preXrpInfo = await client.request({ command: "account_info", account: wallet.address })
-      const preXrp = Number(preXrpInfo.result.account_data.Balance)
+      const preUsd = await getUsdBalance(client, wallet.address)
+      const preXrp = await getXrpBalance(client, wallet.address)
 
       // OfferCreate on DEX
       const amountXrp = Number(order.amount) / 1e6
@@ -73,33 +72,13 @@ export class ZkProver {
       console.log(`[zk-prover] OfferCreate: ${offerResult.result.meta.TransactionResult}`)
 
       // Payment back to user — send only the received difference
-      if (order.side === "BUY") {
-        const postXrpInfo = await client.request({ command: "account_info", account: wallet.address })
-        const receivedXrp = Number(postXrpInfo.result.account_data.Balance) - preXrp
-        if (receivedXrp > 0) {
-          const payTx = {
-            TransactionType: "Payment",
-            Account: wallet.address,
-            Destination: order.owner,
-            Amount: String(receivedXrp),
-          }
-          const payResult = await client.submitAndWait(payTx, { wallet, autofill: true })
-          console.log(`[zk-prover] Payment: ${payResult.result.meta.TransactionResult}`)
-        }
-      } else {
-        const postUsdLines = await client.request({ command: "account_lines", account: wallet.address })
-        const receivedUsd = Number(postUsdLines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0) - preUsd
-        if (receivedUsd > 0) {
-          const payTx = {
-            TransactionType: "Payment",
-            Account: wallet.address,
-            Destination: order.owner,
-            Amount: { currency: "USD", issuer: config.rlusdIssuer, value: receivedUsd.toFixed(6) },
-          }
-          const payResult = await client.submitAndWait(payTx, { wallet, autofill: true })
-          console.log(`[zk-prover] Payment: ${payResult.result.meta.TransactionResult}`)
-        }
-      }
+      await sendProceeds(client, wallet, {
+        side: order.side || "SELL",
+        destination: order.owner,
+        preUsd,
+        preXrp,
+        logPrefix: "[zk-prover]",
+      })
 
       console.log(`[zk-prover] Private order executed successfully`)
     } catch (err) {

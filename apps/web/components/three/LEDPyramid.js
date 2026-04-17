@@ -16,7 +16,7 @@ export default function LEDPyramid() {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 2.5, 6.5); // Zoomez pour la rendre plus grande
+    camera.position.set(0, 2.5, 6.5); // Zoom in to make it larger
     camera.lookAt(0, 0.7, 0);
 
     // Separate scene for background gradient (no pixel effect)

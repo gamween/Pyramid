@@ -1,5 +1,6 @@
 import { config } from "./config.js"
 import { DcaScheduler } from "./dca-scheduler.js"
+import { getUsdBalance, getXrpBalance, sendProceeds } from "./trade-utils.js"
 
 export class DevnetLoop {
   constructor(connections, orderCache, zkProver) {
@@ -165,10 +166,8 @@ export class DevnetLoop {
       console.log(`[devnet-loop] OfferCreate (${order.side}) — ${amountXrp} XRP ≈ ${estimatedUsd} USD @ ${this.currentPrice}`)
 
       // Snapshot balances BEFORE trade to compute exact received amount
-      const preUsdLines = await client.request({ command: "account_lines", account: wallet.address })
-      const preUsd = Number(preUsdLines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0)
-      const preXrpInfo = await client.request({ command: "account_info", account: wallet.address })
-      const preXrp = Number(preXrpInfo.result.account_data.Balance)
+      const preUsd = await getUsdBalance(client, wallet.address)
+      const preXrp = await getXrpBalance(client, wallet.address)
 
       const offerTx = {
         TransactionType: "OfferCreate",
@@ -186,38 +185,13 @@ export class DevnetLoop {
       console.log(`[devnet-loop] OfferCreate: ${offerResult.result.meta.TransactionResult}`)
 
       // Snapshot balances AFTER trade — send only the difference
-      if (order.side === "SELL") {
-        const postUsdLines = await client.request({ command: "account_lines", account: wallet.address })
-        const postUsd = Number(postUsdLines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0)
-        const receivedUsd = postUsd - preUsd
-        if (receivedUsd > 0) {
-          const usdValue = receivedUsd.toFixed(6)
-          console.log(`[devnet-loop] Payment → ${order.owner} (${usdValue} USD)`)
-          const payTx = {
-            TransactionType: "Payment",
-            Account: wallet.address,
-            Destination: order.owner,
-            Amount: { currency: "USD", issuer: config.rlusdIssuer, value: usdValue },
-          }
-          const payResult = await client.submitAndWait(payTx, { wallet, autofill: true })
-          console.log(`[devnet-loop] Payment: ${payResult.result.meta.TransactionResult}`)
-        }
-      } else {
-        const postXrpInfo = await client.request({ command: "account_info", account: wallet.address })
-        const postXrp = Number(postXrpInfo.result.account_data.Balance)
-        const receivedXrp = Math.floor(postXrp - preXrp)
-        if (receivedXrp > 0) {
-          console.log(`[devnet-loop] Payment → ${order.owner} (${receivedXrp} drops XRP)`)
-          const payTx = {
-            TransactionType: "Payment",
-            Account: wallet.address,
-            Destination: order.owner,
-            Amount: String(receivedXrp),
-          }
-          const payResult = await client.submitAndWait(payTx, { wallet, autofill: true })
-          console.log(`[devnet-loop] Payment: ${payResult.result.meta.TransactionResult}`)
-        }
-      }
+      await sendProceeds(client, wallet, {
+        side: order.side,
+        destination: order.owner,
+        preUsd,
+        preXrp,
+        logPrefix: "[devnet-loop]",
+      })
     } catch (err) {
       console.error(`[devnet-loop] Execution failed for ${order.owner}:${order.escrowSequence}:`, err.message)
     }

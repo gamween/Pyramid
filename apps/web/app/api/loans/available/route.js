@@ -1,4 +1,4 @@
-const WATCHER_URL = process.env.WATCHER_URL || "http://localhost:3001"
+import { WATCHER_URL } from "../watcher-url"
 
 export async function GET() {
   try {

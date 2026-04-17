@@ -192,10 +192,11 @@ Pyramid/
 │   ├── web/                     # Next.js 14 frontend
 │   │   ├── app/                 # App Router pages
 │   │   ├── components/          # React components
+│   │   │   ├── loans/          # Loan marketplace + modals
+│   │   │   ├── three/          # Three.js 3D backgrounds
 │   │   │   ├── ui/             # shadcn/ui primitives
-│   │   │   ├── three/          # Three.js 3D background
 │   │   │   └── providers/      # WalletProvider context
-│   │   ├── hooks/               # useVault, useLoan, useEscrow, useTickets, usePrice
+│   │   ├── hooks/               # useVault, useLoanMarket, useEscrow, useTickets, usePrice
 │   │   └── lib/                 # xrplClient, networks, constants
 │   └── watcher/                 # Node.js watcher bot
 │       └── src/                 # devnet-loop, dca-scheduler, order-cache, zk-prover
@@ -234,7 +235,7 @@ pnpm dev
 
 ### Connect & Test
 
-1. Click **Connect Wallet** and choose Xaman, Crossmark, or GemWallet
+1. Click **Connect Wallet** and choose Xaman, Crossmark, GemWallet, Otsu, or WalletConnect
 2. Fund your account with test XRP from the [WASM Devnet faucet](https://wasmfaucet.devnet.rippletest.net/accounts)
 3. **Deposit** into a Vault to start earning yield
 4. **Borrow** against your collateral
@@ -290,6 +291,19 @@ Check the borrower account (`rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv`) on the explore
 | **Faucet** | https://wasmfaucet.devnet.rippletest.net/accounts |
 | **Explorer** | https://custom.xrpl.org/wasm.devnet.rippletest.net |
 
+
+## Troubleshooting
+
+**Wallet Not Detected** — Make sure you have the wallet extension installed and unlocked.
+
+**Transaction Failed** — Check you have sufficient XRP balance, verify you're on **WASM Devnet** (not Testnet), and try refreshing your balance.
+
+**Build Errors** — Clean and reinstall:
+```bash
+pnpm clean
+rm -rf node_modules
+pnpm install
+```
 
 ## License
 
