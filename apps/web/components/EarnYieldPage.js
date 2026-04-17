@@ -31,9 +31,14 @@ export function EarnYieldPage() {
   }, [])
 
   useEffect(() => {
-    fetchVaults()
+    const initialFetchId = setTimeout(() => {
+      void fetchVaults()
+    }, 0)
     const interval = setInterval(fetchVaults, 30_000)
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(initialFetchId)
+      clearInterval(interval)
+    }
   }, [fetchVaults])
 
   const handleAction = (vault, type) => {

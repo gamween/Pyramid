@@ -27,11 +27,8 @@ export function WalletConnector() {
   const { walletManager } = useWallet();
   const walletConnectorRef = useWalletConnector(walletManager);
   const [currentTheme] = useState("sleek");
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-
     // Register the web component
     const registerWebComponent = async () => {
       try {
@@ -48,10 +45,6 @@ export function WalletConnector() {
 
     registerWebComponent();
   }, []);
-
-  if (!isClient) {
-    return null;
-  }
 
   return (
     <div className="relative group/wallet inline-block">

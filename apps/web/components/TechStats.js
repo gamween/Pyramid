@@ -3,12 +3,12 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 
 function ScrambleText({ text, delay, className, inView }) {
-  const [display, setDisplay] = useState(text.replace(/./g, '-'));
+  const maskedText = text.replace(/./g, '-');
+  const [display, setDisplay] = useState(maskedText);
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
   
   useEffect(() => {
     if (!inView) {
-        setDisplay(text.replace(/./g, '-'));
         return;
     }
     let timeout;
@@ -36,13 +36,15 @@ function ScrambleText({ text, delay, className, inView }) {
     };
   }, [text, delay, inView]);
 
+  const renderedText = inView ? display : maskedText;
+
   return (
      <motion.div
        initial={{ opacity: 0, filter: "blur(10px)" }}
        animate={inView ? { opacity: 1, filter: "blur(0px)" } : { opacity: 0, filter: "blur(10px)" }}
        transition={{ duration: 0.5, delay }}
      >
-       <span className={className} style={{ fontFamily: "'Bitcount Grid', monospace" }}>{display}</span>
+       <span className={className} style={{ fontFamily: "'Bitcount Grid', monospace" }}>{renderedText}</span>
      </motion.div>
   );
 }

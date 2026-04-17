@@ -56,15 +56,19 @@ export function useLoanMarket() {
   // ── Polling ─────────────────────────────────────────────────────
 
   useEffect(() => {
-    fetchAvailableVaults()
-    fetchActiveLoans()
+    const pollLoanState = () => {
+      void fetchAvailableVaults()
+      void fetchActiveLoans()
+    }
 
-    const interval = setInterval(() => {
-      fetchAvailableVaults()
-      fetchActiveLoans()
-    }, 30_000)
+    const initialFetchId = setTimeout(pollLoanState, 0)
 
-    return () => clearInterval(interval)
+    const interval = setInterval(pollLoanState, 30_000)
+
+    return () => {
+      clearTimeout(initialFetchId)
+      clearInterval(interval)
+    }
   }, [fetchAvailableVaults, fetchActiveLoans, isConnected])
 
   // ── Write helpers ───────────────────────────────────────────────

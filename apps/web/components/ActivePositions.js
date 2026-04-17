@@ -70,14 +70,16 @@ export function ActivePositions() {
 
   useEffect(() => {
     const controller = new AbortController()
-
-    fetchOrders({ signal: controller.signal })
+    const initialFetchId = setTimeout(() => {
+      void fetchOrders({ signal: controller.signal })
+    }, 0)
 
     const interval = setInterval(() => {
-      fetchOrders()
+      void fetchOrders()
     }, 10000)
 
     return () => {
+      clearTimeout(initialFetchId)
       controller.abort()
       clearInterval(interval)
     }

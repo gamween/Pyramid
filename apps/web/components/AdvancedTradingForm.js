@@ -13,6 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Checkbox } from "./ui/checkbox";
 import { Info } from "lucide-react";
 
+function buildCancelAfter() {
+  const rippleEpoch = 946684800;
+  return Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
+}
+
 export function AdvancedTradingForm() {
   const { walletManager, isConnected, showStatus } = useWallet();
   const { createEscrow } = useEscrow();
@@ -83,8 +88,7 @@ export function AdvancedTradingForm() {
       const conditionHex = "A0258020" + conditionHash + "810120";
       const fulfillmentHex = "A0228020" + preimageHex;
 
-      const rippleEpoch = 946684800;
-      const cancelAfter = Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
+      const cancelAfter = buildCancelAfter();
 
       // ── DCA / TWAP: one escrow for total, watcher splits into N trades ──
       let amountInDrops;
