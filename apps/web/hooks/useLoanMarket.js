@@ -8,10 +8,9 @@ import { useWallet } from "@/components/providers/WalletProvider"
  *
  * Provides:
  *  - availableVaults / activeLoans  (auto-polled every 30 s)
- *  - borrowFromVault   (two-phase cosign flow)
+ *  - borrowFromVault   (server-side borrow flow)
  *  - repayLoan         (single-signer cosign flow)
  *  - manageLoan        (single-signer cosign flow)
- *  - closeLoan         (single-signer cosign flow)
  */
 export function useLoanMarket() {
   const { walletManager, isConnected } = useWallet()
@@ -150,30 +149,6 @@ export function useLoanMarket() {
     }
   }, [fetchActiveLoans])
 
-  /**
-   * closeLoan — server-side (LoanDelete is XLS-66).
-   */
-  const closeLoan = useCallback(async (loanId) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch("/api/loans/close", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loanId }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.error || "Close failed")
-      await fetchActiveLoans()
-      return data
-    } catch (err) {
-      setError(err.message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [fetchActiveLoans])
-
   return {
     availableVaults,
     activeLoans,
@@ -184,6 +159,5 @@ export function useLoanMarket() {
     borrowFromVault,
     repayLoan,
     manageLoan,
-    closeLoan,
   }
 }

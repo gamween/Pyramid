@@ -117,49 +117,6 @@ app.post("/api/loans/manage", async (req, res) => {
   }
 })
 
-app.post("/api/loans/close", async (req, res) => {
-  try {
-    const { loanId } = req.body
-    if (!loanId) return res.status(400).json({ success: false, error: "Missing loanId" })
-    const result = await cosignHandler.closeLoan({ loanId })
-    res.json({ success: true, ...result })
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message })
-  }
-})
-
-app.post("/api/loans/prepare", async (req, res) => {
-  try {
-    const preparedTx = await cosignHandler.prepareLoanTx(req.body)
-    res.json({ preparedTx })
-  } catch (err) {
-    res.status(400).json({ status: "error", message: err.message })
-  }
-})
-
-app.post("/api/loans/cosign", async (req, res) => {
-  try {
-    if (req.body.singleSigner && req.body.tx_blob) {
-      const client = connections.getClient()
-      const result = await client.request({
-        command: "submit",
-        tx_blob: req.body.tx_blob,
-      })
-      res.json(result.result)
-    } else {
-      const { preparedTx, borrowerSignature, borrowerPubKey } = req.body
-      const result = await cosignHandler.cosignAndSubmit({
-        preparedTx,
-        borrowerSignature,
-        borrowerPubKey,
-      })
-      res.json(result)
-    }
-  } catch (err) {
-    res.status(400).json({ status: "error", message: err.message })
-  }
-})
-
 app.get("/api/loans/status", async (req, res) => {
   try {
     if (!req.query.account) {

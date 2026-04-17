@@ -11,11 +11,9 @@ export function LoansPage() {
     availableVaults,
     activeLoans,
     loading,
-    error,
     borrowFromVault,
     repayLoan,
     manageLoan,
-    closeLoan,
   } = useLoanMarket()
 
   return (
@@ -31,7 +29,6 @@ export function LoansPage() {
           loading={loading}
           onRepay={repayLoan}
           onManage={manageLoan}
-          onClose={closeLoan}
         />
       )}
     </div>

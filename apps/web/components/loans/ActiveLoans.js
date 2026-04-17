@@ -9,7 +9,7 @@ import { LENDING } from "@/lib/constants";
 import { LoanRepayModal } from "./LoanRepayModal";
 import { LoanManageModal } from "./LoanManageModal";
 
-export function ActiveLoans({ loans, loading, onRepay, onManage, onClose }) {
+export function ActiveLoans({ loans, loading, onRepay, onManage }) {
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [repayOpen, setRepayOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
