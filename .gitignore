@@ -42,7 +42,6 @@ apps/watcher/.env
 
 # Tooling artifacts
 .superpowers/
-.worktrees/
 
 # Rust/Bedrock
 target/

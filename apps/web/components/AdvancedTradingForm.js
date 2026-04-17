@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useWallet } from "./providers/WalletProvider";
 import { useEscrow } from "@/hooks/useEscrow";
 import { WATCHER_ACCOUNT, ADDRESSES } from "@/lib/constants";
-import { validateSellOrderDraft, validateSellScheduleDraft } from "@/lib/trading-validators";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
+import { validateSellOrderDraft } from "@/lib/trading-validators";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -19,7 +19,7 @@ function buildCancelAfter() {
 }
 
 export function AdvancedTradingForm() {
-  const { walletManager, isConnected, showStatus } = useWallet();
+  const { walletManager, showStatus } = useWallet();
   const { createEscrow } = useEscrow();
 
   // order form state
@@ -30,11 +30,6 @@ export function AdvancedTradingForm() {
   const [trailingPct, setTrailingPct] = useState("");
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
-
-  // DCA/TWAP state
-  const [amountPerBuy, setAmountPerBuy] = useState("");
-  const [numBuys, setNumBuys] = useState("");
-  const [ticketInterval, setTicketInterval] = useState("");
 
   // Privacy
   const [isPrivate, setIsPrivate] = useState(false);
@@ -75,10 +70,7 @@ export function AdvancedTradingForm() {
     }
 
     try {
-      const isDca = type === "DCA" || type === "TWAP";
-      const validatedDraft = isDca
-        ? validateSellScheduleDraft({ type, amount, amountPerBuy, numBuys, ticketInterval })
-        : validateSellOrderDraft({ type, amount, triggerPrice, trailingPct, tpPrice, slPrice });
+      const validatedDraft = validateSellOrderDraft({ type, amount, triggerPrice, trailingPct, tpPrice, slPrice });
 
       setIsSubmitting(true);
 
@@ -90,36 +82,14 @@ export function AdvancedTradingForm() {
 
       const cancelAfter = buildCancelAfter();
 
-      // ── DCA / TWAP: one escrow for total, watcher splits into N trades ──
-      let amountInDrops;
-      let slices, perSliceDrops, intervalMs;
+      const amountInDrops = validatedDraft.amount;
 
-      if (isDca) {
-        const count = validatedDraft.slices;
-
-        // Ensure user has USD trustline to receive proceeds from SELL trades
-        if (side === "SELL") {
-          showStatus("Setting up USD trustline...", "info");
-          await walletManager.signAndSubmit({
-            TransactionType: "TrustSet",
-            LimitAmount: { currency: "USD", issuer: ADDRESSES.RLUSD_ISSUER, value: "100000" },
-          });
-        }
-
-        amountInDrops = validatedDraft.totalAmount;
-        perSliceDrops = validatedDraft.amountPerBuy;
-        slices = count;
-        intervalMs = validatedDraft.intervalMs;
-      } else {
-        amountInDrops = validatedDraft.amount;
-
-        // Ensure user has USD trustline for SELL orders (to receive USD proceeds)
-        if (side === "SELL") {
-          await walletManager.signAndSubmit({
-            TransactionType: "TrustSet",
-            LimitAmount: { currency: "USD", issuer: ADDRESSES.RLUSD_ISSUER, value: "100000" },
-          });
-        }
+      // Ensure user has USD trustline for SELL orders (to receive USD proceeds)
+      if (side === "SELL") {
+        await walletManager.signAndSubmit({
+          TransactionType: "TrustSet",
+          LimitAmount: { currency: "USD", issuer: ADDRESSES.RLUSD_ISSUER, value: "100000" },
+        });
       }
 
       const result = await createEscrow(
@@ -129,75 +99,47 @@ export function AdvancedTradingForm() {
         cancelAfter
       );
 
-      if (isDca) {
-        // Register DCA/TWAP schedule with watcher
-        const resp = await fetch("/api/dca", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            owner: walletManager.account.address,
-            escrowSequence: result.sequence,
-            condition: conditionHex,
-            preimage: fulfillmentHex,
-            side,
-            totalAmount: amountInDrops,
-            perSliceAmount: perSliceDrops,
-            slices,
-            intervalMs,
-          }),
-        });
-        if (!resp.ok) {
-          const detail = await getApiErrorMessage(resp, "request rejected")
-          throw new Error(buildRegistrationFailureMessage("schedule", detail))
-        }
-        showStatus(`${type} scheduled: ${slices} trades every ${intervalMs / 1000}s`, "success");
-        setAmountPerBuy("");
-        setAmount("");
-        setNumBuys("");
-        setTicketInterval("");
-      } else {
-        // Register trigger order with watcher
-        const typeMap = { SL: "STOP_LOSS", TP: "TAKE_PROFIT", TRAILING: "TRAILING_STOP", OCO: "OCO" };
-        const orderPayload = {
-          orderType: typeMap[type] || type,
-          side,
-          amount: amountInDrops,
-          escrowSequence: result.sequence,
-          owner: walletManager.account.address,
-          condition: conditionHex,
-          preimage: fulfillmentHex,
-          isPrivate,
-        };
+      // Register trigger order with watcher
+      const typeMap = { SL: "STOP_LOSS", TP: "TAKE_PROFIT", TRAILING: "TRAILING_STOP", OCO: "OCO" };
+      const orderPayload = {
+        orderType: typeMap[type] || type,
+        side,
+        amount: amountInDrops,
+        escrowSequence: result.sequence,
+        owner: walletManager.account.address,
+        condition: conditionHex,
+        preimage: fulfillmentHex,
+        isPrivate,
+      };
 
-        if (type === "SL" || type === "TP") {
-          orderPayload.triggerPrice = validatedDraft.triggerPrice;
-        } else if (type === "TRAILING") {
-          orderPayload.trailingPct = validatedDraft.trailingPct;
-        } else if (type === "OCO") {
-          orderPayload.tpPrice = validatedDraft.tpPrice;
-          orderPayload.slPrice = validatedDraft.slPrice;
-        }
-
-        if (isPrivate) {
-          orderPayload.nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-            .map(b => b.toString(16).padStart(2, "0")).join("");
-        }
-
-        const resp = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderPayload),
-        });
-        if (!resp.ok) {
-          const detail = await getApiErrorMessage(resp, "request rejected")
-          throw new Error(
-            buildRegistrationFailureMessage("order", detail)
-          )
-        }
-        showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
-        setAmount("");
-        setTriggerPrice("");
+      if (type === "SL" || type === "TP") {
+        orderPayload.triggerPrice = validatedDraft.triggerPrice;
+      } else if (type === "TRAILING") {
+        orderPayload.trailingPct = validatedDraft.trailingPct;
+      } else if (type === "OCO") {
+        orderPayload.tpPrice = validatedDraft.tpPrice;
+        orderPayload.slPrice = validatedDraft.slPrice;
       }
+
+      if (isPrivate) {
+        orderPayload.nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+          .map(b => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      const resp = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+      if (!resp.ok) {
+        const detail = await getApiErrorMessage(resp, "request rejected")
+        throw new Error(
+          buildRegistrationFailureMessage("order", detail)
+        )
+      }
+      showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
+      setAmount("");
+      setTriggerPrice("");
     } catch (err) {
       showStatus(err.message || "Failed to create order", "error");
     } finally {
@@ -215,16 +157,14 @@ export function AdvancedTradingForm() {
       </CardHeader>
       <CardContent className="pt-6">
         <p className="text-xs font-mono text-white/40">
-          Current release supports SELL-side advanced orders only. BUY / short flows are disabled until the asset model is redesigned.
+          Current release supports SELL-side advanced orders only. BUY / short flows and scheduled trading remain disabled until their lifecycle is redesigned.
         </p>
         <Tabs defaultValue="sl" className="w-full">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-6 rounded-none bg-white/5">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6 rounded-none bg-white/5">
             <TabsTrigger value="sl" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">SL</TabsTrigger>
             <TabsTrigger value="tp" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">TP</TabsTrigger>
             <TabsTrigger value="trailing" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">Trailing</TabsTrigger>
             <TabsTrigger value="oco" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">OCO</TabsTrigger>
-            <TabsTrigger value="dca" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">DCA</TabsTrigger>
-            <TabsTrigger value="twap" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">TWAP</TabsTrigger>
           </TabsList>
 
           {/* SL / TP Content */}
@@ -365,49 +305,6 @@ export function AdvancedTradingForm() {
             </form>
           </TabsContent>
 
-          {/* DCA / TWAP Content */}
-          {["dca", "twap"].map((tabInfo) => (
-            <TabsContent key={tabInfo} value={tabInfo}>
-              <form onSubmit={(e) => handleSubmit(e, tabInfo.toUpperCase())} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-white/70 font-mono text-xs">Asset Pair</Label>
-                    <Input value={pair} onChange={e => setPair(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/70 font-mono text-xs">Side</Label>
-                    <select 
-                      value={side} onChange={e => setSide(e.target.value)} 
-                      className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
-                    >
-                      <option value="SELL">SELL</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-white/70 font-mono text-xs">{tabInfo === "dca" ? "Amount per slice (XRP)" : "Total Amount (XRP)"}</Label>
-                  <Input type="number" placeholder="50" value={tabInfo === "dca" ? amountPerBuy : amount} onChange={e => tabInfo === "dca" ? setAmountPerBuy(e.target.value) : setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-white/70 font-mono text-xs">Number of slices</Label>
-                    <Input type="number" placeholder="10" value={numBuys} onChange={e => setNumBuys(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/70 font-mono text-xs">Interval (seconds)</Label>
-                    <Input type="number" placeholder="3600" value={ticketInterval} onChange={e => setTicketInterval(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
-                  </div>
-                </div>
-                
-                <Button type="submit" disabled={isSubmitting} className="w-full rounded-none bg-white text-black hover:bg-slate-200 font-mono font-bold mt-4">
-                  {isSubmitting ? "SIGNING..." : `EXECUTE ${tabInfo.toUpperCase()}`}
-                </Button>
-              </form>
-            </TabsContent>
-          ))}
-          
         </Tabs>
       </CardContent>
     </Card>

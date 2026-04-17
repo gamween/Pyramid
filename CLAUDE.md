@@ -8,8 +8,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 - **`main`** must never be touched directly.
 - Stabilization and audit work may begin from approved `chore/*` branches when the repo is already mid-cleanup.
-- Implementation work should happen in an isolated project-local worktree at `.worktrees/<branch-name>`.
-- **Workflow:** create `fix/<name>` or `refactor/<name>` from the approved audit/spec branch → work in the matching `.worktrees/<branch-name>` directory → verify → merge back intentionally.
+- **Workflow:** create `fix/<name>` or `refactor/<name>` from the approved audit/spec branch → verify changes on that branch → merge back intentionally.
 - Commit messages: `chore:`, `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
 
 ## Architecture
@@ -18,7 +17,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 |---|---|---|
 | **Lending** | WASM Devnet | VaultCreate/Deposit/Withdraw, LoanBrokerSet, LoanSet/Pay/Manage |
 | **Trading** | WASM Devnet | EscrowCreate/Finish/Cancel, OfferCreate (SELL-side execution via app proxy routes) |
-| **Scheduled Trading** | WASM Devnet | `/api/dca` proxy + watcher execution |
+| **Scheduled Trading** | WASM Devnet | Watcher scheduler code remains parked for redesign; no app-supported creation flow is exposed |
 | **Privacy** | WASM Devnet | Smart Escrows (XLS-0100) + RISC0 ZK proofs via Boundless |
 | **Prices** | WASM Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
 

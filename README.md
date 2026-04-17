@@ -21,7 +21,7 @@ The building blocks exist. The product doesn't.
 - **Lend & Earn** : Deposit XRP or RLUSD into a native Vault (`VaultDeposit`). Yield comes from borrower interest, calculated and distributed by the ledger itself.
 - **Borrow** : Take a loan against vault collateral (`LoanSet`). The browser starts the flow, and the watcher signs and submits the XLS-66 transaction server-side because browser wallets cannot sign it. Interest accrual, collateral tracking, and liquidation are all handled natively by the XRPL lending protocol.
 - **Advanced Trading** : Place Stop-Loss, Take-Profit, Trailing Stop, and OCO orders. Each order is an `EscrowCreate` with a crypto-condition. The app proxies the order to the watcher service, which monitors `book_offers` and executes automatically when the price condition is met. The supported surface is SELL-side only.
-- **Scheduled Trading** : Register scheduled order batches through the app's proxy routes. The watcher submits the planned trades at the configured intervals. No direct frontend-to-watcher calls.
+- **Scheduled Trading** : The watcher still contains parked scheduler code for a later redesign, but the app does not currently expose user-creatable DCA/TWAP flows.
 - **ZK-Private Orders** : Hide your trigger price and trade amount on-chain using Smart Escrows (XLS-0100). A RISC0 zkVM proof (Groth16) verifies that the price condition was met without revealing it. The proof is generated via the Boundless Market and verified natively by the ledger.
 
 We did not build a layer on top of XRPL. We composed the chain's own transaction types into a product.
@@ -40,7 +40,7 @@ User (Xaman / Crossmark / GemWallet / Otsu / WalletConnect)
    v  Connect wallet
 Frontend (Next.js 16.1.6)
    |
-   v  App API routes (/api/orders, /api/dca, /api/orders/:owner/:sequence)
+   v  App API routes (/api/orders, /api/orders/:owner/:sequence)
    |
    v
 Watcher Bot (Node.js)
@@ -55,7 +55,7 @@ Ledger
 1. User deposits XRP/RLUSD into a native Vault and starts earning yield immediately
 2. User borrows against their collateral through the lending flow
 3. User places an advanced SELL-side order (SL/TP/Trailing/OCO). An Escrow locks the funds with a crypto-condition
-4. The app proxies order details to the watcher through `/api/orders` or `/api/dca`
+4. The app proxies supported order details to the watcher through `/api/orders`
 5. The Watcher Bot monitors `book_offers` on the DEX for real-time prices
 6. When a trigger condition is met, the bot fulfills the Escrow and executes the trade via `OfferCreate`
 7. For private orders, a Smart Escrow hides the parameters on-chain. A RISC0 ZK proof verifies the condition without revealing it
@@ -109,7 +109,7 @@ Every user action in Pyramid is an on-chain XRPL transaction:
 
 - **Lending lifecycle:** A single user depositing, borrowing, repaying, and withdrawing generates 4+ transactions.
 - **Trading:** Each advanced order creates 2-3 transactions (`EscrowCreate` + `EscrowFinish` + `OfferCreate`). Active traders could generate 10-50 transactions per day.
-- **Scheduled trading:** A DCA or TWAP plan generates one order submission per slice, routed through the app and executed by the watcher.
+- **Scheduled trading:** Scheduler internals remain parked in the watcher, but creating DCA/TWAP plans is disabled in the app until a safe stop/refund lifecycle exists.
 - **At scale:** With 1,000 active users running a mix of lending and trading, Pyramid could generate **50,000 to 100,000 transactions per day** on XRPL, all native, all on-ledger, all paying standard network fees.
 
 ### Roadmap
@@ -131,15 +131,15 @@ Every user action in Pyramid is an on-chain XRPL transaction:
 |  usePrice | useWalletManager                  |
 +-----------------------+-----------------------+
                         |
-   App API routes (/api/orders, /api/dca, /api/orders/:owner/:sequence)
+   App API routes (/api/orders, /api/orders/:owner/:sequence)
                         |
 +-----------------------+-----------------------+
 |        Watcher Bot (Node.js + Express)        |
 |                                                |
-|  Order Cache --> Trigger Engine --> DCA Queue  |
-|       |              |               |         |
-|  book_offers    escrow finish     scheduled    |
-|  (live prices)                   order runs    |
+|     Order Cache --> Trigger Engine --> ZK      |
+|          |               |              |      |
+|     book_offers     escrow finish    proofs    |
+|     (live prices)                        |      |
 +-----------------------+-----------------------+
                         |
                         v
@@ -174,7 +174,7 @@ Pyramid/
 │   │   ├── hooks/               # useVault, useLoanMarket, useEscrow, usePrice, useWalletManager
 │   │   └── lib/                 # xrplClient, networks, constants
 │   └── watcher/                 # Node.js watcher bot
-│       └── src/                 # devnet-loop, dca-scheduler, order-cache, zk-prover
+│       └── src/                 # devnet-loop, order-cache, zk-prover
 ├── packages/
 │   └── zkp/                     # RISC0 guest program + CLI prover
 ├── docs/
@@ -188,7 +188,7 @@ Pyramid/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js >=20.9.0
 - [pnpm](https://pnpm.io/) 8+
 
 ### Install
@@ -215,7 +215,7 @@ pnpm dev
 3. **Deposit** into a Vault to start earning yield
 4. **Borrow** against your collateral
 5. **Place a Stop-Loss** so the Watcher Bot monitors prices and executes automatically
-6. **Set up a DCA**: sign once, the bot handles the rest
+6. **Optional note**: scheduled DCA/TWAP creation is currently disabled in the app while its lifecycle is being redesigned
 
 ## On-Chain Proof — Nothing Is Mocked
 
