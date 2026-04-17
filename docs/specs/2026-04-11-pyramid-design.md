@@ -394,30 +394,37 @@ const { createVault, deposit, withdraw, getVaultInfo, getShareBalance } = useVau
 **Hook:** `useLoanMarket()` (`apps/web/hooks/useLoanMarket.js`)
 
 ```js
-const { createLoanBroker, depositCover, createLoan, payLoan, manageLoan, deleteLoan, getLoanInfo } = useLoanMarket()
+const {
+  availableVaults,
+  activeLoans,
+  loading,
+  error,
+  fetchAvailableVaults,
+  fetchActiveLoans,
+  borrowFromVault,
+  repayLoan,
+  manageLoan,
+} = useLoanMarket()
 ```
 
-| Button | Hook Call | Parameters | Returns |
-|--------|-----------|------------|---------|
-| "Request Loan" | `createLoan(loanBrokerId, borrowerAddress, principal, interestRate?, paymentTotal?, paymentInterval?, gracePeriod?)` | `loanBrokerId`: string, `borrowerAddress`: r-address, `principal`: string (drops), optionals have defaults from `LENDING` constants | `{ tx_blob, tx }` — prepared by the app for the lending flow |
-| "Repay" | `payLoan(loanId, amount, flags?)` | `loanId`: string (hash), `amount`: string (drops), `flags`: number (0 = normal, see `LOAN_PAY_FLAGS`) | `{ hash }` |
-| "Full Repay" | `payLoan(loanId, amount, 0x00020000)` | Use `LOAN_PAY_FLAGS.tfLoanFullPayment` | `{ hash }` |
-| "Loan Info" | `getLoanInfo(loanBrokerId, loanSeq)` | `loanBrokerId`: string, `loanSeq`: number | Loan ledger entry object |
+| Field / Action | Type | Description |
+|----------------|------|-------------|
+| `availableVaults` | `array` | Vaults the browser can borrow from through the watcher-managed flow. |
+| `activeLoans` | `array` | Loans fetched from the watcher. |
+| `loading` | `boolean` | Shared request state for loan actions. |
+| `error` | `string \| null` | Last loan error from the hook. |
+| `fetchAvailableVaults()` | function | Refresh the borrowable vault list from the watcher. |
+| `fetchActiveLoans()` | function | Refresh loan state from the watcher. |
+| `borrowFromVault(vaultId, principalDrops, opts?)` | function | Starts the watcher-managed XLS-66 borrow flow server-side. |
+| `repayLoan(loanId, amountDrops, flags?)` | function | Submits repayment through the watcher. |
+| `manageLoan(loanId, flags)` | function | Submits watcher-managed loan maintenance actions. |
 
 **Loan flow:**
-1. The app prepares the `createLoan(...)` payload and sends it to the watcher-managed lending service
-2. The watcher signs the XLS-66 transaction server-side and submits it because browser wallets cannot sign `LoanSet`
+1. The browser requests a borrow action through `borrowFromVault(...)`
+2. The watcher signs and submits the XLS-66 transaction server-side because browser wallets cannot sign `LoanSet`
 3. The browser displays the resulting status and repayment actions
 
-**Admin-only functions** (not for regular UI, broker/watcher manages these):
-
-| Action | Hook Call | Parameters |
-|--------|-----------|------------|
-| Setup broker | `createLoanBroker(vaultId, managementFeeRate?)` | `vaultId`: string |
-| Deposit cover | `depositCover(loanBrokerId, amount)` | First-loss capital |
-| Impair loan | `manageLoan(loanId, "impair")` | Starts grace period |
-| Default loan | `manageLoan(loanId, "default")` | After grace period |
-| Delete loan | `deleteLoan(loanId)` | After full repay or default |
+**Watcher / internal concerns** — broker setup, cover deposits, and other XLS-66 lifecycle steps are handled by the watcher service and are not exposed as browser hook methods.
 
 **LENDING defaults** (`lib/constants.js`):
 - `MANAGEMENT_FEE_RATE`: 1000 (1%)
@@ -458,7 +465,7 @@ const { createEscrow, finishEscrow, cancelEscrow, getEscrow } = useEscrow()
 **Watcher API** (REST endpoint on watcher bot):
 ```
 POST   /api/orders                  — Register order after frontend creates escrow
-POST   /api/dca                     — Register DCA schedule after frontend signs blobs
+POST   /api/dca                     — Register structured DCA/TWAP schedule payload
 GET    /api/orders                  — List all orders and DCA schedules
 DELETE /api/orders/:owner/:sequence — Remove order from cache
 GET    /api/health                  — Health check
@@ -494,7 +501,7 @@ These must be filled before the frontend works:
 | Constant | Where to get it | Used by |
 |----------|----------------|---------|
 | `ADDRESSES.VAULT_ID` | Output of `createVault()` — run setup script once | Vault deposit/withdraw/info |
-| `ADDRESSES.LOAN_BROKER_ID` | Output of `createLoanBroker()` | Loan operations |
+| `ADDRESSES.LOAN_BROKER_ID` | Output of the watcher-managed loan setup flow | Loan operations |
 | `ADDRESSES.RLUSD_ISSUER` | WASM Devnet RLUSD gateway address (from faucet or trust line setup) | Price feed, offers |
 | `WATCHER_ACCOUNT` | Watcher bot's funded WASM Devnet r-address | Escrow destination |
 
