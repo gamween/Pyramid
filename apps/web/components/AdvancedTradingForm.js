@@ -57,6 +57,10 @@ export function AdvancedTradingForm() {
     }
   }
 
+  function buildRegistrationFailureMessage(kind, detail) {
+    return `Escrow created successfully, but watcher ${kind} registration failed: ${detail}`
+  }
+
   const handleSubmit = async (e, type) => {
     e.preventDefault();
     if (!walletManager || !walletManager.account) {
@@ -146,7 +150,8 @@ export function AdvancedTradingForm() {
           }),
         });
         if (!resp.ok) {
-          throw new Error(await getApiErrorMessage(resp, "Watcher registration failed"))
+          const detail = await getApiErrorMessage(resp, "request rejected")
+          throw new Error(buildRegistrationFailureMessage("schedule", detail))
         }
         showStatus(`${type} scheduled: ${slices} trades every ${intervalMs / 1000}s`, "success");
         setAmountPerBuy("");
@@ -187,8 +192,9 @@ export function AdvancedTradingForm() {
           body: JSON.stringify(orderPayload),
         });
         if (!resp.ok) {
+          const detail = await getApiErrorMessage(resp, "request rejected")
           throw new Error(
-            await getApiErrorMessage(resp, "Watcher registration failed — escrow created but order not tracked")
+            buildRegistrationFailureMessage("order", detail)
           )
         }
         showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");

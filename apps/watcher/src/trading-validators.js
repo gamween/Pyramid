@@ -23,6 +23,8 @@ function assertFinitePositiveAmount(value, fieldName) {
   assertFinitePositiveNumber(numericValue, fieldName)
 }
 
+const SUPPORTED_ORDER_TYPES = new Set(["STOP_LOSS", "TAKE_PROFIT", "TRAILING_STOP", "OCO"])
+
 export function assertSupportedOrderPayload(payload) {
   if (payload.side !== "SELL") {
     throw new Error("BUY / short advanced orders are disabled in the current release")
@@ -33,6 +35,9 @@ export function assertSupportedOrderPayload(payload) {
 
   assertFinitePositiveInteger(payload.escrowSequence, "escrowSequence")
   assertFinitePositiveAmount(payload.amount, "amount")
+  if (!SUPPORTED_ORDER_TYPES.has(payload.orderType)) {
+    throw new Error(`Unsupported orderType: ${payload.orderType}`)
+  }
 
   if (payload.orderType === "STOP_LOSS" || payload.orderType === "TAKE_PROFIT") {
     assertFinitePositiveNumber(payload.triggerPrice, "triggerPrice")

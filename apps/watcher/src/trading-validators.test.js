@@ -34,6 +34,20 @@ test("assertSupportedOrderPayload rejects malformed SELL orders", () => {
   )
 })
 
+test("assertSupportedOrderPayload rejects unknown SELL order types", () => {
+  assert.throws(
+    () =>
+      assertSupportedOrderPayload({
+        side: "SELL",
+        orderType: "WHATEVER",
+        owner: "rOwner",
+        escrowSequence: 12,
+        amount: "1000000",
+      }),
+    /Unsupported orderType/
+  )
+})
+
 test("assertSupportedSchedulePayload rejects BUY schedules", () => {
   assert.throws(() => assertSupportedSchedulePayload({ side: "BUY", slices: 4 }), /disabled/)
 })
