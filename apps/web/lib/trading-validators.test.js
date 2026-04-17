@@ -50,3 +50,15 @@ test("validateSellScheduleDraft rejects TWAP totals that do not divide into whol
     /amount/
   )
 })
+
+test("validateSellScheduleDraft returns exact drop amounts for schedule flows", () => {
+  const parsed = validateSellScheduleDraft({
+    type: "DCA",
+    amountPerBuy: "1.000001",
+    numBuys: "2",
+    ticketInterval: "60",
+  })
+
+  assert.equal(parsed.amountPerBuy, "1000001")
+  assert.equal(parsed.totalAmount, "2000002")
+})

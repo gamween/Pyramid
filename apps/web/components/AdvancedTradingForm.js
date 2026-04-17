@@ -92,8 +92,6 @@ export function AdvancedTradingForm() {
 
       if (isDca) {
         const count = validatedDraft.slices;
-        const totalXrp = validatedDraft.totalAmount;
-        const perSliceXrp = validatedDraft.amountPerBuy;
 
         // Ensure user has USD trustline to receive proceeds from SELL trades
         if (side === "SELL") {
@@ -104,8 +102,8 @@ export function AdvancedTradingForm() {
           });
         }
 
-        amountInDrops = String(Math.floor(totalXrp * 1000000));
-        perSliceDrops = String(Math.floor(perSliceXrp * 1000000));
+        amountInDrops = validatedDraft.totalAmount;
+        perSliceDrops = validatedDraft.amountPerBuy;
         slices = count;
         intervalMs = validatedDraft.intervalMs;
       } else {

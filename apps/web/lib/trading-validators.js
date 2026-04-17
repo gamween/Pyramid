@@ -78,16 +78,16 @@ export function validateSellScheduleDraft(draft) {
 
   if (draft.type === "DCA") {
     const amountPerBuyDrops = parsePositiveDropAmount(draft.amountPerBuy, "amount")
-    parsed.amountPerBuy = amountPerBuyDrops / DROPS_PER_XRP
-    parsed.totalAmount = parsed.amountPerBuy * slices
+    parsed.amountPerBuy = String(amountPerBuyDrops)
+    parsed.totalAmount = String(amountPerBuyDrops * slices)
   } else {
     const totalAmountDrops = parsePositiveDropAmount(draft.amount, "amount")
     if (totalAmountDrops % slices !== 0) {
       throw new Error("Invalid amount")
     }
 
-    parsed.totalAmount = totalAmountDrops / DROPS_PER_XRP
-    parsed.amountPerBuy = parsed.totalAmount / slices
+    parsed.totalAmount = String(totalAmountDrops)
+    parsed.amountPerBuy = String(totalAmountDrops / slices)
   }
 
   return parsed
