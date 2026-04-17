@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useWallet } from "./providers/WalletProvider";
 import { useEscrow } from "@/hooks/useEscrow";
 import { WATCHER_ACCOUNT, ADDRESSES } from "@/lib/constants";
+import { validateSellOrderDraft, validateSellScheduleDraft } from "@/lib/trading-validators";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -68,8 +69,14 @@ export function AdvancedTradingForm() {
       return;
     }
 
-    setIsSubmitting(true);
     try {
+      const isDca = type === "DCA" || type === "TWAP";
+      const validatedDraft = isDca
+        ? validateSellScheduleDraft({ type, amount, amountPerBuy, numBuys, ticketInterval })
+        : validateSellOrderDraft({ type, amount, triggerPrice, trailingPct, tpPrice, slPrice });
+
+      setIsSubmitting(true);
+
       const { preimageHex, preimage } = generateCondition();
       const conditionHash = await hashPreimage(preimage);
 
@@ -80,17 +87,13 @@ export function AdvancedTradingForm() {
       const cancelAfter = Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
 
       // ── DCA / TWAP: one escrow for total, watcher splits into N trades ──
-      const isDca = type === "DCA" || type === "TWAP";
       let amountInDrops;
       let slices, perSliceDrops, intervalMs;
 
       if (isDca) {
-        const count = parseInt(numBuys);
-        const intervalSec = parseInt(ticketInterval);
-        if (!count || count < 1 || !intervalSec || intervalSec < 1) {
-          showStatus("Enter valid # slices and interval", "error");
-          return;
-        }
+        const count = validatedDraft.slices;
+        const totalXrp = validatedDraft.totalAmount;
+        const perSliceXrp = validatedDraft.amountPerBuy;
 
         // Ensure user has USD trustline to receive proceeds from SELL trades
         if (side === "SELL") {
@@ -101,20 +104,12 @@ export function AdvancedTradingForm() {
           });
         }
 
-        let totalXrp;
-        if (type === "DCA") {
-          const perBuy = parseFloat(amountPerBuy);
-          totalXrp = perBuy * count;
-          perSliceDrops = String(Math.floor(perBuy * 1000000));
-        } else {
-          totalXrp = parseFloat(amount);
-          perSliceDrops = String(Math.floor((totalXrp / count) * 1000000));
-        }
         amountInDrops = String(Math.floor(totalXrp * 1000000));
+        perSliceDrops = String(Math.floor(perSliceXrp * 1000000));
         slices = count;
-        intervalMs = intervalSec * 1000;
+        intervalMs = validatedDraft.intervalMs;
       } else {
-        amountInDrops = String(Math.floor(parseFloat(amount) * 1000000));
+        amountInDrops = String(Math.floor(validatedDraft.amount * 1000000));
 
         // Ensure user has USD trustline for SELL orders (to receive USD proceeds)
         if (side === "SELL") {
@@ -173,12 +168,12 @@ export function AdvancedTradingForm() {
         };
 
         if (type === "SL" || type === "TP") {
-          orderPayload.triggerPrice = parseFloat(triggerPrice);
+          orderPayload.triggerPrice = validatedDraft.triggerPrice;
         } else if (type === "TRAILING") {
-          orderPayload.trailingPct = parseInt(trailingPct, 10);
+          orderPayload.trailingPct = validatedDraft.trailingPct;
         } else if (type === "OCO") {
-          orderPayload.tpPrice = parseFloat(tpPrice);
-          orderPayload.slPrice = parseFloat(slPrice);
+          orderPayload.tpPrice = validatedDraft.tpPrice;
+          orderPayload.slPrice = validatedDraft.slPrice;
         }
 
         if (isPrivate) {
