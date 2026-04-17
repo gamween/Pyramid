@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Activity, AlertTriangle, ArrowRight, Database, Lock } from "lucide-react"
 
 import { useVault } from "@/hooks/useVault"
@@ -28,8 +28,19 @@ export function ActivePositions() {
   const [vaultsLoading, setVaultsLoading] = useState(true)
   const [ordersError, setOrdersError] = useState("")
   const [actionKey, setActionKey] = useState("")
+  const fetchRequestIdRef = useRef(0)
+  const appliedRequestIdRef = useRef(0)
+  const isMountedRef = useRef(true)
 
-  const fetchOrders = useCallback(async (signal) => {
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  const fetchOrders = useCallback(async ({ signal } = {}) => {
+    const requestId = ++fetchRequestIdRef.current
+
     try {
       const response = await fetch("/api/orders", { signal })
       if (!response.ok) {
@@ -37,14 +48,24 @@ export function ActivePositions() {
       }
 
       const data = await response.json()
+      if (!isMountedRef.current || signal?.aborted || requestId < appliedRequestIdRef.current) {
+        return
+      }
+
+      appliedRequestIdRef.current = requestId
       setWatcherState(normalizeWatcherState(data))
       setOrdersError("")
     } catch (error) {
       if (error?.name === "AbortError") return
+      if (!isMountedRef.current || requestId < appliedRequestIdRef.current) {
+        return
+      }
+
+      appliedRequestIdRef.current = requestId
       setWatcherState({ orders: [], schedules: [] })
       setOrdersError("Watcher data unavailable")
     } finally {
-      if (!signal?.aborted) {
+      if (isMountedRef.current && !signal?.aborted && requestId >= appliedRequestIdRef.current) {
         setOrdersLoading(false)
       }
     }
@@ -53,7 +74,7 @@ export function ActivePositions() {
   useEffect(() => {
     const controller = new AbortController()
 
-    fetchOrders(controller.signal)
+    fetchOrders({ signal: controller.signal })
 
     const interval = setInterval(() => {
       fetchOrders()
@@ -97,19 +118,23 @@ export function ActivePositions() {
 
   const trackedItems = [...watcherState.orders, ...watcherState.schedules]
 
+  const removeTrackedOrder = useCallback(async (owner, sequence, message) => {
+    const response = await fetch(`/api/orders/${owner}/${sequence}`, { method: "DELETE" })
+    if (!response.ok) {
+      throw new Error(`Stop tracking failed with ${response.status}`)
+    }
+    const data = await response.json()
+    if (data?.status !== "ok") {
+      throw new Error(message)
+    }
+  }, [])
+
   async function handleStopTracking(owner, sequence) {
     const nextActionKey = `stop:${owner}:${sequence}`
     setActionKey(nextActionKey)
 
     try {
-      const response = await fetch(`/api/orders/${owner}/${sequence}`, { method: "DELETE" })
-      if (!response.ok) {
-        throw new Error(`Stop tracking failed with ${response.status}`)
-      }
-      const data = await response.json()
-      if (data?.status !== "ok") {
-        throw new Error("Tracked order was not removed")
-      }
+      await removeTrackedOrder(owner, sequence, "Tracked order was not removed")
       await fetchOrders()
     } catch (error) {
       setOrdersError(error instanceof Error ? error.message : "Unable to stop tracking order")
@@ -124,6 +149,7 @@ export function ActivePositions() {
 
     try {
       await cancelEscrow(owner, sequence)
+      await removeTrackedOrder(owner, sequence, "Tracked order was not removed after on-chain cancel")
       await fetchOrders()
     } catch (error) {
       setOrdersError(error instanceof Error ? error.message : "Unable to cancel escrow on-chain")

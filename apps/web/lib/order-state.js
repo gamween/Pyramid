@@ -43,7 +43,7 @@ export function normalizeWatcherState(payload = {}) {
     progress: `${schedule.completed}/${schedule.total}`,
     status: schedule.status ?? "ACTIVE",
     canStopTracking: false,
-    canCancelEscrow: isActiveStatus(schedule.status) && schedule.escrowFinished !== true,
+    canCancelEscrow: false,
   }))
 
   return { orders, schedules }

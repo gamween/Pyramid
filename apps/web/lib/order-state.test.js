@@ -139,6 +139,6 @@ test("normalizeWatcherState exposes truthful action metadata per row", () => {
   assert.equal(normalized.orders[0].canCancelEscrow, true)
   assert.equal(normalized.orders[1].canCancelEscrow, false)
   assert.equal(normalized.schedules[0].canStopTracking, false)
-  assert.equal(normalized.schedules[0].canCancelEscrow, true)
+  assert.equal(normalized.schedules[0].canCancelEscrow, false)
   assert.equal(normalized.schedules[1].canCancelEscrow, false)
 })
