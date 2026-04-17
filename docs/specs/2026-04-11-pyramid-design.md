@@ -505,7 +505,7 @@ import { ORDER_TYPES, ORDER_STATUS, SIDES } from "@/lib/constants"
 
 ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO, DCA, TWAP }
 ORDER_STATUS: { ACTIVE, TRIGGERED, EXECUTED, CANCELLED, EXPIRED }
-SIDES: { SELL }
+SIDES: { BUY, SELL }
 ```
 
 `apps/web/lib/constants.js` still exports `SIDES = { BUY, SELL }`, but the supported trading surface exposed by the app is SELL-only.
