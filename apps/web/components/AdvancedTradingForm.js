@@ -48,6 +48,15 @@ export function AdvancedTradingForm() {
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
+  async function getApiErrorMessage(response, fallbackMessage) {
+    try {
+      const payload = await response.json();
+      return payload?.message || payload?.error || fallbackMessage;
+    } catch {
+      return fallbackMessage;
+    }
+  }
+
   const handleSubmit = async (e, type) => {
     e.preventDefault();
     if (!walletManager || !walletManager.account) {
@@ -136,7 +145,9 @@ export function AdvancedTradingForm() {
             intervalMs,
           }),
         });
-        if (!resp.ok) throw new Error("Watcher registration failed");
+        if (!resp.ok) {
+          throw new Error(await getApiErrorMessage(resp, "Watcher registration failed"))
+        }
         showStatus(`${type} scheduled: ${slices} trades every ${intervalMs / 1000}s`, "success");
         setAmountPerBuy("");
         setAmount("");
@@ -175,7 +186,11 @@ export function AdvancedTradingForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(orderPayload),
         });
-        if (!resp.ok) throw new Error("Watcher registration failed — escrow created but order not tracked");
+        if (!resp.ok) {
+          throw new Error(
+            await getApiErrorMessage(resp, "Watcher registration failed — escrow created but order not tracked")
+          )
+        }
         showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
         setAmount("");
         setTriggerPrice("");
@@ -224,7 +239,7 @@ export function AdvancedTradingForm() {
                       value={side} onChange={e => setSide(e.target.value)} 
                       className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                     >
-                      <option value="SELL">SELL (Long)</option>
+                      <option value="SELL">SELL</option>
                     </select>
                   </div>
                 </div>
@@ -269,7 +284,7 @@ export function AdvancedTradingForm() {
                     value={side} onChange={e => setSide(e.target.value)} 
                     className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                   >
-                    <option value="SELL">SELL (Long)</option>
+                    <option value="SELL">SELL</option>
                   </select>
                 </div>
               </div>
@@ -312,7 +327,7 @@ export function AdvancedTradingForm() {
                     value={side} onChange={e => setSide(e.target.value)} 
                     className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                   >
-                    <option value="SELL">SELL (Long)</option>
+                    <option value="SELL">SELL</option>
                   </select>
                 </div>
               </div>
@@ -362,7 +377,7 @@ export function AdvancedTradingForm() {
                       value={side} onChange={e => setSide(e.target.value)} 
                       className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                     >
-                      <option value="SELL">SELL (Long)</option>
+                      <option value="SELL">SELL</option>
                     </select>
                   </div>
                 </div>
