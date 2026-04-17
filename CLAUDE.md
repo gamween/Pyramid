@@ -6,9 +6,10 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 ## Branch Strategy
 
-- **`develop`** is the integration branch. All work merges here.
-- **`main`** must never be touched.
-- **Workflow:** create `feat/<name>` or `fix/<name>` from `develop` → work → merge to `develop` → delete branch.
+- **`main`** must never be touched directly.
+- Stabilization and audit work may begin from approved `chore/*` branches when the repo is already mid-cleanup.
+- Implementation work should happen in an isolated project-local worktree at `.worktrees/<branch-name>`.
+- **Workflow:** create `fix/<name>` or `refactor/<name>` from the approved audit/spec branch → work in the matching `.worktrees/<branch-name>` directory → verify → merge back intentionally.
 - Commit messages: `chore:`, `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
 
 ## Architecture
@@ -24,7 +25,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 ## Tech Stack
 
 - **Frontend:** Next.js 14 / React 18 / Tailwind CSS / shadcn/ui
-- **Watcher Bot:** Node.js + xrpl.js v3
+- **Watcher Bot:** Node.js + xrpl.js v4 (smartescrow fork)
 - **ZK Proofs:** RISC0 zkVM (Groth16) + Boundless Market
 - **Wallet:** xrpl-connect (Xaman, Crossmark, GemWallet)
 - **Monorepo:** pnpm workspaces + Turborepo
@@ -37,7 +38,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 ## Naming Conventions
 
-- **Branch:** `develop` (working), `main` (untouched)
+- **Branch:** `chore/*` for audit/cleanup, `fix/*` or `refactor/*` for implementation, `main` untouched
 - **Components:** PascalCase (`VaultDeposit.js`, `OrderCard.js`)
 - **Hooks:** camelCase with `use` prefix (`usePrice.js`, `useVault.js`)
 - **Utils/lib:** camelCase (`constants.js`, `networks.js`)

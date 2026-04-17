@@ -12,11 +12,6 @@ out/
 build
 dist/
 
-# Nuxt
-.nuxt/
-.output/
-
-
 # Production
 build
 
@@ -44,6 +39,10 @@ pnpm-debug.log*
 # Devnet secrets
 apps/web/scripts/devnet-addresses.json
 apps/watcher/.env
+
+# Tooling artifacts
+.superpowers/
+.worktrees/
 
 # Rust/Bedrock
 target/

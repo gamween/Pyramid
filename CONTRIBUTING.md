@@ -7,7 +7,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/DVB-ESILV/Pyramid.git`
 3. Install dependencies: `pnpm install`
-4. Create a branch from `develop`: `git checkout -b feature/your-feature-name`
+4. Create a worktree-backed branch from the approved working branch: `git worktree add .worktrees/your-branch -b your-branch`
 
 ## Development Workflow
 
@@ -26,9 +26,15 @@ pnpm build
 ### Linting and Formatting
 
 ```bash
-pnpm lint
+pnpm --filter web lint
 pnpm format
 ```
+
+## Branching
+
+1. Create a dedicated implementation branch from the approved working branch, not from `main`.
+2. Use `.worktrees/<branch-name>` for project-local isolation.
+3. Keep documentation and verification changes in the same branch as the code they describe.
 
 ## Project Structure
 
@@ -56,7 +62,7 @@ pnpm format
 
 ### Adding New Features
 
-1. Create a new branch from `develop`
+1. Create a new worktree-backed branch from the approved working branch
 2. Implement your feature
 3. Test thoroughly on Devnet
 4. Submit a pull request
