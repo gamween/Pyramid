@@ -4,6 +4,7 @@ import { useCallback } from "react"
 import { getClient } from "@/lib/xrplClient"
 import { useWallet } from "@/components/providers/WalletProvider"
 import { WATCHER_ACCOUNT } from "@/lib/constants"
+import { assertValidatedTransactionSuccess } from "./useEscrow.validation"
 
 async function getTxMeta(hash) {
   const client = await getClient()
@@ -52,7 +53,10 @@ export function useEscrow() {
       Owner: owner,
       OfferSequence: sequence,
     }
-    return await walletManager.signAndSubmit(tx)
+    const submitted = await walletManager.signAndSubmit(tx)
+    const txResult = await getTxMeta(submitted.hash)
+    assertValidatedTransactionSuccess(txResult, "EscrowCancel")
+    return submitted
   }, [walletManager])
 
   const getEscrow = useCallback(async (owner, sequence) => {
