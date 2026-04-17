@@ -81,6 +81,22 @@ test("assertSupportedSchedulePayload accepts valid SELL schedules", () => {
   )
 })
 
+test("assertSupportedSchedulePayload rejects mismatched SELL schedule arithmetic", () => {
+  assert.throws(
+    () =>
+      assertSupportedSchedulePayload({
+        side: "SELL",
+        owner: "rOwner",
+        escrowSequence: 44,
+        slices: 4,
+        totalAmount: "4000001",
+        perSliceAmount: "1000000",
+        intervalMs: 30000,
+      }),
+    /totalAmount/
+  )
+})
+
 test("assertSupportedSchedulePayload rejects malformed SELL schedules", () => {
   assert.throws(
     () =>

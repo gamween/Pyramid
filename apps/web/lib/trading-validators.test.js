@@ -18,6 +18,18 @@ test("validateSellOrderDraft rejects invalid OCO tp/sl values", () => {
   assert.throws(() => validateSellOrderDraft({ type: "OCO", amount: "100", tpPrice: "-1", slPrice: "0.45" }), /tpPrice/)
 })
 
+test("validateSellOrderDraft rejects sub-drop SELL amounts", () => {
+  assert.throws(
+    () => validateSellOrderDraft({ type: "SL", amount: "0.0000005", triggerPrice: "0.55" }),
+    /amount/
+  )
+})
+
+test("validateSellOrderDraft returns exact drop strings for SELL amounts", () => {
+  const parsed = validateSellOrderDraft({ type: "SL", amount: "1.000001", triggerPrice: "0.55" })
+  assert.equal(parsed.amount, "1000001")
+})
+
 test("validateSellScheduleDraft rejects invalid DCA and TWAP numeric inputs", () => {
   assert.throws(
     () => validateSellScheduleDraft({ type: "DCA", amountPerBuy: "", numBuys: "4", ticketInterval: "60" }),

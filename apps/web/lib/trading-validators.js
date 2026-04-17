@@ -53,7 +53,7 @@ function parsePositiveDropAmount(value, fieldName) {
 
 export function validateSellOrderDraft(draft) {
   const parsed = {
-    amount: parsePositiveNumber(draft.amount, "amount"),
+    amount: String(parsePositiveDropAmount(draft.amount, "amount")),
   }
 
   if (draft.type === "SL" || draft.type === "TP") {

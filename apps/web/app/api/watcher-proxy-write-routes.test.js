@@ -131,6 +131,42 @@ test("watcher write and delete routes preserve upstream status on empty watcher 
   assert.deepEqual(await dcaResponse.json(), { error: "Watcher response was not valid JSON" })
 })
 
+test("watcher write and delete routes return unavailable on fetch rejection", async (t) => {
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  globalThis.fetch = async () => {
+    throw new Error("watcher offline")
+  }
+
+  const orderResponse = await createOrder(
+    new Request("http://localhost/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner: "rOwner" }),
+    })
+  )
+  assert.equal(orderResponse.status, 503)
+  assert.deepEqual(await orderResponse.json(), { error: "Watcher service unavailable" })
+
+  const deleteResponse = await deleteOrder(new Request("http://localhost/api/orders/rOwner/12", { method: "DELETE" }), {
+    params: { owner: "rOwner", sequence: "12" },
+  })
+  assert.equal(deleteResponse.status, 503)
+  assert.deepEqual(await deleteResponse.json(), { error: "Watcher service unavailable" })
+
+  const dcaResponse = await createDca(
+    new Request("http://localhost/api/dca", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "scheduleA" }),
+    })
+  )
+  assert.equal(dcaResponse.status, 503)
+  assert.deepEqual(await dcaResponse.json(), { error: "Watcher service unavailable" })
+})
+
 test("watcher write routes still proxy successful JSON responses", async (t) => {
   t.after(() => {
     globalThis.fetch = originalFetch

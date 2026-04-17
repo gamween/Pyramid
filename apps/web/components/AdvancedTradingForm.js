@@ -107,7 +107,7 @@ export function AdvancedTradingForm() {
         slices = count;
         intervalMs = validatedDraft.intervalMs;
       } else {
-        amountInDrops = String(Math.floor(validatedDraft.amount * 1000000));
+        amountInDrops = validatedDraft.amount;
 
         // Ensure user has USD trustline for SELL orders (to receive USD proceeds)
         if (side === "SELL") {

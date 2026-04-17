@@ -66,5 +66,8 @@ export function assertSupportedSchedulePayload(payload) {
   assertFinitePositiveInteger(payload.slices, "slices")
   assertIntegerDropString(payload.totalAmount, "totalAmount")
   assertIntegerDropString(payload.perSliceAmount, "perSliceAmount")
+  if (BigInt(payload.totalAmount) !== BigInt(payload.perSliceAmount) * BigInt(payload.slices)) {
+    throw new Error("Invalid totalAmount")
+  }
   assertFinitePositiveInteger(payload.intervalMs, "intervalMs")
 }
