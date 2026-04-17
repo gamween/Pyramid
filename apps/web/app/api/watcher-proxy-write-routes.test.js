@@ -97,6 +97,29 @@ test("watcher write and delete routes preserve upstream status and text on non-J
   })
 })
 
+test("delete route resolves async params before proxying to the watcher", async (t) => {
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  let requestedUrl
+  globalThis.fetch = async (url) => {
+    requestedUrl = url
+    return jsonResponse({ status: "ok" })
+  }
+
+  const deleteResponse = await deleteOrder(
+    new Request("http://localhost/api/orders/rOwner/12", { method: "DELETE" }),
+    {
+      params: Promise.resolve({ owner: "rOwner", sequence: "12" }),
+    }
+  )
+
+  assert.equal(deleteResponse.status, 200)
+  assert.deepEqual(await deleteResponse.json(), { status: "ok" })
+  assert.equal(requestedUrl, "http://localhost:3001/api/orders/rOwner/12")
+})
+
 test("watcher write and delete routes preserve upstream status on empty watcher responses", async (t) => {
   t.after(() => {
     globalThis.fetch = originalFetch

@@ -27,7 +27,8 @@ async function proxyWatcherResponse(response) {
 
 export async function DELETE(_request, { params }) {
   try {
-    const response = await fetch(`${WATCHER_URL}/api/orders/${params.owner}/${params.sequence}`, {
+    const resolvedParams = await params
+    const response = await fetch(`${WATCHER_URL}/api/orders/${resolvedParams.owner}/${resolvedParams.sequence}`, {
       method: "DELETE",
     })
     return proxyWatcherResponse(response)
