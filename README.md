@@ -14,14 +14,14 @@ The building blocks exist. The product doesn't.
 
 ## The Solution
 
-**Pyramid** is the first protocol to leverage XRPL's Native Lending Protocol (XLS-65/66) and compose it with the chain's existing primitives (Escrows, DEX Offers, Tickets, Smart Escrows) into a complete lending + trading + privacy platform.
+**Pyramid** is the first protocol to leverage XRPL's Native Lending Protocol (XLS-65/66) and compose it with the chain's existing primitives (Escrows, DEX Offers, Smart Escrows) into a complete lending + trading + privacy platform.
 
 **Everything is native.** There are no smart contracts, no Hooks, no off-chain order books. Every single operation that Pyramid performs is a native XRPL transaction type, processed directly by the ledger's consensus engine:
 
 - **Lend & Earn** : Deposit XRP or RLUSD into a native Vault (`VaultDeposit`). Yield comes from borrower interest, calculated and distributed by the ledger itself.
-- **Borrow** : Take a loan against vault collateral (`LoanSet`). Interest accrual, collateral tracking, and liquidation are all handled natively by the XRPL lending protocol.
-- **Advanced Trading** : Place Stop-Loss, Take-Profit, Trailing Stop, and OCO orders. Each order is an `EscrowCreate` with a crypto-condition. A Watcher Bot monitors the native DEX via `book_offers` and executes automatically when the price condition is met.
-- **DCA & TWAP** : Sign a batch of orders once using `TicketCreate` + pre-signed `OfferCreate` transactions. The bot submits them at scheduled intervals. No further user interaction needed.
+- **Borrow** : Take a loan against vault collateral (`LoanSet`). The browser starts the flow, and the watcher signs and submits the XLS-66 transaction server-side because browser wallets cannot sign it. Interest accrual, collateral tracking, and liquidation are all handled natively by the XRPL lending protocol.
+- **Advanced Trading** : Place Stop-Loss, Take-Profit, Trailing Stop, and OCO orders. Each order is an `EscrowCreate` with a crypto-condition. The app proxies the order to the watcher service, which monitors `book_offers` and executes automatically when the price condition is met. The supported surface is SELL-side only.
+- **Scheduled Trading** : Register scheduled order batches through the app's proxy routes. The watcher submits the planned trades at the configured intervals. No direct frontend-to-watcher calls.
 - **ZK-Private Orders** : Hide your trigger price and trade amount on-chain using Smart Escrows (XLS-0100). A RISC0 zkVM proof (Groth16) verifies that the price condition was met without revealing it. The proof is generated via the Boundless Market and verified natively by the ledger.
 
 We did not build a layer on top of XRPL. We composed the chain's own transaction types into a product.
@@ -35,50 +35,29 @@ We did not build a layer on top of XRPL. We composed the chain's own transaction
 ## How It Works
 
 ```
-User (Xaman / Crossmark / GemWallet)
+User (Xaman / Crossmark / GemWallet / Otsu / WalletConnect)
    |
    v  Connect wallet
-Frontend (Next.js :3000)
+Frontend (Next.js 16.1.6)
    |
-   |-- LENDING --------------------------------+
-   |   |                                       |
-   |   |-- 1. VaultDeposit (XLS-65)            |
-   |   |      User deposits XRP/RLUSD          |
-   |   |      into a native Vault, earns yield |
-   |   |                                       |
-   |   '-- 2. LoanSet (XLS-66)                 |
-   |          Borrow against vault collateral   |
-   |          On-chain interest + liquidation   |
-   |                                           |
-   |-- TRADING --------------------------------+
-   |   |                                       |
-   |   |-- 3. EscrowCreate + crypto-condition   |
-   |   |      SL / TP / Trailing / OCO order    |
-   |   |                                       |
-   |   '-- 4. TicketCreate + pre-signed Offers  |
-   |          DCA / TWAP strategy               |
-   |                                           |
-   |-- PRIVACY --------------------------------+
-   |   |                                       |
-   |   '-- 5. Smart Escrow (XLS-0100)           |
-   |          Hidden trigger price + amount      |
-   |          RISC0 ZK proof via Boundless       |
-   |                                           |
-   v                                           |
-Watcher Bot (Node.js)                          |
-   |                                           |
-   |-- Monitors book_offers for live prices     |
-   |-- Triggers orders when conditions met      |
-   |-- Executes DCA slices on schedule          |
-   '-- Fulfills escrow crypto-conditions        |
+   v  App API routes (/api/orders, /api/dca, /api/orders/:owner/:sequence)
+   |
+   v
+Watcher Bot (Node.js)
+   |-- Monitors book_offers for live prices
+   |-- Triggers orders when conditions met
+   '-- Fulfills escrow crypto-conditions
+   |
+   v
+Ledger
 ```
 
 1. User deposits XRP/RLUSD into a native Vault and starts earning yield immediately
-2. User borrows against their collateral via a cosigned Loan transaction
-3. User places an advanced order (SL/TP/Trailing/OCO). An Escrow locks the funds with a crypto-condition
-4. The Watcher Bot monitors `book_offers` on the DEX for real-time prices
-5. When a trigger condition is met, the bot fulfills the Escrow and executes the trade via `OfferCreate`
-6. For DCA, the bot submits pre-signed orders at scheduled intervals using Tickets
+2. User borrows against their collateral through the lending flow
+3. User places an advanced SELL-side order (SL/TP/Trailing/OCO). An Escrow locks the funds with a crypto-condition
+4. The app proxies order details to the watcher through `/api/orders` or `/api/dca`
+5. The Watcher Bot monitors `book_offers` on the DEX for real-time prices
+6. When a trigger condition is met, the bot fulfills the Escrow and executes the trade via `OfferCreate`
 7. For private orders, a Smart Escrow hides the parameters on-chain. A RISC0 ZK proof verifies the condition without revealing it
 
 ## Why Native Matters
@@ -92,15 +71,14 @@ This matters because:
 - **Atomic settlement.** Offers, escrows, and loans are processed by the consensus engine in a single ledger close (~3-4 seconds). No multi-step settlement, no MEV.
 - **Mainnet-ready by design.** Once XLS-65/66 ship to Mainnet, Pyramid's lending layer works with zero code changes. Same transaction types, same fields, same flow.
 
-Pyramid uses **10+ native XRPL transaction types** across three layers:
+Pyramid uses native XRPL transaction types across three layers:
 
 | Feature | Primitive | What It Does |
 |---------|-----------|--------------|
 | **Native Vaults** (XLS-65) | `VaultCreate`, `VaultDeposit`, `VaultWithdraw` | Deposit assets into ledger-native vaults. Yield is distributed automatically from borrower interest. |
 | **Native Lending** (XLS-66) | `LoanBrokerSet`, `LoanSet`, `LoanPay`, `LoanManage` | On-chain loans with native interest accrual, collateral tracking, and liquidation. |
 | **Escrow** | `EscrowCreate`, `EscrowFinish`, `EscrowCancel` | Lock funds with crypto-conditions for advanced orders (SL, TP, Trailing, OCO). |
-| **Native DEX** | `OfferCreate` (`tfImmediateOrCancel`) | Execute market orders directly on the XRPL order book. |
-| **Tickets** | `TicketCreate` + pre-signed `OfferCreate` | Enable DCA/TWAP by pre-authorizing a sequence of future trades. |
+| **Native DEX** | `OfferCreate` (`tfImmediateOrCancel`) | Execute SELL-side market orders directly on the XRPL order book. |
 | **Smart Escrows** (XLS-0100) | `EscrowCreate` with `FinishFunction` | ZK-private orders: the trigger price and amount are hidden on-chain, verified by a Groth16 proof. |
 | **DEX Price Feed** | `book_offers`, `amm_info` | Real-time on-chain price discovery from the native DEX and AMM. No external oracle. |
 | **Multi-Purpose Tokens** | MPToken ledger entries | Track vault shares and handle RLUSD (MPT-issued stablecoin). |
@@ -131,7 +109,7 @@ Every user action in Pyramid is an on-chain XRPL transaction:
 
 - **Lending lifecycle:** A single user depositing, borrowing, repaying, and withdrawing generates 4+ transactions.
 - **Trading:** Each advanced order creates 2-3 transactions (`EscrowCreate` + `EscrowFinish` + `OfferCreate`). Active traders could generate 10-50 transactions per day.
-- **DCA:** A single DCA strategy with 30 daily slices generates 31 transactions (1 `TicketCreate` + 30 `OfferCreate`).
+- **Scheduled trading:** A DCA or TWAP plan generates one order submission per slice, routed through the app and executed by the watcher.
 - **At scale:** With 1,000 active users running a mix of lending and trading, Pyramid could generate **50,000 to 100,000 transactions per day** on XRPL, all native, all on-ledger, all paying standard network fees.
 
 ### Roadmap
@@ -147,39 +125,36 @@ Every user action in Pyramid is an on-chain XRPL transaction:
 
 ```
 +-----------------------------------------------+
-|       Frontend (Next.js 14 + shadcn/ui)       |
+|       Frontend (Next.js 16.1.6 + shadcn/ui)   |
 |                                                |
-|  useVault | useLoan | useEscrow | usePrice    |
-|  useTickets | useWallet (xrpl-connect)         |
+|  useVault | useLoanMarket | useEscrow         |
+|  usePrice | useWalletManager                  |
 +-----------------------+-----------------------+
                         |
-          WASM Devnet   |   wss://wasm.devnet.rippletest.net:51233
+   App API routes (/api/orders, /api/dca, /api/orders/:owner/:sequence)
                         |
 +-----------------------+-----------------------+
 |        Watcher Bot (Node.js + Express)        |
 |                                                |
-|  Devnet Loop --> Order Cache --> Trigger Engine |
+|  Order Cache --> Trigger Engine --> DCA Queue  |
 |       |              |               |         |
-|  book_offers    DCA Scheduler   ZK Prover      |
-|  (live prices)  (cron slices)   (RISC0)        |
-+--------+-------------+---------------+--------+
-         |             |               |
-         v             v               v
-    XRPL DEX      Escrow Finish   Smart Escrow
-  (OfferCreate)  (crypto-cond.)  (ZK on-chain)
-                                       |
-                                RISC0 zkVM
-                              (Boundless Market)
+|  book_offers    escrow finish     scheduled    |
+|  (live prices)                   order runs    |
++-----------------------+-----------------------+
+                        |
+                        v
+                     XRPL DEX
+                (OfferCreate, Escrow)
 ```
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | [Next.js 14](https://nextjs.org/) + [React 18](https://react.dev/) + [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) |
+| Frontend | [Next.js 16.1.6](https://nextjs.org/) + [React 19](https://react.dev/) + [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) |
 | 3D Background | [Three.js](https://threejs.org/) |
 | XRPL Client | [xrpl.js](https://js.xrpl.org/) v4.5.0-smartescrow.4 |
-| Wallet | [xrpl-connect](https://github.com/XRPL-Commons/xrpl-connect) (Xaman, Crossmark, GemWallet) |
+| Wallet | [xrpl-connect](https://github.com/XRPL-Commons/xrpl-connect) (Xaman, Crossmark, GemWallet, Otsu, WalletConnect) |
 | Watcher Bot | Node.js + Express |
 | ZK Proofs | [RISC0 zkVM](https://www.risczero.com/) (Groth16) + [Boundless Market](https://boundless.xyz/) |
 | Monorepo | [Turborepo](https://turbo.build/) + pnpm workspaces |
@@ -189,13 +164,14 @@ Every user action in Pyramid is an on-chain XRPL transaction:
 ```
 Pyramid/
 ├── apps/
-│   ├── web/                     # Next.js 14 frontend
+│   ├── web/                     # Next.js 16.1.6 frontend
 │   │   ├── app/                 # App Router pages
 │   │   ├── components/          # React components
+│   │   │   ├── loans/          # Loan marketplace + modals
+│   │   │   ├── three/          # Three.js 3D backgrounds
 │   │   │   ├── ui/             # shadcn/ui primitives
-│   │   │   ├── three/          # Three.js 3D background
 │   │   │   └── providers/      # WalletProvider context
-│   │   ├── hooks/               # useVault, useLoan, useEscrow, useTickets, usePrice
+│   │   ├── hooks/               # useVault, useLoanMarket, useEscrow, usePrice, useWalletManager
 │   │   └── lib/                 # xrplClient, networks, constants
 │   └── watcher/                 # Node.js watcher bot
 │       └── src/                 # devnet-loop, dca-scheduler, order-cache, zk-prover
@@ -212,7 +188,7 @@ Pyramid/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js >=20.9.0
 - [pnpm](https://pnpm.io/) 8+
 
 ### Install
@@ -234,7 +210,7 @@ pnpm dev
 
 ### Connect & Test
 
-1. Click **Connect Wallet** and choose Xaman, Crossmark, or GemWallet
+1. Click **Connect Wallet** and choose Xaman, Crossmark, GemWallet, Otsu, or WalletConnect
 2. Fund your account with test XRP from the [WASM Devnet faucet](https://wasmfaucet.devnet.rippletest.net/accounts)
 3. **Deposit** into a Vault to start earning yield
 4. **Borrow** against your collateral
@@ -271,12 +247,12 @@ Every transaction Pyramid executes is a real, validated XRPL transaction on the 
 
 ### Sample Transactions
 
-Check the borrower account (`rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv`) on the explorer to see real `LoanSet`, `LoanPay`, and `LoanManage` transactions executed from the Pyramid UI during the hackathon.
+Check the borrower account (`rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv`) on the explorer to see real `LoanSet`, `LoanPay`, and `LoanManage` transactions executed through the watcher-managed lending flow during the hackathon.
 
 **What you'll find:**
 - `VaultCreate` / `VaultDeposit` — vaults created with real XRP
 - `LoanBrokerSet` / `LoanBrokerCoverDeposit` — brokers configured on-chain
-- `LoanSet` with `CounterpartySignature` — real XLS-66 cosigned loans
+- `LoanSet` — real XLS-66 loan transactions signed and submitted by the watcher
 - `LoanPay` — real loan repayments with interest
 - `LoanManage` — broker management actions
 
@@ -290,6 +266,19 @@ Check the borrower account (`rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv`) on the explore
 | **Faucet** | https://wasmfaucet.devnet.rippletest.net/accounts |
 | **Explorer** | https://custom.xrpl.org/wasm.devnet.rippletest.net |
 
+
+## Troubleshooting
+
+**Wallet Not Detected** — Make sure you have the wallet extension installed and unlocked.
+
+**Transaction Failed** — Check you have sufficient XRP balance, verify you're on **WASM Devnet** (not Testnet), and try refreshing your balance.
+
+**Build Errors** — Clean and reinstall:
+```bash
+pnpm clean
+rm -rf node_modules
+pnpm install
+```
 
 ## License
 

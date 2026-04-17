@@ -31,9 +31,13 @@ export function EarnYieldPage() {
   }, [])
 
   useEffect(() => {
-    fetchVaults()
+    // The initial mount fetch is intentional so the vault list is populated before polling.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchVaults()
     const interval = setInterval(fetchVaults, 30_000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+    }
   }, [fetchVaults])
 
   const handleAction = (vault, type) => {

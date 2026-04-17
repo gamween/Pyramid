@@ -5,6 +5,7 @@ import { DevnetLoop } from "./devnet-loop.js"
 import { ZkProver } from "./zk-prover.js"
 import { CosignHandler } from "./cosign-handler.js"
 import { config } from "./config.js"
+import { assertSupportedOrderPayload, assertSupportedSchedulePayload } from "./trading-validators.js"
 
 const app = express()
 app.use(express.json())
@@ -26,6 +27,7 @@ let cosignHandler = null
 
 app.post("/api/orders", (req, res) => {
   try {
+    assertSupportedOrderPayload(req.body)
     const key = orderCache.addOrder(req.body)
     res.json({ status: "ok", key })
   } catch (err) {
@@ -35,6 +37,7 @@ app.post("/api/orders", (req, res) => {
 
 app.post("/api/dca", (req, res) => {
   try {
+    assertSupportedSchedulePayload(req.body)
     const id = orderCache.addDca(req.body)
     res.json({ status: "ok", id })
   } catch (err) {
@@ -60,7 +63,7 @@ app.get("/api/health", (req, res) => {
   })
 })
 
-// --- Loan / Cosign Routes ---
+// --- Loan Routes ---
 
 app.get("/api/loans/available", async (req, res) => {
   try {
@@ -111,49 +114,6 @@ app.post("/api/loans/manage", async (req, res) => {
     res.json({ success: true, ...result })
   } catch (err) {
     res.status(400).json({ success: false, error: err.message })
-  }
-})
-
-app.post("/api/loans/close", async (req, res) => {
-  try {
-    const { loanId } = req.body
-    if (!loanId) return res.status(400).json({ success: false, error: "Missing loanId" })
-    const result = await cosignHandler.closeLoan({ loanId })
-    res.json({ success: true, ...result })
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message })
-  }
-})
-
-app.post("/api/loans/prepare", async (req, res) => {
-  try {
-    const preparedTx = await cosignHandler.prepareLoanTx(req.body)
-    res.json({ preparedTx })
-  } catch (err) {
-    res.status(400).json({ status: "error", message: err.message })
-  }
-})
-
-app.post("/api/loans/cosign", async (req, res) => {
-  try {
-    if (req.body.singleSigner && req.body.tx_blob) {
-      const client = connections.getClient()
-      const result = await client.request({
-        command: "submit",
-        tx_blob: req.body.tx_blob,
-      })
-      res.json(result.result)
-    } else {
-      const { preparedTx, borrowerSignature, borrowerPubKey } = req.body
-      const result = await cosignHandler.cosignAndSubmit({
-        preparedTx,
-        borrowerSignature,
-        borrowerPubKey,
-      })
-      res.json(result)
-    }
-  } catch (err) {
-    res.status(400).json({ status: "error", message: err.message })
   }
 })
 

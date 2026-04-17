@@ -6,9 +6,9 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 ## Branch Strategy
 
-- **`develop`** is the integration branch. All work merges here.
-- **`main`** must never be touched.
-- **Workflow:** create `feat/<name>` or `fix/<name>` from `develop` → work → merge to `develop` → delete branch.
+- **`main`** must never be touched directly.
+- Stabilization and audit work may begin from approved `chore/*` branches when the repo is already mid-cleanup.
+- **Workflow:** create `fix/<name>` or `refactor/<name>` from the approved audit/spec branch → verify changes on that branch → merge back intentionally.
 - Commit messages: `chore:`, `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
 
 ## Architecture
@@ -16,17 +16,17 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 | Layer | Network | Primitives |
 |---|---|---|
 | **Lending** | WASM Devnet | VaultCreate/Deposit/Withdraw, LoanBrokerSet, LoanSet/Pay/Manage |
-| **Trading** | WASM Devnet | EscrowCreate/Finish/Cancel, OfferCreate (ImmediateOrCancel) |
-| **DCA/TWAP** | WASM Devnet | TicketCreate + pre-signed OfferCreate |
+| **Trading** | WASM Devnet | EscrowCreate/Finish/Cancel, OfferCreate (SELL-side execution via app proxy routes) |
+| **Scheduled Trading** | WASM Devnet | `/api/dca` proxy + watcher execution |
 | **Privacy** | WASM Devnet | Smart Escrows (XLS-0100) + RISC0 ZK proofs via Boundless |
 | **Prices** | WASM Devnet | book_offers + amm_info (native DEX/AMM, no oracle) |
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 / React 18 / Tailwind CSS / shadcn/ui
-- **Watcher Bot:** Node.js + xrpl.js v3
+- **Frontend:** Next.js 16.1.6 / React 19 / Tailwind CSS / shadcn/ui
+- **Watcher Bot:** Node.js + xrpl.js v4 (smartescrow fork)
 - **ZK Proofs:** RISC0 zkVM (Groth16) + Boundless Market
-- **Wallet:** xrpl-connect (Xaman, Crossmark, GemWallet)
+- **Wallet:** xrpl-connect (Xaman, Crossmark, GemWallet, Otsu, WalletConnect)
 - **Monorepo:** pnpm workspaces + Turborepo
 
 ## Key Directories
@@ -37,7 +37,7 @@ First DeFi protocol built on XRPL's native lending protocol (XLS-65/66). Compose
 
 ## Naming Conventions
 
-- **Branch:** `develop` (working), `main` (untouched)
+- **Branch:** `chore/*` for audit/cleanup, `fix/*` or `refactor/*` for implementation, `main` untouched
 - **Components:** PascalCase (`VaultDeposit.js`, `OrderCard.js`)
 - **Hooks:** camelCase with `use` prefix (`usePrice.js`, `useVault.js`)
 - **Utils/lib:** camelCase (`constants.js`, `networks.js`)

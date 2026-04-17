@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useWallet } from "./providers/WalletProvider";
 import { useEscrow } from "@/hooks/useEscrow";
 import { WATCHER_ACCOUNT, ADDRESSES } from "@/lib/constants";
+import { validateSellOrderDraft, validateSellScheduleDraft } from "@/lib/trading-validators";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -11,6 +12,11 @@ import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Checkbox } from "./ui/checkbox";
 import { Info } from "lucide-react";
+
+function buildCancelAfter() {
+  const rippleEpoch = 946684800;
+  return Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
+}
 
 export function AdvancedTradingForm() {
   const { walletManager, isConnected, showStatus } = useWallet();
@@ -48,6 +54,19 @@ export function AdvancedTradingForm() {
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
+  async function getApiErrorMessage(response, fallbackMessage) {
+    try {
+      const payload = await response.json();
+      return payload?.message || payload?.error || fallbackMessage;
+    } catch {
+      return fallbackMessage;
+    }
+  }
+
+  function buildRegistrationFailureMessage(kind, detail) {
+    return `Escrow created successfully, but watcher ${kind} registration failed: ${detail}`
+  }
+
   const handleSubmit = async (e, type) => {
     e.preventDefault();
     if (!walletManager || !walletManager.account) {
@@ -55,29 +74,28 @@ export function AdvancedTradingForm() {
       return;
     }
 
-    setIsSubmitting(true);
     try {
+      const isDca = type === "DCA" || type === "TWAP";
+      const validatedDraft = isDca
+        ? validateSellScheduleDraft({ type, amount, amountPerBuy, numBuys, ticketInterval })
+        : validateSellOrderDraft({ type, amount, triggerPrice, trailingPct, tpPrice, slPrice });
+
+      setIsSubmitting(true);
+
       const { preimageHex, preimage } = generateCondition();
       const conditionHash = await hashPreimage(preimage);
 
       const conditionHex = "A0258020" + conditionHash + "810120";
       const fulfillmentHex = "A0228020" + preimageHex;
 
-      const rippleEpoch = 946684800;
-      const cancelAfter = Math.floor(Date.now() / 1000) - rippleEpoch + 86400;
+      const cancelAfter = buildCancelAfter();
 
       // ── DCA / TWAP: one escrow for total, watcher splits into N trades ──
-      const isDca = type === "DCA" || type === "TWAP";
       let amountInDrops;
       let slices, perSliceDrops, intervalMs;
 
       if (isDca) {
-        const count = parseInt(numBuys);
-        const intervalSec = parseInt(ticketInterval);
-        if (!count || count < 1 || !intervalSec || intervalSec < 1) {
-          showStatus("Enter valid # slices and interval", "error");
-          return;
-        }
+        const count = validatedDraft.slices;
 
         // Ensure user has USD trustline to receive proceeds from SELL trades
         if (side === "SELL") {
@@ -88,20 +106,12 @@ export function AdvancedTradingForm() {
           });
         }
 
-        let totalXrp;
-        if (type === "DCA") {
-          const perBuy = parseFloat(amountPerBuy);
-          totalXrp = perBuy * count;
-          perSliceDrops = String(Math.floor(perBuy * 1000000));
-        } else {
-          totalXrp = parseFloat(amount);
-          perSliceDrops = String(Math.floor((totalXrp / count) * 1000000));
-        }
-        amountInDrops = String(Math.floor(totalXrp * 1000000));
+        amountInDrops = validatedDraft.totalAmount;
+        perSliceDrops = validatedDraft.amountPerBuy;
         slices = count;
-        intervalMs = intervalSec * 1000;
+        intervalMs = validatedDraft.intervalMs;
       } else {
-        amountInDrops = String(Math.floor(parseFloat(amount) * 1000000));
+        amountInDrops = validatedDraft.amount;
 
         // Ensure user has USD trustline for SELL orders (to receive USD proceeds)
         if (side === "SELL") {
@@ -121,7 +131,7 @@ export function AdvancedTradingForm() {
 
       if (isDca) {
         // Register DCA/TWAP schedule with watcher
-        const resp = await fetch("http://localhost:3001/api/dca", {
+        const resp = await fetch("/api/dca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -136,7 +146,10 @@ export function AdvancedTradingForm() {
             intervalMs,
           }),
         });
-        if (!resp.ok) throw new Error("Watcher registration failed");
+        if (!resp.ok) {
+          const detail = await getApiErrorMessage(resp, "request rejected")
+          throw new Error(buildRegistrationFailureMessage("schedule", detail))
+        }
         showStatus(`${type} scheduled: ${slices} trades every ${intervalMs / 1000}s`, "success");
         setAmountPerBuy("");
         setAmount("");
@@ -157,12 +170,12 @@ export function AdvancedTradingForm() {
         };
 
         if (type === "SL" || type === "TP") {
-          orderPayload.triggerPrice = parseFloat(triggerPrice);
+          orderPayload.triggerPrice = validatedDraft.triggerPrice;
         } else if (type === "TRAILING") {
-          orderPayload.trailingPct = parseInt(trailingPct, 10);
+          orderPayload.trailingPct = validatedDraft.trailingPct;
         } else if (type === "OCO") {
-          orderPayload.tpPrice = parseFloat(tpPrice);
-          orderPayload.slPrice = parseFloat(slPrice);
+          orderPayload.tpPrice = validatedDraft.tpPrice;
+          orderPayload.slPrice = validatedDraft.slPrice;
         }
 
         if (isPrivate) {
@@ -170,12 +183,17 @@ export function AdvancedTradingForm() {
             .map(b => b.toString(16).padStart(2, "0")).join("");
         }
 
-        const resp = await fetch("http://localhost:3001/api/orders", {
+        const resp = await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(orderPayload),
         });
-        if (!resp.ok) throw new Error("Watcher registration failed — escrow created but order not tracked");
+        if (!resp.ok) {
+          const detail = await getApiErrorMessage(resp, "request rejected")
+          throw new Error(
+            buildRegistrationFailureMessage("order", detail)
+          )
+        }
         showStatus(`Successfully created ${type} order on ${isPrivate ? "Groth5 (Private)" : "DevNet"}!`, "success");
         setAmount("");
         setTriggerPrice("");
@@ -196,6 +214,9 @@ export function AdvancedTradingForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
+        <p className="text-xs font-mono text-white/40">
+          Current release supports SELL-side advanced orders only. BUY / short flows are disabled until the asset model is redesigned.
+        </p>
         <Tabs defaultValue="sl" className="w-full">
           <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-6 rounded-none bg-white/5">
             <TabsTrigger value="sl" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">SL</TabsTrigger>
@@ -217,16 +238,15 @@ export function AdvancedTradingForm() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white/70 font-mono text-xs">Side</Label>
-                    <select 
-                      value={side} onChange={e => setSide(e.target.value)} 
+                    <select
+                      value={side} onChange={e => setSide(e.target.value)}
                       className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                     >
-                      <option value="SELL">SELL (Long)</option>
-                      <option value="BUY">BUY (Short)</option>
+                      <option value="SELL">SELL</option>
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-white/70 font-mono text-xs">Amount (XRP)</Label>
                   <Input type="number" placeholder="100" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
@@ -236,7 +256,7 @@ export function AdvancedTradingForm() {
                   <Label className="text-white/70 font-mono text-xs">Trigger Price (USD)</Label>
                   <Input type="number" step="0.0001" placeholder="0.55" value={triggerPrice} onChange={e => setTriggerPrice(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                 </div>
-                
+
                 {/* ZK Toggle */}
                 <div className="flex items-center space-x-2 pt-2 border-t border-white/10 mt-4">
                   <Checkbox id={`zk-${tabInfo}`} checked={isPrivate} onCheckedChange={setIsPrivate} className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-black rounded-none" />
@@ -267,8 +287,7 @@ export function AdvancedTradingForm() {
                     value={side} onChange={e => setSide(e.target.value)} 
                     className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                   >
-                    <option value="SELL">SELL (Long)</option>
-                    <option value="BUY">BUY (Short)</option>
+                    <option value="SELL">SELL</option>
                   </select>
                 </div>
               </div>
@@ -311,8 +330,7 @@ export function AdvancedTradingForm() {
                     value={side} onChange={e => setSide(e.target.value)} 
                     className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                   >
-                    <option value="SELL">SELL (Long)</option>
-                    <option value="BUY">BUY (Short)</option>
+                    <option value="SELL">SELL</option>
                   </select>
                 </div>
               </div>
@@ -358,24 +376,23 @@ export function AdvancedTradingForm() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white/70 font-mono text-xs">Side</Label>
-                    <select 
-                      value={side} onChange={e => setSide(e.target.value)} 
+                    <select
+                      value={side} onChange={e => setSide(e.target.value)}
                       className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                     >
-                      <option value="SELL">SELL (Long)</option>
-                      <option value="BUY">BUY (Short)</option>
+                      <option value="SELL">SELL</option>
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label className="text-white/70 font-mono text-xs">{tabInfo === "dca" ? "Amount per buy (XRP)" : "Total Amount (XRP)"}</Label>
+                  <Label className="text-white/70 font-mono text-xs">{tabInfo === "dca" ? "Amount per slice (XRP)" : "Total Amount (XRP)"}</Label>
                   <Input type="number" placeholder="50" value={tabInfo === "dca" ? amountPerBuy : amount} onChange={e => tabInfo === "dca" ? setAmountPerBuy(e.target.value) : setAmount(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-white/70 font-mono text-xs"># Slices/Buys</Label>
+                    <Label className="text-white/70 font-mono text-xs">Number of slices</Label>
                     <Input type="number" placeholder="10" value={numBuys} onChange={e => setNumBuys(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                   </div>
                   <div className="space-y-2">
@@ -383,14 +400,14 @@ export function AdvancedTradingForm() {
                     <Input type="number" placeholder="3600" value={ticketInterval} onChange={e => setTicketInterval(e.target.value)} className="rounded-none bg-black border-white/30 text-white font-mono" />
                   </div>
                 </div>
-                
+
                 <Button type="submit" disabled={isSubmitting} className="w-full rounded-none bg-white text-black hover:bg-slate-200 font-mono font-bold mt-4">
                   {isSubmitting ? "SIGNING..." : `EXECUTE ${tabInfo.toUpperCase()}`}
                 </Button>
               </form>
             </TabsContent>
           ))}
-          
+
         </Tabs>
       </CardContent>
     </Card>

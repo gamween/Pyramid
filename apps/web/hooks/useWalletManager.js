@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useWallet } from "../components/providers/WalletProvider";
+import { registerManagerListeners } from "../lib/wallet-listeners";
 
 // Configuration - Replace with your API keys
 const XAMAN_API_KEY = process.env.NEXT_PUBLIC_XAMAN_API_KEY || "";
@@ -11,7 +12,33 @@ export function useWalletManager() {
   const { walletManager, setWalletManager, setIsConnected, setAccountInfo, addEvent, showStatus } =
     useWallet();
 
+  const updateConnectionState = useCallback(
+    (manager) => {
+      const connected = manager.connected;
+      setIsConnected(connected);
+
+      if (connected) {
+        const account = manager.account;
+        const wallet = manager.wallet;
+
+        if (account && wallet) {
+          setAccountInfo({
+            address: account.address,
+            network: `${account.network.name} (${account.network.id})`,
+            walletName: wallet.name,
+          });
+        }
+      } else {
+        setAccountInfo(null);
+      }
+    },
+    [setIsConnected, setAccountInfo]
+  );
+
   useEffect(() => {
+    let cleanupListeners = () => {};
+    let cancelled = false;
+
     // Dynamic import to avoid SSR issues
     const initWalletManager = async () => {
       try {
@@ -48,22 +75,25 @@ export function useWalletManager() {
           logger: { level: "info" },
         });
 
+        if (cancelled) {
+          return;
+        }
+
         setWalletManager(manager);
 
-        // Event listeners
-        manager.on("connect", (account) => {
-          addEvent("Connected", account);
-          updateConnectionState(manager);
-        });
-
-        manager.on("disconnect", () => {
-          addEvent("Disconnected", null);
-          updateConnectionState(manager);
-        });
-
-        manager.on("error", (error) => {
-          addEvent("Error", error);
-          showStatus(error.message, "error");
+        cleanupListeners = registerManagerListeners(manager, {
+          connect: (account) => {
+            addEvent("Connected", account);
+            updateConnectionState(manager);
+          },
+          disconnect: () => {
+            addEvent("Disconnected", null);
+            updateConnectionState(manager);
+          },
+          error: (error) => {
+            addEvent("Error", error);
+            showStatus(error.message, "error");
+          },
         });
 
         // Check initial connection status (don't show message on landing page)
@@ -76,33 +106,19 @@ export function useWalletManager() {
 
         console.log("XRPL Connect initialized", manager);
       } catch (error) {
-        console.error("Failed to initialize wallet manager:", error);
-        showStatus("Failed to initialize wallet connection", "error");
+        if (!cancelled) {
+          console.error("Failed to initialize wallet manager:", error);
+          showStatus("Failed to initialize wallet connection", "error");
+        }
       }
     };
 
     initWalletManager();
-  }, [setWalletManager, setIsConnected, setAccountInfo, addEvent, showStatus]);
-
-  const updateConnectionState = (manager) => {
-    const connected = manager.connected;
-    setIsConnected(connected);
-
-    if (connected) {
-      const account = manager.account;
-      const wallet = manager.wallet;
-
-      if (account && wallet) {
-        setAccountInfo({
-          address: account.address,
-          network: `${account.network.name} (${account.network.id})`,
-          walletName: wallet.name,
-        });
-      }
-    } else {
-      setAccountInfo(null);
-    }
-  };
+    return () => {
+      cancelled = true;
+      cleanupListeners();
+    };
+  }, [setWalletManager, addEvent, showStatus, updateConnectionState]);
 
   return { walletManager };
 }

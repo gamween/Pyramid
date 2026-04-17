@@ -7,7 +7,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/DVB-ESILV/Pyramid.git`
 3. Install dependencies: `pnpm install`
-4. Create a branch from `develop`: `git checkout -b feature/your-feature-name`
+4. Create a dedicated branch from the approved working branch for your change set
 
 ## Development Workflow
 
@@ -26,13 +26,18 @@ pnpm build
 ### Linting and Formatting
 
 ```bash
-pnpm lint
+pnpm --filter web lint
 pnpm format
 ```
 
+## Branching
+
+1. Create a dedicated implementation branch from the approved working branch, not from `main`.
+2. Keep documentation and verification changes in the same branch as the code they describe.
+
 ## Project Structure
 
-- `apps/web` — Next.js 14 frontend (lending, trading, dashboard)
+- `apps/web` — Next.js 16.1.6 / React 19 frontend (lending, watcher-proxied trading, dashboard)
 - `apps/watcher` — Node.js watcher bot (price monitoring, order execution)
 - `packages/zkp` — RISC0 ZK guest program + CLI prover
 - `docs/specs` — Design specification
@@ -56,7 +61,7 @@ pnpm format
 
 ### Adding New Features
 
-1. Create a new branch from `develop`
+1. Create a new implementation branch from the approved working branch
 2. Implement your feature
 3. Test thoroughly on Devnet
 4. Submit a pull request

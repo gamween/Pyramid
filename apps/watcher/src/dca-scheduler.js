@@ -1,4 +1,5 @@
 import { config } from "./config.js"
+import { getUsdBalance, getXrpBalance, sendProceeds } from "./trade-utils.js"
 
 export class DcaScheduler {
   async submitNext(schedule, client, wallet) {
@@ -36,14 +37,8 @@ export class DcaScheduler {
       const sliceXrp = Number(sliceDrops) / 1e6
 
       // Snapshot balance before trade
-      let preBalance
-      if (schedule.side === "SELL") {
-        const lines = await client.request({ command: "account_lines", account: wallet.address })
-        preBalance = Number(lines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0)
-      } else {
-        const info = await client.request({ command: "account_info", account: wallet.address })
-        preBalance = Number(info.result.account_data.Balance)
-      }
+      const preUsd = schedule.side === "SELL" ? await getUsdBalance(client, wallet.address) : 0
+      const preXrp = schedule.side !== "SELL" ? await getXrpBalance(client, wallet.address) : 0
 
       // Fetch price from the CORRECT side of the book
       // SELL XRP → look at BID book (what buyers will pay)
@@ -105,37 +100,14 @@ export class DcaScheduler {
         return null
       }
 
-      // Send proceeds to user (balance diff, with precision fix)
-      if (schedule.side === "SELL") {
-        const postLines = await client.request({ command: "account_lines", account: wallet.address })
-        const postUsd = Number(postLines.result.lines?.find(l => l.currency === "USD" && l.account === config.rlusdIssuer)?.balance || 0)
-        const received = postUsd - preBalance
-        if (received > 0) {
-          const usdValue = received.toFixed(6)
-          console.log(`[dca] Payment → ${schedule.owner} (${usdValue} USD)`)
-          const payTx = {
-            TransactionType: "Payment",
-            Account: wallet.address,
-            Destination: schedule.owner,
-            Amount: { currency: "USD", issuer: config.rlusdIssuer, value: usdValue },
-          }
-          await client.submitAndWait(payTx, { wallet, autofill: true })
-        }
-      } else {
-        const postInfo = await client.request({ command: "account_info", account: wallet.address })
-        const postXrp = Number(postInfo.result.account_data.Balance)
-        const received = Math.floor(postXrp - preBalance)
-        if (received > 0) {
-          console.log(`[dca] Payment → ${schedule.owner} (${received} drops XRP)`)
-          const payTx = {
-            TransactionType: "Payment",
-            Account: wallet.address,
-            Destination: schedule.owner,
-            Amount: String(received),
-          }
-          await client.submitAndWait(payTx, { wallet, autofill: true })
-        }
-      }
+      // Send proceeds to user (balance diff)
+      await sendProceeds(client, wallet, {
+        side: schedule.side,
+        destination: schedule.owner,
+        preUsd,
+        preXrp,
+        logPrefix: "[dca]",
+      })
 
       schedule.completed++
       schedule.nextSubmitTime = Date.now() + schedule.intervalMs

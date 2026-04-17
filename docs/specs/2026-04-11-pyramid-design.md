@@ -12,15 +12,15 @@ Pyramid is the first DeFi protocol built on XRPL's new native lending protocol (
 
 1. **EARN** — Deposit XRP/tokens into a Vault, earn yield from loan interest
 2. **BORROW** — Take a loan from Vault liquidity for trading
-3. **TRADE** — Advanced orders (SL, TP, trailing, OCO) via Escrow + watcher + DEX
-4. **ACCUMULATE** — DCA/TWAP via Tickets + pre-signed OfferCreate
+3. **TRADE** — Advanced SELL-side orders (SL, TP, trailing, OCO) via Escrow + watcher + DEX; BUY/short flows are deferred
+4. **ACCUMULATE** — DCA/TWAP via the app's `/api/dca` proxy and watcher execution
 5. **PRIVATE** — ZK-hidden trigger prices via Smart Escrows (XLS-0100) + RISC0/Boundless on WASM Devnet
 
 ### Networks
 
 | Network | Purpose | xrpl.js |
 |---------|---------|---------|
-| **WASM Devnet** (`wss://wasm.devnet.rippletest.net:51233`) | Lending, trading, DCA, price monitoring, ZK private orders via Smart Escrows (XLS-0100) | `xrpl@4.5.0-smartescrow.4` |
+| **WASM Devnet** (`wss://wasm.devnet.rippletest.net:51233`) | Lending, trading, scheduled order execution, price monitoring, ZK private orders via Smart Escrows (XLS-0100) | `xrpl@4.5.0-smartescrow.4` |
 
 ### Price Source
 
@@ -59,7 +59,7 @@ Pyramid acts as the Loan Broker — manages the lending protocol.
 ### Loans (XLS-66)
 
 **Loan creation:**
-- `LoanSet` — cosigned by broker (Pyramid) + borrower
+- `LoanSet` — watcher-managed broker/borrower lending flow handled by the app
   - `PrincipalRequested`: loan amount
   - `InterestRate`: annualized, 1/10th basis points (e.g., 500 = 0.5%)
   - `PaymentTotal`: number of payments
@@ -82,7 +82,7 @@ Depositors → VaultDeposit (earn yield)
     ↓
 Vault has liquidity
     ↓
-Borrowers → LoanSet (cosigned) → receive funds
+Borrowers → LoanSet → receive funds
     ↓
 Borrowers → trade on DEX with advanced orders
     ↓
@@ -105,7 +105,7 @@ All on WASM Devnet using native XRPL primitives. A Node.js watcher bot monitors 
    - `Destination`: watcher account
    - `Condition`: SHA-256 hash of a random preimage
    - `CancelAfter`: order expiry time
-2. User shares with watcher (off-chain): trigger_price, order_type (SL/TP), side (BUY/SELL), preimage (fulfillment)
+2. User shares with watcher (off-chain): trigger_price, order_type (SL/TP), side (SELL), preimage (fulfillment)
 
 **Monitoring:**
 - Watcher subscribes to WASM Devnet ledger stream
@@ -113,8 +113,7 @@ All on WASM Devnet using native XRPL primitives. A Node.js watcher bot monitors 
 - Checks: does current_price satisfy the trigger condition?
   - SL SELL: current_price ≤ trigger_price
   - TP SELL: current_price ≥ trigger_price
-  - SL BUY: current_price ≥ trigger_price
-  - TP BUY: current_price ≤ trigger_price
+  - BUY/short flows are deferred and not part of the active surface
 
 **Execution (condition met):**
 1. Watcher submits `EscrowFinish` with the preimage (fulfillment) → funds released to watcher
@@ -142,34 +141,9 @@ Same as SL/TP but:
 - When one condition triggers → watcher finishes that escrow + executes trade
 - The other escrow expires naturally via CancelAfter → user calls EscrowCancel to recover funds
 
-### DCA (Dollar-Cost Averaging)
+### DCA (Dollar-Cost Averaging) / TWAP
 
-Uses Tickets for pre-signed orders — all on WASM Devnet, no Hooks needed.
-
-**Setup:**
-1. User submits `TicketCreate` with `TicketCount: N` (e.g., 10)
-   - Reserves N sequence numbers (0.2 XRP reserve each)
-2. Frontend builds N `OfferCreate` transactions, each using a different Ticket
-   - Each buys `amount_per_buy` of the target asset
-   - `tfImmediateOrCancel` flag
-3. User signs all N transactions in the wallet
-4. Frontend sends signed tx blobs to watcher
-
-**Execution:**
-- Watcher holds the N signed blobs
-- Every `interval` ledgers, submits the next one to WASM Devnet
-- Tickets allow out-of-sequence submission — user's wallet stays usable
-
-**Cancellation:**
-- User tells watcher to stop (off-chain)
-- Unused Tickets can be cancelled via a no-op AccountSet using each Ticket
-
-### TWAP (Time-Weighted Average Price)
-
-Same as DCA but:
-- Shorter intervals (seconds/minutes, not hours)
-- Larger total amount split into smaller slices
-- Purpose: execute a big order with minimal price impact
+Scheduled order batches are registered through the app and executed by the watcher at the configured intervals. The active surface does not expose a Ticket-based flow.
 
 ---
 
@@ -302,7 +276,7 @@ Called by the ledger loop when a private order triggers:
 
 ## Frontend
 
-Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
+Clean dashboard. Next.js 16.1.6 + shadcn/ui.
 
 ### Views
 
@@ -313,7 +287,7 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 
 **Lending:**
 - Deposit into Vault: amount input → VaultDeposit tx
-- Borrow: loan request form → cosigned LoanSet
+- Borrow: loan request form → LoanSet
 - Repay: LoanPay with amount
 - Vault stats: total assets, share price, yield rate
 
@@ -322,8 +296,8 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 - SL/TP: pair, side, amount, trigger_price → EscrowCreate
 - Trailing: pair, side, amount, trailing_pct → EscrowCreate
 - OCO: pair, side, amount, tp_price, sl_price → 2× EscrowCreate
-- DCA: pair, amount_per_buy, num_buys, interval → TicketCreate + sign N txs
-- TWAP: pair, total_amount, num_slices, interval → TicketCreate + sign N txs
+- DCA: pair, amount_per_buy, num_buys, interval → `/api/dca`
+- TWAP: pair, total_amount, num_slices, interval → `/api/dca`
 - Private toggle: "Hide trigger price (ZK)" → EscrowCreate on WASM Devnet with FinishFunction (WASM) + commitment in Data
 
 **Order Detail:**
@@ -333,8 +307,8 @@ Clean dashboard. Next.js 14 + shadcn/ui on the existing scaffold.
 
 ### Technical
 
-- WalletProvider (existing scaffold)
-- Hooks: `usePrice`, `useVault`, `useLoan`, `useEscrow`, `useTickets`, `useWalletManager`
+- WalletProvider (React context)
+- Hooks: `usePrice`, `useVault`, `useLoanMarket`, `useEscrow`, `useWalletManager`
 - xrpl.js for all network interactions
 - shadcn/ui: Card, Button, Input, Label, Badge, Tabs
 
@@ -417,35 +391,40 @@ const { createVault, deposit, withdraw, getVaultInfo, getShareBalance } = useVau
 
 ### Loans (Lending)
 
-**Hook:** `useLoan()` (`hooks/useLoan.js`)
+**Hook:** `useLoanMarket()` (`apps/web/hooks/useLoanMarket.js`)
 
 ```js
-const { createLoanBroker, depositCover, createLoan, payLoan, manageLoan, deleteLoan, getLoanInfo } = useLoan()
+const {
+  availableVaults,
+  activeLoans,
+  loading,
+  error,
+  fetchAvailableVaults,
+  fetchActiveLoans,
+  borrowFromVault,
+  repayLoan,
+  manageLoan,
+} = useLoanMarket()
 ```
 
-| Button | Hook Call | Parameters | Returns |
-|--------|-----------|------------|---------|
-| "Request Loan" | `createLoan(loanBrokerId, borrowerAddress, principal, interestRate?, paymentTotal?, paymentInterval?, gracePeriod?)` | `loanBrokerId`: string, `borrowerAddress`: r-address, `principal`: string (drops), optionals have defaults from `LENDING` constants | `{ tx_blob, tx }` — needs borrower cosign (see flow below) |
-| "Repay" | `payLoan(loanId, amount, flags?)` | `loanId`: string (hash), `amount`: string (drops), `flags`: number (0 = normal, see `LOAN_PAY_FLAGS`) | `{ hash }` |
-| "Full Repay" | `payLoan(loanId, amount, 0x00020000)` | Use `LOAN_PAY_FLAGS.tfLoanFullPayment` | `{ hash }` |
-| "Loan Info" | `getLoanInfo(loanBrokerId, loanSeq)` | `loanBrokerId`: string, `loanSeq`: number | Loan ledger entry object |
+| Field / Action | Type | Description |
+|----------------|------|-------------|
+| `availableVaults` | `array` | Vaults the browser can borrow from through the watcher-managed flow. |
+| `activeLoans` | `array` | Loans fetched from the watcher. |
+| `loading` | `boolean` | Shared request state for loan actions. |
+| `error` | `string \| null` | Last loan error from the hook. |
+| `fetchAvailableVaults()` | function | Refresh the borrowable vault list from the watcher. |
+| `fetchActiveLoans()` | function | Refresh loan state from the watcher. |
+| `borrowFromVault(vaultId, principalDrops, opts?)` | function | Starts the watcher-managed XLS-66 borrow flow server-side. |
+| `repayLoan(loanId, amountDrops, flags?)` | function | Submits repayment through the watcher. |
+| `manageLoan(loanId, flags)` | function | Submits watcher-managed loan maintenance actions. |
 
-**Cosign flow for new loans:**
-1. Broker (our backend/admin) calls `createLoan(...)` → gets `{ tx_blob, tx }`
-2. `tx_blob` is sent to borrower (the frontend user)
-3. Borrower signs the same transaction via their wallet
-4. Both signatures combined and submitted
-5. **For hackathon MVP:** The broker signs server-side, and the frontend just needs to display loan status and repay.
+**Loan flow:**
+1. The browser requests a borrow action through `borrowFromVault(...)`
+2. The watcher signs and submits the XLS-66 transaction server-side because browser wallets cannot sign `LoanSet`
+3. The browser displays the resulting status and repayment actions
 
-**Admin-only functions** (not for regular UI, broker/watcher manages these):
-
-| Action | Hook Call | Parameters |
-|--------|-----------|------------|
-| Setup broker | `createLoanBroker(vaultId, managementFeeRate?)` | `vaultId`: string |
-| Deposit cover | `depositCover(loanBrokerId, amount)` | First-loss capital |
-| Impair loan | `manageLoan(loanId, "impair")` | Starts grace period |
-| Default loan | `manageLoan(loanId, "default")` | After grace period |
-| Delete loan | `deleteLoan(loanId)` | After full repay or default |
+**Watcher / internal concerns** — broker setup, cover deposits, and other XLS-66 lifecycle steps are handled by the watcher service and are not exposed as browser hook methods.
 
 **LENDING defaults** (`lib/constants.js`):
 - `MANAGEMENT_FEE_RATE`: 1000 (1%)
@@ -486,7 +465,7 @@ const { createEscrow, finishEscrow, cancelEscrow, getEscrow } = useEscrow()
 **Watcher API** (REST endpoint on watcher bot):
 ```
 POST   /api/orders                  — Register order after frontend creates escrow
-POST   /api/dca                     — Register DCA schedule after frontend signs blobs
+POST   /api/dca                     — Register structured DCA/TWAP schedule payload
 GET    /api/orders                  — List all orders and DCA schedules
 DELETE /api/orders/:owner/:sequence — Remove order from cache
 GET    /api/health                  — Health check
@@ -495,34 +474,25 @@ Note: per-user filtering (`GET /api/orders/:owner`) is not yet implemented.
 
 ### DCA / TWAP
 
-**Hook:** `useTickets()` (`hooks/useTickets.js`)
+Scheduled order batches are created through the app proxy and registered as structured schedules:
 
-```js
-const { createTickets, buildPresignedOffers, signAll } = useTickets()
+```json
+{
+  "owner": "r...",
+  "escrowSequence": 123,
+  "condition": "A0258020...",
+  "preimage": "A0228020...",
+  "side": "SELL",
+  "totalAmount": "500000000",
+  "perSliceAmount": "50000000",
+  "slices": 10,
+  "intervalMs": 60000
+}
 ```
 
-**DCA Creation Flow (3 steps):**
+The watcher stores the same schedule shape in its order cache and submits each slice on schedule.
 
-| Step | Button | Hook Call | Parameters |
-|------|--------|-----------|------------|
-| 1 | "Create DCA Plan" | `createTickets(count)` | `count`: number (e.g., 10 for 10 buys) |
-| 2 | (auto) | `buildPresignedOffers(ticketSequences, pair, amountPerBuy, side)` | `ticketSequences`: number[] (from step 1), `pair`: `{ usdAmount }`, `amountPerBuy`: string (drops), `side`: `"BUY"` or `"SELL"` |
-| 3 | "Sign All" | `signAll(txs)` | `txs`: transaction objects from step 2 |
-
-After step 3, the signed blobs are sent to the watcher which submits them at intervals.
-
-```
-POST /api/dca
-Body: { signedBlobs: string[], interval: number (seconds), owner: string }
-```
-
-**TWAP** — Same flow, just shorter intervals and larger amounts split into more slices.
-
-**`buildPresignedOffers` details:**
-- Each tx uses `OfferCreate` with `tfImmediateOrCancel` (flag `0x00020000`)
-- `Sequence: 0` (required when using TicketSequence)
-- BUY: `TakerPays` = XRP drops, `TakerGets` = `{ currency: "USD", issuer: RLUSD_ISSUER, value }`
-- SELL: reversed
+**TWAP** — Same submission surface as DCA, with a different `totalAmount`, `perSliceAmount`, `slices`, and `intervalMs` combination. The supported surface remains SELL-only.
 
 ### Constants & Addresses (`lib/constants.js`)
 
@@ -531,7 +501,7 @@ These must be filled before the frontend works:
 | Constant | Where to get it | Used by |
 |----------|----------------|---------|
 | `ADDRESSES.VAULT_ID` | Output of `createVault()` — run setup script once | Vault deposit/withdraw/info |
-| `ADDRESSES.LOAN_BROKER_ID` | Output of `createLoanBroker()` | Loan operations |
+| `ADDRESSES.LOAN_BROKER_ID` | Output of the watcher-managed loan setup flow | Loan operations |
 | `ADDRESSES.RLUSD_ISSUER` | WASM Devnet RLUSD gateway address (from faucet or trust line setup) | Price feed, offers |
 | `WATCHER_ACCOUNT` | Watcher bot's funded WASM Devnet r-address | Escrow destination |
 
@@ -544,6 +514,8 @@ ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO, DCA, TWAP }
 ORDER_STATUS: { ACTIVE, TRIGGERED, EXECUTED, CANCELLED, EXPIRED }
 SIDES: { BUY, SELL }
 ```
+
+`apps/web/lib/constants.js` still exports `SIDES = { BUY, SELL }`, but the supported trading surface exposed by the app is SELL-only.
 
 ### Error Handling
 
@@ -573,7 +545,7 @@ Common errors:
 - LoanBrokerSet, LoanBrokerCoverDeposit, LoanSet, LoanPay, LoanManage, LoanDelete (XLS-66)
 - EscrowCreate, EscrowFinish, EscrowCancel (conditional fund locking)
 - OfferCreate with ImmediateOrCancel (DEX execution)
-- TicketCreate (parallel pre-signed DCA/TWAP)
+- App proxy routes for watcher-backed scheduled trading
 - Payment (settlement)
 - book_offers (native price discovery; amm_info planned)
 - Smart Escrows with FinishFunction (XLS-0100) on WASM Devnet
@@ -585,7 +557,7 @@ Per active user:
 - Each vault deposit/withdraw: 1 tx
 - Each loan: 3+ txs (create + N payments + delete)
 - Each SL/TP order: 4 txs (escrow create + finish + offer + payment)
-- Each DCA (10 buys): 12 txs (ticket create + 10 offers + cleanup)
+- Each DCA/TWAP batch: 1 proxy submission per slice + watcher execution
 - Each private order: 4 txs on WASM Devnet (escrow create + finish w/ proof + offer + payment)
 
 10 users × 5 actions = 200+ transactions on WASM Devnet.
