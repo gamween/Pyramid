@@ -142,7 +142,7 @@ export function ActivePositions() {
         <Tabs defaultValue="escrows" className="w-full">
           <TabsList className="grid grid-cols-3 mb-6 rounded-none bg-transparent border border-white/20 p-0 h-auto">
             <TabsTrigger value="escrows" className="rounded-none border-r border-transparent data-[state=active]:border-white/20 data-[state=active]:bg-white data-[state=active]:text-black py-2 text-xs font-mono uppercase tracking-widest">
-              Escrows & Orders ({trackedItems.length})
+              Tracked Orders & Schedules ({trackedItems.length})
             </TabsTrigger>
             <TabsTrigger value="vaults" className="rounded-none border-r border-transparent data-[state=active]:border-white/20 data-[state=active]:bg-white data-[state=active]:text-black py-2 text-xs font-mono uppercase tracking-widest">
               Vaults (XLS-65) ({vaultsLoading ? "…" : vaults.length})
@@ -230,7 +230,7 @@ export function ActivePositions() {
               ) : null}
 
               {!ordersLoading && trackedItems.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 font-mono text-xs uppercase">No active escrows found.</div>
+                <div className="text-center py-8 text-slate-500 font-mono text-xs uppercase">No tracked orders or schedules found.</div>
               ) : null}
 
               {ordersError ? (
