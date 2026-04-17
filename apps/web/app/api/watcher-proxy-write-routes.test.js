@@ -1,6 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 
+import { GET as listOrders } from "./orders/route.js"
 import { POST as createOrder } from "./orders/route.js"
 import { DELETE as deleteOrder } from "./orders/[owner]/[sequence]/route.js"
 import { POST as createDca } from "./dca/route.js"
@@ -52,6 +53,37 @@ test("orders and dca write routes return 400 on invalid request JSON", async (t)
     assert.equal(response.status, 400)
     assert.deepEqual(await response.json(), { error: "Invalid request body" })
   }
+})
+
+test("orders list route returns unavailable on watcher fetch rejection", async (t) => {
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  globalThis.fetch = async () => {
+    throw new Error("watcher offline")
+  }
+
+  const response = await listOrders(new Request("http://localhost/api/orders", { method: "GET" }))
+
+  assert.equal(response.status, 503)
+  assert.deepEqual(await response.json(), { error: "Watcher service unavailable" })
+})
+
+test("orders list route preserves upstream status and wrapper on non-JSON responses", async (t) => {
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  globalThis.fetch = async () => textResponse("upstream exploded", 502)
+
+  const response = await listOrders(new Request("http://localhost/api/orders", { method: "GET" }))
+
+  assert.equal(response.status, 502)
+  assert.deepEqual(await response.json(), {
+    error: "Watcher response was not valid JSON",
+    upstreamText: "upstream exploded",
+  })
 })
 
 test("watcher write and delete routes preserve upstream status and text on non-JSON responses", async (t) => {
