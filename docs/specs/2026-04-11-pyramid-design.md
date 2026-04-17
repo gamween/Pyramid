@@ -484,17 +484,15 @@ These must be filled before the frontend works:
 | `ADDRESSES.RLUSD_ISSUER` | WASM Devnet RLUSD gateway address (from faucet or trust line setup) | Price feed, offers |
 | `WATCHER_ACCOUNT` | Watcher bot's funded WASM Devnet r-address | Escrow destination |
 
-### Order Types & Status Enums
+### Supported Order Types & Status Enums
 
 ```js
-import { ORDER_TYPES, ORDER_STATUS, SIDES } from "@/lib/constants"
-
-ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO, DCA, TWAP }
+SUPPORTED_ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO }
 ORDER_STATUS: { ACTIVE, TRIGGERED, EXECUTED, CANCELLED, EXPIRED }
 SIDES: { BUY, SELL }
 ```
 
-`apps/web/lib/constants.js` still exports `SIDES = { BUY, SELL }`, but the supported trading surface exposed by the app is SELL-only.
+`apps/web/lib/constants.js` still contains legacy scheduler order types plus `SIDES = { BUY, SELL }`, but the supported app surface only exposes SELL-side SL/TP/Trailing/OCO orders.
 
 ### Error Handling
 
