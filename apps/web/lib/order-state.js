@@ -11,6 +11,10 @@ function formatTrigger(order) {
   return "—"
 }
 
+function isActiveStatus(status) {
+  return (status ?? "ACTIVE") === "ACTIVE"
+}
+
 export function normalizeWatcherState(payload = {}) {
   const orders = Object.values(payload.orders ?? {}).map((order) => ({
     kind: "order",
@@ -22,6 +26,8 @@ export function normalizeWatcherState(payload = {}) {
     amountLabel: formatAmount(order.amount),
     trigger: formatTrigger(order),
     status: order.status ?? "ACTIVE",
+    canStopTracking: true,
+    canCancelEscrow: isActiveStatus(order.status),
   }))
 
   const schedules = Object.values(payload.dcaSchedules ?? {}).map((schedule) => ({
@@ -36,6 +42,8 @@ export function normalizeWatcherState(payload = {}) {
     trigger: `Progress ${schedule.completed}/${schedule.total}`,
     progress: `${schedule.completed}/${schedule.total}`,
     status: schedule.status ?? "ACTIVE",
+    canStopTracking: false,
+    canCancelEscrow: isActiveStatus(schedule.status) && schedule.escrowFinished !== true,
   }))
 
   return { orders, schedules }

@@ -88,3 +88,57 @@ test("normalizeWatcherState keeps cancelable metadata for tracked orders", () =>
   assert.equal(normalized.orders[0].sequence, 33)
   assert.match(normalized.orders[0].trigger, /150/)
 })
+
+test("normalizeWatcherState exposes truthful action metadata per row", () => {
+  const normalized = normalizeWatcherState({
+    orders: {
+      "rActive:10": {
+        owner: "rActive",
+        escrowSequence: 10,
+        orderType: "STOP_LOSS",
+        amount: "1000000",
+        triggerPrice: "0.50",
+        status: "ACTIVE",
+      },
+      "rDone:11": {
+        owner: "rDone",
+        escrowSequence: 11,
+        orderType: "TRAILING_STOP",
+        amount: "1000000",
+        trailingPct: 125,
+        status: "FILLED",
+      },
+    },
+    dcaSchedules: {
+      activeSchedule: {
+        id: "activeSchedule",
+        owner: "rSched",
+        escrowSequence: 20,
+        side: "SELL",
+        perSliceAmount: "250000",
+        completed: 0,
+        total: 4,
+        status: "ACTIVE",
+        escrowFinished: false,
+      },
+      finishedSchedule: {
+        id: "finishedSchedule",
+        owner: "rSchedDone",
+        escrowSequence: 21,
+        side: "SELL",
+        perSliceAmount: "250000",
+        completed: 4,
+        total: 4,
+        status: "COMPLETED",
+        escrowFinished: true,
+      },
+    },
+  })
+
+  assert.equal(normalized.orders[0].canStopTracking, true)
+  assert.equal(normalized.orders[0].canCancelEscrow, true)
+  assert.equal(normalized.orders[1].canCancelEscrow, false)
+  assert.equal(normalized.schedules[0].canStopTracking, false)
+  assert.equal(normalized.schedules[0].canCancelEscrow, true)
+  assert.equal(normalized.schedules[1].canCancelEscrow, false)
+})

@@ -106,6 +106,10 @@ export function ActivePositions() {
       if (!response.ok) {
         throw new Error(`Stop tracking failed with ${response.status}`)
       }
+      const data = await response.json()
+      if (data?.status !== "ok") {
+        throw new Error("Tracked order was not removed")
+      }
       await fetchOrders()
     } catch (error) {
       setOrdersError(error instanceof Error ? error.message : "Unable to stop tracking order")
@@ -167,7 +171,9 @@ export function ActivePositions() {
                 </thead>
                 <tbody>
                   {trackedItems.map((item) => {
-                    const canAct = item.owner && item.sequence != null
+                    const hasOwnerSequence = item.owner && item.sequence != null
+                    const canStopTracking = hasOwnerSequence && item.canStopTracking
+                    const canCancelEscrow = hasOwnerSequence && item.canCancelEscrow
                     const stopKey = `stop:${item.owner}:${item.sequence}`
                     const cancelKey = `cancel:${item.owner}:${item.sequence}`
 
@@ -196,28 +202,36 @@ export function ActivePositions() {
                           </span>
                         </td>
                         <td className="p-3">
-                          <div className="flex flex-col items-end gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="rounded-none border-white/20 bg-transparent text-white hover:bg-white hover:text-black"
-                              disabled={!canAct || actionKey !== "" || ordersLoading}
-                              onClick={() => handleStopTracking(item.owner, item.sequence)}
-                            >
-                              {actionKey === stopKey ? "Stopping..." : "Stop Tracking"}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="rounded-none border-amber-400/40 bg-transparent text-amber-300 hover:bg-amber-300 hover:text-black"
-                              disabled={!canAct || actionKey !== "" || ordersLoading}
-                              onClick={() => handleCancelEscrow(item.owner, item.sequence)}
-                            >
-                              {actionKey === cancelKey ? "Cancelling..." : "Cancel Escrow On-Chain"}
-                            </Button>
-                          </div>
+                          {canStopTracking || canCancelEscrow ? (
+                            <div className="flex flex-col items-end gap-2">
+                              {canStopTracking ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-none border-white/20 bg-transparent text-white hover:bg-white hover:text-black"
+                                  disabled={actionKey !== "" || ordersLoading}
+                                  onClick={() => handleStopTracking(item.owner, item.sequence)}
+                                >
+                                  {actionKey === stopKey ? "Stopping..." : "Stop Tracking"}
+                                </Button>
+                              ) : null}
+                              {canCancelEscrow ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-none border-amber-400/40 bg-transparent text-amber-300 hover:bg-amber-300 hover:text-black"
+                                  disabled={actionKey !== "" || ordersLoading}
+                                  onClick={() => handleCancelEscrow(item.owner, item.sequence)}
+                                >
+                                  {actionKey === cancelKey ? "Cancelling..." : "Cancel Escrow On-Chain"}
+                                </Button>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-500 uppercase">No actions</span>
+                          )}
                         </td>
                       </tr>
                     )
