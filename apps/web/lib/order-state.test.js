@@ -70,3 +70,21 @@ test("normalizeWatcherState preserves zero-valued trigger fields", () => {
   assert.equal(normalized.orders[1].trigger, "Trail 0 bps")
   assert.equal(normalized.orders[2].trigger, "TP 0 / SL 0")
 })
+
+test("normalizeWatcherState keeps cancelable metadata for tracked orders", () => {
+  const normalized = normalizeWatcherState({
+    orders: {
+      "rOwner:33": {
+        owner: "rOwner",
+        escrowSequence: 33,
+        orderType: "TRAILING_STOP",
+        amount: "5000000",
+        trailingPct: 150,
+        status: "ACTIVE",
+      },
+    },
+  })
+
+  assert.equal(normalized.orders[0].sequence, 33)
+  assert.match(normalized.orders[0].trigger, /150/)
+})
