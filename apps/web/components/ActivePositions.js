@@ -70,16 +70,16 @@ export function ActivePositions() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const initialFetchId = setTimeout(() => {
-      void fetchOrders({ signal: controller.signal })
-    }, 0)
+
+    // The initial mount fetch is intentional; fetchOrders already guards stale responses.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchOrders({ signal: controller.signal })
 
     const interval = setInterval(() => {
       void fetchOrders()
     }, 10000)
 
     return () => {
-      clearTimeout(initialFetchId)
       controller.abort()
       clearInterval(interval)
     }

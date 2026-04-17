@@ -61,12 +61,12 @@ export function useLoanMarket() {
       void fetchActiveLoans()
     }
 
-    const initialFetchId = setTimeout(pollLoanState, 0)
+    // The initial mount fetch is intentional; the periodic poll keeps subsequent state fresh.
+    pollLoanState()
 
     const interval = setInterval(pollLoanState, 30_000)
 
     return () => {
-      clearTimeout(initialFetchId)
       clearInterval(interval)
     }
   }, [fetchAvailableVaults, fetchActiveLoans, isConnected])
