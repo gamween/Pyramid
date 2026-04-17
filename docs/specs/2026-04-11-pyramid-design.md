@@ -391,10 +391,10 @@ const { createVault, deposit, withdraw, getVaultInfo, getShareBalance } = useVau
 
 ### Loans (Lending)
 
-**Hook:** `useLoan()` (`hooks/useLoan.js`)
+**Hook:** `useLoanMarket()` (`apps/web/hooks/useLoanMarket.js`)
 
 ```js
-const { createLoanBroker, depositCover, createLoan, payLoan, manageLoan, deleteLoan, getLoanInfo } = useLoan()
+const { createLoanBroker, depositCover, createLoan, payLoan, manageLoan, deleteLoan, getLoanInfo } = useLoanMarket()
 ```
 
 | Button | Hook Call | Parameters | Returns |
