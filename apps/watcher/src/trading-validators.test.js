@@ -34,6 +34,21 @@ test("assertSupportedOrderPayload rejects malformed SELL orders", () => {
   )
 })
 
+test("assertSupportedOrderPayload rejects decimal-drop SELL amounts", () => {
+  assert.throws(
+    () =>
+      assertSupportedOrderPayload({
+        side: "SELL",
+        orderType: "STOP_LOSS",
+        owner: "rOwner",
+        escrowSequence: 12,
+        amount: "1000000.5",
+        triggerPrice: 0.55,
+      }),
+    /amount/
+  )
+})
+
 test("assertSupportedOrderPayload rejects unknown SELL order types", () => {
   assert.throws(
     () =>
@@ -79,5 +94,34 @@ test("assertSupportedSchedulePayload rejects malformed SELL schedules", () => {
         intervalMs: Number.NaN,
       }),
     /intervalMs/
+  )
+})
+
+test("assertSupportedSchedulePayload rejects decimal-drop SELL schedule amounts", () => {
+  assert.throws(
+    () =>
+      assertSupportedSchedulePayload({
+        side: "SELL",
+        owner: "rOwner",
+        escrowSequence: 44,
+        slices: 4,
+        totalAmount: "4000000.5",
+        perSliceAmount: "1000000",
+        intervalMs: 30000,
+      }),
+    /totalAmount/
+  )
+  assert.throws(
+    () =>
+      assertSupportedSchedulePayload({
+        side: "SELL",
+        owner: "rOwner",
+        escrowSequence: 44,
+        slices: 4,
+        totalAmount: "4000000",
+        perSliceAmount: "1000000.5",
+        intervalMs: 30000,
+      }),
+    /perSliceAmount/
   )
 })

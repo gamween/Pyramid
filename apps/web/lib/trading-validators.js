@@ -1,3 +1,5 @@
+const DROPS_PER_XRP = 1_000_000
+
 function assertFiniteNumber(value, fieldName) {
   if (!Number.isFinite(value)) {
     throw new Error(`Invalid ${fieldName}`)
@@ -30,6 +32,25 @@ function parsePositiveInteger(value, fieldName) {
   return numericValue
 }
 
+function parsePositiveDropAmount(value, fieldName) {
+  const text = String(value).trim()
+  if (!/^\d+(?:\.\d+)?$/.test(text)) {
+    throw new Error(`Invalid ${fieldName}`)
+  }
+
+  const [wholePart, fractionalPart = ""] = text.split(".")
+  if (fractionalPart.length > 6) {
+    throw new Error(`Invalid ${fieldName}`)
+  }
+
+  const totalDrops = Number(wholePart) * DROPS_PER_XRP + Number(fractionalPart.padEnd(6, "0"))
+  if (!Number.isFinite(totalDrops) || totalDrops < 1 || !Number.isInteger(totalDrops)) {
+    throw new Error(`Invalid ${fieldName}`)
+  }
+
+  return totalDrops
+}
+
 export function validateSellOrderDraft(draft) {
   const parsed = {
     amount: parsePositiveNumber(draft.amount, "amount"),
@@ -56,10 +77,16 @@ export function validateSellScheduleDraft(draft) {
   }
 
   if (draft.type === "DCA") {
-    parsed.amountPerBuy = parsePositiveNumber(draft.amountPerBuy, "amount")
+    const amountPerBuyDrops = parsePositiveDropAmount(draft.amountPerBuy, "amount")
+    parsed.amountPerBuy = amountPerBuyDrops / DROPS_PER_XRP
     parsed.totalAmount = parsed.amountPerBuy * slices
   } else {
-    parsed.totalAmount = parsePositiveNumber(draft.amount, "amount")
+    const totalAmountDrops = parsePositiveDropAmount(draft.amount, "amount")
+    if (totalAmountDrops % slices !== 0) {
+      throw new Error("Invalid amount")
+    }
+
+    parsed.totalAmount = totalAmountDrops / DROPS_PER_XRP
     parsed.amountPerBuy = parsed.totalAmount / slices
   }
 

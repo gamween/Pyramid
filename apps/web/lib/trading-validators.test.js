@@ -32,3 +32,21 @@ test("validateSellScheduleDraft rejects invalid DCA and TWAP numeric inputs", ()
     /intervalMs/
   )
 })
+
+test("validateSellScheduleDraft rejects sub-drop DCA and TWAP amounts", () => {
+  assert.throws(
+    () => validateSellScheduleDraft({ type: "DCA", amountPerBuy: "0.0000005", numBuys: "4", ticketInterval: "60" }),
+    /amount/
+  )
+  assert.throws(
+    () => validateSellScheduleDraft({ type: "TWAP", amount: "0.0000005", numBuys: "4", ticketInterval: "60" }),
+    /amount/
+  )
+})
+
+test("validateSellScheduleDraft rejects TWAP totals that do not divide into whole-drop slices", () => {
+  assert.throws(
+    () => validateSellScheduleDraft({ type: "TWAP", amount: "0.000002", numBuys: "3", ticketInterval: "60" }),
+    /amount/
+  )
+})

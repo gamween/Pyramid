@@ -18,9 +18,14 @@ function assertFinitePositiveInteger(value, fieldName) {
   }
 }
 
-function assertFinitePositiveAmount(value, fieldName) {
-  const numericValue = typeof value === "string" ? Number(value) : value
-  assertFinitePositiveNumber(numericValue, fieldName)
+function assertIntegerDropString(value, fieldName) {
+  if (typeof value !== "string" || !/^\d+$/.test(value)) {
+    throw new Error(`Invalid ${fieldName}`)
+  }
+
+  if (BigInt(value) <= 0n) {
+    throw new Error(`Invalid ${fieldName}`)
+  }
 }
 
 const SUPPORTED_ORDER_TYPES = new Set(["STOP_LOSS", "TAKE_PROFIT", "TRAILING_STOP", "OCO"])
@@ -34,7 +39,7 @@ export function assertSupportedOrderPayload(payload) {
   }
 
   assertFinitePositiveInteger(payload.escrowSequence, "escrowSequence")
-  assertFinitePositiveAmount(payload.amount, "amount")
+  assertIntegerDropString(payload.amount, "amount")
   if (!SUPPORTED_ORDER_TYPES.has(payload.orderType)) {
     throw new Error(`Unsupported orderType: ${payload.orderType}`)
   }
@@ -59,7 +64,7 @@ export function assertSupportedSchedulePayload(payload) {
 
   assertFinitePositiveInteger(payload.escrowSequence, "escrowSequence")
   assertFinitePositiveInteger(payload.slices, "slices")
-  assertFinitePositiveAmount(payload.totalAmount, "totalAmount")
-  assertFinitePositiveAmount(payload.perSliceAmount, "perSliceAmount")
+  assertIntegerDropString(payload.totalAmount, "totalAmount")
+  assertIntegerDropString(payload.perSliceAmount, "perSliceAmount")
   assertFinitePositiveInteger(payload.intervalMs, "intervalMs")
 }

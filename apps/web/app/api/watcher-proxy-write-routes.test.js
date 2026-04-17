@@ -10,8 +10,23 @@ const originalFetch = globalThis.fetch
 function jsonResponse(data, status = 200) {
   return {
     status,
+    async text() {
+      return JSON.stringify(data)
+    },
     async json() {
       return data
+    },
+  }
+}
+
+function textResponse(text, status = 200) {
+  return {
+    status,
+    async text() {
+      return text
+    },
+    async json() {
+      throw new Error("invalid json")
     },
   }
 }
@@ -39,14 +54,12 @@ test("orders and dca write routes return 400 on invalid request JSON", async (t)
   }
 })
 
-test("watcher write and delete routes return app-owned JSON on fetch rejection", async (t) => {
+test("watcher write and delete routes preserve upstream status and text on non-JSON responses", async (t) => {
   t.after(() => {
     globalThis.fetch = originalFetch
   })
 
-  globalThis.fetch = async () => {
-    throw new Error("watcher offline")
-  }
+  globalThis.fetch = async () => textResponse("upstream exploded", 502)
 
   const orderResponse = await createOrder(
     new Request("http://localhost/api/orders", {
@@ -55,14 +68,20 @@ test("watcher write and delete routes return app-owned JSON on fetch rejection",
       body: JSON.stringify({ owner: "rOwner" }),
     })
   )
-  assert.equal(orderResponse.status, 503)
-  assert.deepEqual(await orderResponse.json(), { error: "Watcher service unavailable" })
+  assert.equal(orderResponse.status, 502)
+  assert.deepEqual(await orderResponse.json(), {
+    error: "Watcher response was not valid JSON",
+    upstreamText: "upstream exploded",
+  })
 
   const deleteResponse = await deleteOrder(new Request("http://localhost/api/orders/rOwner/12", { method: "DELETE" }), {
     params: { owner: "rOwner", sequence: "12" },
   })
-  assert.equal(deleteResponse.status, 503)
-  assert.deepEqual(await deleteResponse.json(), { error: "Watcher service unavailable" })
+  assert.equal(deleteResponse.status, 502)
+  assert.deepEqual(await deleteResponse.json(), {
+    error: "Watcher response was not valid JSON",
+    upstreamText: "upstream exploded",
+  })
 
   const dcaResponse = await createDca(
     new Request("http://localhost/api/dca", {
@@ -71,21 +90,19 @@ test("watcher write and delete routes return app-owned JSON on fetch rejection",
       body: JSON.stringify({ id: "scheduleA" }),
     })
   )
-  assert.equal(dcaResponse.status, 503)
-  assert.deepEqual(await dcaResponse.json(), { error: "Watcher service unavailable" })
+  assert.equal(dcaResponse.status, 502)
+  assert.deepEqual(await dcaResponse.json(), {
+    error: "Watcher response was not valid JSON",
+    upstreamText: "upstream exploded",
+  })
 })
 
-test("watcher write and delete routes return app-owned JSON on non-JSON watcher responses", async (t) => {
+test("watcher write and delete routes preserve upstream status on empty watcher responses", async (t) => {
   t.after(() => {
     globalThis.fetch = originalFetch
   })
 
-  globalThis.fetch = async () => ({
-    status: 502,
-    async json() {
-      throw new Error("invalid json")
-    },
-  })
+  globalThis.fetch = async () => textResponse("", 404)
 
   const orderResponse = await createOrder(
     new Request("http://localhost/api/orders", {
@@ -94,14 +111,14 @@ test("watcher write and delete routes return app-owned JSON on non-JSON watcher 
       body: JSON.stringify({ owner: "rOwner" }),
     })
   )
-  assert.equal(orderResponse.status, 503)
-  assert.deepEqual(await orderResponse.json(), { error: "Watcher service unavailable" })
+  assert.equal(orderResponse.status, 404)
+  assert.deepEqual(await orderResponse.json(), { error: "Watcher response was not valid JSON" })
 
   const deleteResponse = await deleteOrder(new Request("http://localhost/api/orders/rOwner/12", { method: "DELETE" }), {
     params: { owner: "rOwner", sequence: "12" },
   })
-  assert.equal(deleteResponse.status, 503)
-  assert.deepEqual(await deleteResponse.json(), { error: "Watcher service unavailable" })
+  assert.equal(deleteResponse.status, 404)
+  assert.deepEqual(await deleteResponse.json(), { error: "Watcher response was not valid JSON" })
 
   const dcaResponse = await createDca(
     new Request("http://localhost/api/dca", {
@@ -110,8 +127,8 @@ test("watcher write and delete routes return app-owned JSON on non-JSON watcher 
       body: JSON.stringify({ id: "scheduleA" }),
     })
   )
-  assert.equal(dcaResponse.status, 503)
-  assert.deepEqual(await dcaResponse.json(), { error: "Watcher service unavailable" })
+  assert.equal(dcaResponse.status, 404)
+  assert.deepEqual(await dcaResponse.json(), { error: "Watcher response was not valid JSON" })
 })
 
 test("watcher write routes still proxy successful JSON responses", async (t) => {
