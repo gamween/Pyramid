@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useWallet } from "../components/providers/WalletProvider";
+import { registerDomEventListeners } from "../lib/wallet-listeners";
 
 export function useWalletConnector(walletManager) {
   const walletConnectorRef = useRef(null);
@@ -10,6 +11,10 @@ export function useWalletConnector(walletManager) {
   useEffect(() => {
     if (!walletConnectorRef.current || !walletManager) return;
 
+    const connector = walletConnectorRef.current;
+    let cleanupListeners = () => {};
+    let cancelled = false;
+
     const setupConnector = async () => {
       // Wait for custom element to be defined and upgraded
       await customElements.whenDefined("xrpl-wallet-connector");
@@ -17,11 +22,12 @@ export function useWalletConnector(walletManager) {
       // Small delay to ensure the element is fully initialized
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      if (
-        walletConnectorRef.current &&
-        typeof walletConnectorRef.current.setWalletManager === "function"
-      ) {
-        walletConnectorRef.current.setWalletManager(walletManager);
+      if (cancelled) {
+        return;
+      }
+
+      if (connector && typeof connector.setWalletManager === "function") {
+        connector.setWalletManager(walletManager);
 
         // Listen to connector events
         const handleConnecting = (e) => {
@@ -38,21 +44,20 @@ export function useWalletConnector(walletManager) {
           addEvent("Connection Error", e.detail);
         };
 
-        walletConnectorRef.current.addEventListener("connecting", handleConnecting);
-        walletConnectorRef.current.addEventListener("connected", handleConnected);
-        walletConnectorRef.current.addEventListener("error", handleError);
-
-        return () => {
-          if (walletConnectorRef.current) {
-            walletConnectorRef.current.removeEventListener("connecting", handleConnecting);
-            walletConnectorRef.current.removeEventListener("connected", handleConnected);
-            walletConnectorRef.current.removeEventListener("error", handleError);
-          }
-        };
+        cleanupListeners = registerDomEventListeners(connector, {
+          connecting: handleConnecting,
+          connected: handleConnected,
+          error: handleError,
+        });
       }
     };
 
     setupConnector();
+
+    return () => {
+      cancelled = true;
+      cleanupListeners();
+    };
   }, [walletManager, addEvent, showStatus]);
 
   return walletConnectorRef;
