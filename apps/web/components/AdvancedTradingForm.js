@@ -121,7 +121,7 @@ export function AdvancedTradingForm() {
 
       if (isDca) {
         // Register DCA/TWAP schedule with watcher
-        const resp = await fetch("http://localhost:3001/api/dca", {
+        const resp = await fetch("/api/dca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -170,7 +170,7 @@ export function AdvancedTradingForm() {
             .map(b => b.toString(16).padStart(2, "0")).join("");
         }
 
-        const resp = await fetch("http://localhost:3001/api/orders", {
+        const resp = await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(orderPayload),
@@ -196,6 +196,9 @@ export function AdvancedTradingForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
+        <p className="text-xs font-mono text-white/40">
+          Current release supports SELL-side advanced orders only. BUY / short flows are disabled until the asset model is redesigned.
+        </p>
         <Tabs defaultValue="sl" className="w-full">
           <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-6 rounded-none bg-white/5">
             <TabsTrigger value="sl" className="rounded-none font-mono text-xs hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-black transition-colors">SL</TabsTrigger>
@@ -222,7 +225,6 @@ export function AdvancedTradingForm() {
                       className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                     >
                       <option value="SELL">SELL (Long)</option>
-                      <option value="BUY">BUY (Short)</option>
                     </select>
                   </div>
                 </div>
@@ -268,7 +270,6 @@ export function AdvancedTradingForm() {
                     className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                   >
                     <option value="SELL">SELL (Long)</option>
-                    <option value="BUY">BUY (Short)</option>
                   </select>
                 </div>
               </div>
@@ -312,7 +313,6 @@ export function AdvancedTradingForm() {
                     className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                   >
                     <option value="SELL">SELL (Long)</option>
-                    <option value="BUY">BUY (Short)</option>
                   </select>
                 </div>
               </div>
@@ -363,7 +363,6 @@ export function AdvancedTradingForm() {
                       className="flex h-10 w-full border border-white/30 bg-black px-3 py-2 text-sm font-mono text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white rounded-none"
                     >
                       <option value="SELL">SELL (Long)</option>
-                      <option value="BUY">BUY (Short)</option>
                     </select>
                   </div>
                 </div>

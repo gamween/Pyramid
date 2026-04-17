@@ -5,6 +5,7 @@ import { DevnetLoop } from "./devnet-loop.js"
 import { ZkProver } from "./zk-prover.js"
 import { CosignHandler } from "./cosign-handler.js"
 import { config } from "./config.js"
+import { assertSupportedOrderPayload, assertSupportedSchedulePayload } from "./trading-validators.js"
 
 const app = express()
 app.use(express.json())
@@ -26,6 +27,7 @@ let cosignHandler = null
 
 app.post("/api/orders", (req, res) => {
   try {
+    assertSupportedOrderPayload(req.body)
     const key = orderCache.addOrder(req.body)
     res.json({ status: "ok", key })
   } catch (err) {
@@ -35,6 +37,7 @@ app.post("/api/orders", (req, res) => {
 
 app.post("/api/dca", (req, res) => {
   try {
+    assertSupportedSchedulePayload(req.body)
     const id = orderCache.addDca(req.body)
     res.json({ status: "ok", id })
   } catch (err) {
