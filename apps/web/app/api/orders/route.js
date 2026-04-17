@@ -28,7 +28,7 @@ async function proxyWatcherResponse(response) {
 export async function GET() {
   try {
     const response = await fetch(`${WATCHER_URL}/api/orders`)
-    return proxyWatcherResponse(response)
+    return await proxyWatcherResponse(response)
   } catch (_error) {
     return watcherUnavailableResponse()
   }

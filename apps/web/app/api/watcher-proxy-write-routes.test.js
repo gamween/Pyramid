@@ -32,6 +32,18 @@ function textResponse(text, status = 200) {
   }
 }
 
+function failingTextResponse(status = 200) {
+  return {
+    status,
+    async text() {
+      throw new Error("stream broken")
+    },
+    async json() {
+      throw new Error("invalid json")
+    },
+  }
+}
+
 test("orders and dca write routes return 400 on invalid request JSON", async (t) => {
   t.after(() => {
     globalThis.fetch = originalFetch
@@ -84,6 +96,19 @@ test("orders list route preserves upstream status and wrapper on non-JSON respon
     error: "Watcher response was not valid JSON",
     upstreamText: "upstream exploded",
   })
+})
+
+test("orders list route returns unavailable when upstream text parsing rejects", async (t) => {
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  globalThis.fetch = async () => failingTextResponse(502)
+
+  const response = await listOrders(new Request("http://localhost/api/orders", { method: "GET" }))
+
+  assert.equal(response.status, 503)
+  assert.deepEqual(await response.json(), { error: "Watcher service unavailable" })
 })
 
 test("watcher write and delete routes preserve upstream status and text on non-JSON responses", async (t) => {
