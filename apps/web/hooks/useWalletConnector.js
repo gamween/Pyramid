@@ -9,11 +9,16 @@ export function useWalletConnector(walletManager) {
   const { addEvent, showStatus } = useWallet();
 
   useEffect(() => {
-    if (!walletConnectorRef.current || !walletManager) return;
-
-    const connector = walletConnectorRef.current;
     let cleanupListeners = () => {};
     let cancelled = false;
+    const cleanup = () => {
+      cancelled = true;
+      cleanupListeners();
+    };
+
+    if (!walletConnectorRef.current || !walletManager) return cleanup;
+
+    const connector = walletConnectorRef.current;
 
     const setupConnector = async () => {
       // Wait for custom element to be defined and upgraded
@@ -54,10 +59,7 @@ export function useWalletConnector(walletManager) {
 
     setupConnector();
 
-    return () => {
-      cancelled = true;
-      cleanupListeners();
-    };
+    return cleanup;
   }, [walletManager, addEvent, showStatus]);
 
   return walletConnectorRef;
