@@ -59,7 +59,7 @@ Pyramid acts as the Loan Broker — manages the lending protocol.
 ### Loans (XLS-66)
 
 **Loan creation:**
-- `LoanSet` — broker/borrower lending flow handled by the app
+- `LoanSet` — watcher-managed broker/borrower lending flow handled by the app
   - `PrincipalRequested`: loan amount
   - `InterestRate`: annualized, 1/10th basis points (e.g., 500 = 0.5%)
   - `PaymentTotal`: number of payments
@@ -405,9 +405,9 @@ const { createLoanBroker, depositCover, createLoan, payLoan, manageLoan, deleteL
 | "Loan Info" | `getLoanInfo(loanBrokerId, loanSeq)` | `loanBrokerId`: string, `loanSeq`: number | Loan ledger entry object |
 
 **Loan flow:**
-1. The app prepares the `createLoan(...)` payload and submits it through the lending flow
-2. The browser displays the resulting status and repayment actions
-3. No extra signing step is described in the current surface
+1. The app prepares the `createLoan(...)` payload and sends it to the watcher-managed lending service
+2. The watcher signs the XLS-66 transaction server-side and submits it because browser wallets cannot sign `LoanSet`
+3. The browser displays the resulting status and repayment actions
 
 **Admin-only functions** (not for regular UI, broker/watcher manages these):
 
@@ -467,14 +467,25 @@ Note: per-user filtering (`GET /api/orders/:owner`) is not yet implemented.
 
 ### DCA / TWAP
 
-Scheduled order batches are created through the app proxy and submitted to the watcher as signed blobs.
+Scheduled order batches are created through the app proxy and registered as structured schedules:
 
-```
-POST /api/dca
-Body: { signedBlobs: string[], interval: number (seconds), owner: string }
+```json
+{
+  "owner": "r...",
+  "escrowSequence": 123,
+  "condition": "A0258020...",
+  "preimage": "A0228020...",
+  "side": "SELL",
+  "totalAmount": "500000000",
+  "perSliceAmount": "50000000",
+  "slices": 10,
+  "intervalMs": 60000
+}
 ```
 
-**TWAP** — Same submission surface as DCA, with shorter intervals and smaller slices per batch. The current surface does not expose a ticket-signing flow.
+The watcher stores the same schedule shape in its order cache and submits each slice on schedule.
+
+**TWAP** — Same submission surface as DCA, with a different `totalAmount`, `perSliceAmount`, `slices`, and `intervalMs` combination. The supported surface remains SELL-only.
 
 ### Constants & Addresses (`lib/constants.js`)
 
@@ -496,6 +507,8 @@ ORDER_TYPES: { STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, OCO, DCA, TWAP }
 ORDER_STATUS: { ACTIVE, TRIGGERED, EXECUTED, CANCELLED, EXPIRED }
 SIDES: { SELL }
 ```
+
+`apps/web/lib/constants.js` still exports `SIDES = { BUY, SELL }`, but the supported trading surface exposed by the app is SELL-only.
 
 ### Error Handling
 

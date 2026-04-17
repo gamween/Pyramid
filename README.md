@@ -19,7 +19,7 @@ The building blocks exist. The product doesn't.
 **Everything is native.** There are no smart contracts, no Hooks, no off-chain order books. Every single operation that Pyramid performs is a native XRPL transaction type, processed directly by the ledger's consensus engine:
 
 - **Lend & Earn** : Deposit XRP or RLUSD into a native Vault (`VaultDeposit`). Yield comes from borrower interest, calculated and distributed by the ledger itself.
-- **Borrow** : Take a loan against vault collateral (`LoanSet`). Interest accrual, collateral tracking, and liquidation are all handled natively by the XRPL lending protocol.
+- **Borrow** : Take a loan against vault collateral (`LoanSet`). The browser starts the flow, and the watcher signs and submits the XLS-66 transaction server-side because browser wallets cannot sign it. Interest accrual, collateral tracking, and liquidation are all handled natively by the XRPL lending protocol.
 - **Advanced Trading** : Place Stop-Loss, Take-Profit, Trailing Stop, and OCO orders. Each order is an `EscrowCreate` with a crypto-condition. The app proxies the order to the watcher service, which monitors `book_offers` and executes automatically when the price condition is met. The supported surface is SELL-side only.
 - **Scheduled Trading** : Register scheduled order batches through the app's proxy routes. The watcher submits the planned trades at the configured intervals. No direct frontend-to-watcher calls.
 - **ZK-Private Orders** : Hide your trigger price and trade amount on-chain using Smart Escrows (XLS-0100). A RISC0 zkVM proof (Groth16) verifies that the price condition was met without revealing it. The proof is generated via the Boundless Market and verified natively by the ledger.
@@ -247,12 +247,12 @@ Every transaction Pyramid executes is a real, validated XRPL transaction on the 
 
 ### Sample Transactions
 
-Check the borrower account (`rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv`) on the explorer to see real `LoanSet`, `LoanPay`, and `LoanManage` transactions executed from the Pyramid UI during the hackathon.
+Check the borrower account (`rPzZ6FYTDu8eWMP3NVbfxLQmXmqp5NwVFv`) on the explorer to see real `LoanSet`, `LoanPay`, and `LoanManage` transactions executed through the watcher-managed lending flow during the hackathon.
 
 **What you'll find:**
 - `VaultCreate` / `VaultDeposit` — vaults created with real XRP
 - `LoanBrokerSet` / `LoanBrokerCoverDeposit` — brokers configured on-chain
-- `LoanSet` — real XLS-66 loan transactions
+- `LoanSet` — real XLS-66 loan transactions signed and submitted by the watcher
 - `LoanPay` — real loan repayments with interest
 - `LoanManage` — broker management actions
 
