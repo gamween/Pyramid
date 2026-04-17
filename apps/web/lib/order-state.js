@@ -5,9 +5,9 @@ function formatAmount(drops) {
 }
 
 function formatTrigger(order) {
-  if (order.triggerPrice) return `Trigger @ ${order.triggerPrice}`
-  if (order.trailingPct) return `Trail ${order.trailingPct} bps`
-  if (order.tpPrice || order.slPrice) return `TP ${order.tpPrice ?? "—"} / SL ${order.slPrice ?? "—"}`
+  if (order.triggerPrice != null) return `Trigger @ ${order.triggerPrice}`
+  if (order.trailingPct != null) return `Trail ${order.trailingPct} bps`
+  if (order.tpPrice != null || order.slPrice != null) return `TP ${order.tpPrice ?? "—"} / SL ${order.slPrice ?? "—"}`
   return "—"
 }
 
