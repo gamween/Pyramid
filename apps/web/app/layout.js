@@ -1,23 +1,42 @@
-"use client";
+import { Cormorant_Garamond, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
 
-import "./globals.css";
-import { WalletProvider } from "../components/providers/WalletProvider";
-import PrismBackground from "../components/three/PrismBackground";
+import "./globals.css"
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ["latin"],
+  variable: "--font-cormorant-garamond",
+})
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  variable: "--font-ibm-plex-sans",
+  weight: ["400", "500", "600", "700"],
+})
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  variable: "--font-ibm-plex-mono",
+  weight: ["400", "500", "600", "700"],
+})
+
+export const metadata = {
+  title: "Pyramid",
+  description: "XRPL-native lending, trading, and private execution.",
+  icons: {
+    icon: [
+      { media: "(prefers-color-scheme: light)", url: "/icon-light.png" },
+      { media: "(prefers-color-scheme: dark)", url: "/icon-dark.png" },
+    ],
+  },
+}
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="bg-black">
-      <head>
-        <title>Pyramid</title>
-        <link rel="icon" href="/icon-light.png" media="(prefers-color-scheme: light)" />
-        <link rel="icon" href="/icon-dark.png" media="(prefers-color-scheme: dark)" />
-      </head>
-      <body className="relative min-h-screen bg-black text-white" style={{ backgroundColor: "#02040a" }}>
-        <PrismBackground />
-        <WalletProvider>
-          <div className="relative z-10">{children}</div>
-        </WalletProvider>
-      </body>
+    <html
+      lang="en"
+      className={`${cormorantGaramond.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+    >
+      <body>{children}</body>
     </html>
-  );
+  )
 }
