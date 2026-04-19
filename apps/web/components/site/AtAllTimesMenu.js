@@ -59,7 +59,6 @@ export function AtAllTimesMenu() {
         type="button"
         aria-controls={panelId}
         aria-expanded={isOpen}
-        aria-haspopup="dialog"
         onClick={() => setIsOpen((open) => !open)}
         className="museum-shell border museum-rule px-4 py-3 font-ui text-[11px] uppercase tracking-[0.18em] shadow-[0_10px_30px_rgba(1,0,1,0.08)] transition-transform hover:-translate-y-px"
       >
@@ -67,10 +66,9 @@ export function AtAllTimesMenu() {
       </button>
 
       {isOpen ? (
-        <div
+        <nav
           id={panelId}
-          role="dialog"
-          aria-label="At All Times links"
+          aria-label="At All Times"
           className="museum-shell mt-2 min-w-[200px] border museum-rule p-3 shadow-[0_18px_40px_rgba(1,0,1,0.12)]"
         >
           <div className="flex flex-col gap-3">
@@ -86,7 +84,7 @@ export function AtAllTimesMenu() {
               </Link>
             ))}
           </div>
-        </div>
+        </nav>
       ) : null}
     </div>
   )
