@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation"
 
 import { ContentPageLayout } from "../../../components/site/ContentPageLayout"
-import { getLearnPage, learnPages } from "../../../lib/site-content"
+import { learnPages } from "../../../lib/site-content"
+import { resolveLearnPageFromParams } from "../../../lib/learn-page"
 
 export function generateStaticParams() {
   return learnPages.map((page) => ({ slug: page.slug }))
 }
 
-export default function LearnPage({ params }) {
-  const page = getLearnPage(params.slug)
+export default async function LearnPage({ params }) {
+  const page = await resolveLearnPageFromParams(params)
 
   if (!page) {
     notFound()

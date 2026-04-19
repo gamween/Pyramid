@@ -2,6 +2,8 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 
+import { resolveLearnPageFromParams } from "./learn-page.js"
+
 function readSource(relativePath) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8")
 }
@@ -28,9 +30,16 @@ test("learn pages use the registry, static params, and notFound", () => {
   const source = readSource("../app/learn/[slug]/page.js")
 
   assert.match(source, /generateStaticParams/)
-  assert.match(source, /getLearnPage/)
+  assert.match(source, /resolveLearnPageFromParams/)
   assert.match(source, /notFound/)
   assert.match(source, /officialLinks/)
   assert.match(source, /What it is/)
   assert.match(source, /Why it matters in Pyramid/)
+})
+
+test("learn page helper resolves async params", async () => {
+  const page = await resolveLearnPageFromParams(Promise.resolve({ slug: "boundless" }))
+
+  assert.equal(page?.slug, "boundless")
+  assert.equal(page?.title, "Boundless")
 })
