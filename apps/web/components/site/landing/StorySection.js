@@ -9,7 +9,7 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
   return (
     <section className="flex flex-col gap-8 border-t museum-rule pb-12 pt-16 md:gap-10 md:pb-16 lg:min-h-[92svh] lg:flex-row lg:items-start lg:gap-16 lg:pt-20">
       <figure className={`relative self-start lg:flex-[1.08] ${figureOrderClass}`}>
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-75 mix-blend-screen">
+        <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <LightRays
             raysOrigin={visualFirst ? "left" : "right"}
             raysColor="#fff9c4"

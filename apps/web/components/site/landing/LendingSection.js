@@ -47,7 +47,7 @@ export function LendingSection({ section }) {
       </div>
 
       <figure className="relative mt-12 text-center lg:order-1 lg:mt-0 lg:self-start">
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-75 mix-blend-screen">
+        <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <LightRays
             raysOrigin="left"
             raysColor="#fff9c4"

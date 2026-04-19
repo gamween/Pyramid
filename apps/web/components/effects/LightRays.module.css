@@ -5,4 +5,5 @@
   pointer-events: none;
   z-index: 3;
   overflow: hidden;
+  filter: contrast(1.4) saturate(1.15) brightness(1.04);
 }

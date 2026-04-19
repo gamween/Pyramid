@@ -35,7 +35,7 @@ export function LandingHero({ section }) {
       </div>
 
       <figure className="relative w-full justify-self-end text-center">
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-75 mix-blend-screen">
+        <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <LightRays
             raysOrigin="right"
             raysColor="#fff9c4"

@@ -68,6 +68,8 @@ test("landing artwork is integrated with blend treatment instead of white panels
   assert.match(heroSource, /LightRays/)
   assert.match(heroSource, /raysOrigin="right"/)
   assert.doesNotMatch(heroSource, /raysOrigin="bottom/)
+  assert.doesNotMatch(heroSource, /mix-blend-screen/)
+  assert.match(heroSource, /opacity-100/)
 
   assert.doesNotMatch(storySource, /border museum-rule bg-\[/)
   assert.match(storySource, /mix-blend-multiply/)
@@ -78,6 +80,8 @@ test("landing artwork is integrated with blend treatment instead of white panels
   assert.match(storySource, /LightRays/)
   assert.match(storySource, /raysOrigin=\{visualFirst \? "left" : "right"\}/)
   assert.doesNotMatch(storySource, /raysOrigin="bottom/)
+  assert.doesNotMatch(storySource, /mix-blend-screen/)
+  assert.match(storySource, /opacity-100/)
 })
 
 test("landing typography and artwork scale stay restrained for viewport fit", () => {
@@ -148,6 +152,8 @@ test("lending section uses the discobolus artwork with the same editorial treatm
   assert.match(lendingSource, /LightRays/)
   assert.match(lendingSource, /raysOrigin="left"/)
   assert.doesNotMatch(lendingSource, /raysOrigin="bottom/)
+  assert.doesNotMatch(lendingSource, /mix-blend-screen/)
+  assert.match(lendingSource, /opacity-100/)
 })
 
 test("light rays component is installed locally with ogl and non-interactive canvas styling", () => {
