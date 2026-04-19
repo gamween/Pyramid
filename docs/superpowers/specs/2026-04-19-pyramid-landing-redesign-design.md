@@ -390,9 +390,11 @@ Official references:
 Purpose:
 - explain Boundless as the proving/execution market used in Pyramid’s privacy story
 
-Official reference:
+Official references:
 - Boundless Quick Start:
   `https://docs.boundless.network/developers/quick-start`
+- XRPL Boundless starter repository:
+  `https://github.com/boundless-xyz/xrpl-boundless-starter`
 
 Important note:
 - this is official Boundless documentation, not XRP Ledger documentation, and the page should label it as an external dependency clearly
