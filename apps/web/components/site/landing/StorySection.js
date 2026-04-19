@@ -5,17 +5,17 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
   const figureOrderClass = visualFirst ? "lg:sticky lg:top-24" : "lg:order-2 lg:sticky lg:top-24"
 
   return (
-    <section className="flex flex-col gap-8 pb-12 md:gap-10 md:pb-16 lg:flex-row lg:items-start lg:gap-12">
-      <figure className={`relative self-start lg:flex-1 ${figureOrderClass}`}>
+    <section className="flex flex-col gap-8 pb-12 md:gap-10 md:pb-16 lg:flex-row lg:items-start lg:gap-16">
+      <figure className={`relative self-start lg:flex-[1.08] ${figureOrderClass}`}>
         <div className="pointer-events-none absolute left-1/2 top-0 hidden h-[72%] w-px -translate-x-1/2 bg-black/12 lg:block" />
-        <div className="relative mx-auto max-w-[44rem] px-5 pt-5 text-center md:px-8 lg:px-0">
+        <div className="relative mx-auto w-full pt-5 text-center">
           <div className="pointer-events-none absolute left-1/2 top-14 h-px w-20 -translate-x-1/2 bg-black/12 md:w-28" />
           <Image
             src={section.artwork.src}
             alt={section.artwork.alt}
             width={1400}
             height={1680}
-            className="mx-auto h-auto w-full max-w-[42rem] object-contain mix-blend-multiply opacity-95"
+            className="mx-auto h-auto w-full object-contain mix-blend-multiply opacity-95"
           />
         </div>
         <figcaption className="mt-4 text-center font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">
@@ -23,7 +23,7 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
         </figcaption>
       </figure>
 
-      <div className={`${visualFirst ? "" : "lg:order-1"} max-w-3xl flex-1`}>
+      <div className={`${visualFirst ? "" : "lg:order-1"} max-w-3xl flex-1 lg:max-w-none`}>
         <p className="font-ui text-[11px] uppercase tracking-[0.24em]">{section.eyebrow}</p>
         <h2 className="font-display mt-4 text-4xl leading-[0.95] md:text-6xl">{section.title}</h2>
 

@@ -14,7 +14,7 @@ export function LandingScene() {
     <div className="museum-shell min-h-screen">
       <SiteHeader />
 
-      <main className="mx-auto flex max-w-7xl flex-col gap-24 px-6 py-10 pb-20 md:px-10 md:py-14">
+      <main className="flex w-full flex-col gap-24 px-4 py-10 pb-20 md:px-8 md:py-14 lg:px-10 xl:px-12">
         <LandingHero section={heroSection} />
         <StorySection
           section={howItWorksSection}

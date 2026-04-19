@@ -13,6 +13,19 @@ test("root page composes the landing scene", () => {
   assert.match(pageSource, /<LandingScene\s*\/>/)
 })
 
+test("landing scene uses the full page width instead of a centered max-width shell", () => {
+  const sceneSource = readSource("../components/site/landing/LandingScene.js")
+  const headerSource = readSource("../components/site/SiteHeader.js")
+  const footerSource = readSource("../components/site/SiteFooter.js")
+
+  assert.doesNotMatch(sceneSource, /max-w-7xl/)
+  assert.doesNotMatch(sceneSource, /mx-auto/)
+  assert.doesNotMatch(headerSource, /max-w-7xl/)
+  assert.doesNotMatch(headerSource, /mx-auto/)
+  assert.doesNotMatch(footerSource, /max-w-7xl/)
+  assert.doesNotMatch(footerSource, /mx-auto/)
+})
+
 test("active repo references point to gamween/Pyramid", () => {
   const contactSource = readSource("../app/contact/page.js")
   const readmeSource = readSource("../../../README.md")
