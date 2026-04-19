@@ -25,22 +25,9 @@ test("landing scene wires the landing sections in the approved order", () => {
   assert.match(sceneSource, /LendingSection/)
   assert.match(sceneSource, /ClosingSection/)
   assert.doesNotMatch(sceneSource, /overflow-hidden/)
-
-  assert.ok(
-    sceneSource.indexOf("<LandingHero section={heroSection} />") <
-      sceneSource.indexOf("<StorySection\n          section={howItWorksSection}")
-  )
-  assert.ok(
-    sceneSource.indexOf("<StorySection\n          section={howItWorksSection}") <
-      sceneSource.indexOf("<StorySection\n          section={tradingToolsSection}")
-  )
-  assert.ok(
-    sceneSource.indexOf("<StorySection\n          section={tradingToolsSection}") <
-      sceneSource.indexOf("<LendingSection section={lendingSection} />")
-  )
-  assert.ok(
-    sceneSource.indexOf("<LendingSection section={lendingSection} />") <
-      sceneSource.indexOf("<ClosingSection section={closingSection} />")
+  assert.match(
+    sceneSource,
+    /<LandingHero section=\{heroSection\} \/>\s*<StorySection[\s\S]*section=\{howItWorksSection\}[\s\S]*<StorySection[\s\S]*section=\{tradingToolsSection\}[\s\S]*<LendingSection section=\{lendingSection\} \/>\s*<ClosingSection section=\{closingSection\} \/>/
   )
 })
 
