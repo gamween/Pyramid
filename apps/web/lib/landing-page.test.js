@@ -29,6 +29,8 @@ test("landing scene wires the landing sections in the approved order", () => {
     sceneSource,
     /<LandingHero section=\{heroSection\} \/>\s*<StorySection[\s\S]*section=\{howItWorksSection\}[\s\S]*<StorySection[\s\S]*section=\{tradingToolsSection\}[\s\S]*<LendingSection section=\{lendingSection\} \/>\s*<ClosingSection section=\{closingSection\} \/>/
   )
+  assert.match(sceneSource, /section=\{howItWorksSection\}[\s\S]*highlights=\{\[/)
+  assert.match(sceneSource, /section=\{tradingToolsSection\}[\s\S]*highlights=\{\[/)
 })
 
 test("story section uses the highlights prop as its only note source", () => {
