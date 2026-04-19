@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
+import { useWalletManager } from "../../hooks/useWalletManager"
 import { Header } from "../Header"
 import LEDPyramid from "../three/LEDPyramid"
 import { DEFAULT_APP_TAB } from "../../lib/app-shell"
@@ -13,6 +14,7 @@ import { AppTabsNav } from "./AppTabsNav"
 export function AppExperience() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(DEFAULT_APP_TAB)
+  useWalletManager()
 
   const tabsNode = <AppTabsNav activeTab={activeTab} />
 

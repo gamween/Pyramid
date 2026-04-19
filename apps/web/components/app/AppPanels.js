@@ -1,5 +1,6 @@
 "use client"
 
+import { APP_TABS } from "../../lib/app-shell"
 import { AccountInfo } from "../AccountInfo"
 import { ActivePositions } from "../ActivePositions"
 import { AdvancedTradingForm } from "../AdvancedTradingForm"
@@ -12,9 +13,11 @@ import { ZkPrivacy } from "../ZkPrivacy"
 import { TabsContent } from "../ui/tabs"
 
 export function AppPanels() {
+  const [dashboardTab, lendingTab, loansTab, tradingTab] = APP_TABS
+
   return (
     <>
-      <TabsContent value="dashboard" className="animate-in fade-in duration-500">
+      <TabsContent value={dashboardTab.value} className="animate-in fade-in duration-500">
         <div className="mb-6">
           <ProtocolStats />
         </div>
@@ -40,16 +43,16 @@ export function AppPanels() {
         <ActivePositions />
       </TabsContent>
 
-      <TabsContent value="lending" className="animate-in fade-in duration-500">
+      <TabsContent value={lendingTab.value} className="animate-in fade-in duration-500">
         <EarnYieldPage />
         <LendingShowcase />
       </TabsContent>
 
-      <TabsContent value="loans" className="animate-in fade-in duration-500">
+      <TabsContent value={loansTab.value} className="animate-in fade-in duration-500">
         <LoansPage />
       </TabsContent>
 
-      <TabsContent value="trading" className="animate-in fade-in duration-500">
+      <TabsContent value={tradingTab.value} className="animate-in fade-in duration-500">
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
           <div className="border border-white/20 bg-black/40 backdrop-blur-xl">
             <div className="p-4 border-b border-white/20 bg-white/5">
