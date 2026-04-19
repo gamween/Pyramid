@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 
 import { TermLinksRow } from "../TermLinksRow"
@@ -34,12 +35,13 @@ export function LandingHero({ section }) {
 
       <figure className="justify-self-end">
         <div className="relative overflow-hidden border museum-rule bg-[rgba(255,255,255,0.24)] p-5">
-          <img
+          <Image
             src={section.artwork.src}
             alt={section.artwork.alt}
+            width={940}
+            height={1120}
             className="h-auto w-full object-cover"
-            loading="eager"
-            decoding="async"
+            priority
           />
         </div>
         <figcaption className="mt-3 font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">

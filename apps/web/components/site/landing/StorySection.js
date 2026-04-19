@@ -1,15 +1,17 @@
+import Image from "next/image"
+
 export function StorySection({ section, visualPlacement = "left", highlights = [] }) {
   const visualFirst = visualPlacement === "left"
 
   return (
     <section className="flex flex-col gap-8 pb-12 md:gap-10 md:pb-16 lg:flex-row lg:items-start">
       <figure className={`self-start ${visualFirst ? "lg:sticky lg:top-24" : "lg:order-2 lg:sticky lg:top-24"}`}>
-        <img
+        <Image
           src={section.artwork.src}
           alt={section.artwork.alt}
+          width={1400}
+          height={1680}
           className="h-auto w-full max-w-3xl object-cover"
-          loading="lazy"
-          decoding="async"
         />
         <figcaption className="mt-3 font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">
           {section.eyebrow}
