@@ -13,7 +13,7 @@ export function ContentPageLayout({
   return (
     <div className="museum-shell min-h-screen">
       <AtAllTimesMenu />
-      <SiteHeader />
+      <SiteHeader reserveAtAllTimesSpace />
 
       <main className="mx-auto max-w-5xl px-6 pb-20 pt-14 md:px-10 md:pt-16">
         <p className="font-ui text-[11px] uppercase tracking-[0.22em]">{eyebrow}</p>

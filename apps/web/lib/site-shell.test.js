@@ -9,3 +9,15 @@ test("AtAllTimesMenu uses non-modal navigation semantics", () => {
   assert.doesNotMatch(source, /role="dialog"/)
   assert.match(source, /<nav[\s\S]*aria-label="At All Times"/)
 })
+
+test("ContentPageLayout reserves header space for the At All Times control", () => {
+  const headerSource = readFileSync(new URL("../components/site/SiteHeader.js", import.meta.url), "utf8")
+  const layoutSource = readFileSync(
+    new URL("../components/site/ContentPageLayout.js", import.meta.url),
+    "utf8"
+  )
+
+  assert.match(layoutSource, /<SiteHeader reserveAtAllTimesSpace \/>/)
+  assert.match(headerSource, /reserveAtAllTimesSpace = false/)
+  assert.match(headerSource, /reserveAtAllTimesSpace \?/)
+})

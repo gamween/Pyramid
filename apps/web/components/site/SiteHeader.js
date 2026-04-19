@@ -1,9 +1,13 @@
 import Link from "next/link"
 
-export function SiteHeader() {
+export function SiteHeader({ reserveAtAllTimesSpace = false }) {
   return (
     <header className="museum-shell sticky top-0 z-40 border-b museum-rule">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
+      <div
+        className={`mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10 ${
+          reserveAtAllTimesSpace ? "pl-36 md:pl-44" : ""
+        }`}
+      >
         <Link
           href="/"
           className="font-ui text-[11px] uppercase tracking-[0.24em] transition-opacity hover:opacity-70"
