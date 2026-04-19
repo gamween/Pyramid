@@ -64,12 +64,14 @@ test("landing artwork is integrated with blend treatment instead of white panels
   assert.match(heroSource, /mix-blend-multiply/)
   assert.match(heroSource, /text-center/)
   assert.doesNotMatch(heroSource, /rounded-full border border-black\/10/)
-  assert.match(heroSource, /section\.artwork\.caption/)
+  assert.doesNotMatch(heroSource, /figcaption/)
 
   assert.doesNotMatch(storySource, /border museum-rule bg-\[/)
   assert.match(storySource, /mix-blend-multiply/)
-  assert.match(storySource, /section\.artwork\.caption/)
   assert.match(storySource, /text-center/)
+  assert.doesNotMatch(storySource, /figcaption/)
+  assert.doesNotMatch(storySource, /lg:sticky/)
+  assert.doesNotMatch(storySource, /lg:top-24/)
 })
 
 test("landing typography and artwork scale stay restrained for viewport fit", () => {
@@ -128,8 +130,13 @@ test("lending section uses the discobolus artwork with the same editorial treatm
   const lendingSource = readSource("../components/site/landing/LendingSection.js")
 
   assert.match(lendingSource, /section\.artwork\.src/)
-  assert.match(lendingSource, /section\.artwork\.caption/)
   assert.match(lendingSource, /<Image/)
   assert.match(lendingSource, /mix-blend-multiply/)
   assert.match(lendingSource, /border-t museum-rule/)
+  assert.doesNotMatch(lendingSource, /figcaption/)
+  assert.match(lendingSource, /lg:grid-cols-\[minmax\(0,1\.02fr\)_minmax\(0,0\.98fr\)\]/)
+  assert.match(lendingSource, /className="max-w-3xl lg:order-2"/)
+  assert.match(lendingSource, /className="relative mt-12 text-center lg:order-1 lg:mt-0 lg:self-start"/)
+  assert.match(lendingSource, /font-display text-3xl leading-none">\{String\(index \+ 1\)\.padStart\(2, "0"\)\}/)
+  assert.match(lendingSource, /font-ui text-\[10px\] uppercase tracking-\[0\.18em\]">\{pillar\.label\}/)
 })

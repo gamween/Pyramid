@@ -2,7 +2,7 @@ import Image from "next/image"
 
 export function StorySection({ section, visualPlacement = "left", highlights = [] }) {
   const visualFirst = visualPlacement === "left"
-  const figureOrderClass = visualFirst ? "lg:sticky lg:top-24" : "lg:order-2 lg:sticky lg:top-24"
+  const figureOrderClass = visualFirst ? "" : "lg:order-2"
 
   return (
     <section className="flex flex-col gap-8 border-t museum-rule pb-12 pt-16 md:gap-10 md:pb-16 lg:min-h-[92svh] lg:flex-row lg:items-start lg:gap-16 lg:pt-20">
@@ -18,9 +18,6 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
             className="mx-auto h-auto max-h-[68vh] w-full object-contain mix-blend-multiply opacity-95"
           />
         </div>
-        <figcaption className="mt-4 text-center font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">
-          {section.artwork.caption}
-        </figcaption>
       </figure>
 
       <div className={`${visualFirst ? "" : "lg:order-1"} max-w-3xl flex-1 lg:max-w-none`}>

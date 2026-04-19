@@ -46,9 +46,6 @@ export function LandingHero({ section }) {
             priority
           />
         </div>
-        <figcaption className="mt-4 text-center font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">
-          {section.artwork.caption}
-        </figcaption>
       </figure>
     </section>
   )
