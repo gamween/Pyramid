@@ -19,7 +19,7 @@ export function LendingSection({ section }) {
   ]
 
   return (
-    <section className="border-b museum-rule pb-12 md:pb-16">
+    <section className="pb-12 md:pb-16">
       <div className="max-w-4xl">
         <p className="font-ui text-[11px] uppercase tracking-[0.24em]">{section.eyebrow}</p>
         <h2 className="font-display mt-4 text-4xl leading-[0.95] md:text-6xl">{section.title}</h2>
@@ -30,17 +30,17 @@ export function LendingSection({ section }) {
         </div>
       </div>
 
-      <div className="mt-10 grid gap-0 md:grid-cols-4">
+      <div className="mt-10 space-y-8 border-t border-black/15 pt-6">
         {pillars.map((pillar, index) => (
           <div
             key={pillar.label}
-            className={`border-t museum-rule pt-5 ${index > 0 ? "md:border-l md:pl-6" : ""} ${
-              index === 0 ? "md:pr-6" : ""
-            }`}
+            className="flex max-w-3xl gap-4"
           >
             <p className="font-ui text-[10px] uppercase tracking-[0.18em]">{String(index + 1).padStart(2, "0")}</p>
-            <h3 className="font-display mt-3 text-3xl leading-none">{pillar.label}</h3>
-            <p className="museum-copy mt-4 text-sm leading-6">{pillar.text}</p>
+            <div>
+              <h3 className="font-display text-3xl leading-none">{pillar.label}</h3>
+              <p className="museum-copy mt-3 text-sm leading-6">{pillar.text}</p>
+            </div>
           </div>
         ))}
       </div>

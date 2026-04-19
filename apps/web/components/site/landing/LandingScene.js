@@ -11,7 +11,7 @@ export function LandingScene() {
     landingSections
 
   return (
-    <div className="museum-shell min-h-screen overflow-hidden">
+    <div className="museum-shell min-h-screen">
       <SiteHeader />
 
       <main className="mx-auto flex max-w-7xl flex-col gap-24 px-6 py-10 pb-20 md:px-10 md:py-14">
