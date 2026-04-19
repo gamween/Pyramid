@@ -1,7 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import LightRays from "../../effects/LightRays"
 import { TermLinksRow } from "../TermLinksRow"
 
 export function LandingHero({ section }) {
@@ -35,23 +34,8 @@ export function LandingHero({ section }) {
       </div>
 
       <figure className="relative w-full justify-self-end text-center">
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
-          <LightRays
-            raysOrigin="right"
-            raysColor="#fff9c4"
-            raysSpeed={0.4}
-            lightSpread={0.72}
-            rayLength={1.18}
-            fadeDistance={1.12}
-            saturation={0.38}
-            followMouse={false}
-            mouseInfluence={0}
-            noiseAmount={0.05}
-            distortion={0.03}
-          />
-        </div>
-        <div className="pointer-events-none absolute left-0 top-10 z-10 hidden h-[72%] w-px bg-black/12 lg:block" />
-        <div className="relative z-10 mx-auto w-full pt-6">
+        <div className="pointer-events-none absolute left-0 top-10 hidden h-[72%] w-px bg-black/12 lg:block" />
+        <div className="relative mx-auto w-full pt-6">
           <div className="pointer-events-none absolute left-1/2 top-16 h-px w-20 -translate-x-1/2 bg-black/12 md:w-28" />
           <Image
             src={section.artwork.src}

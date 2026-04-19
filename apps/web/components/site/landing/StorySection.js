@@ -1,7 +1,5 @@
 import Image from "next/image"
 
-import LightRays from "../../effects/LightRays"
-
 export function StorySection({ section, visualPlacement = "left", highlights = [] }) {
   const visualFirst = visualPlacement === "left"
   const figureOrderClass = visualFirst ? "" : "lg:order-2"
@@ -9,23 +7,8 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
   return (
     <section className="flex flex-col gap-8 border-t museum-rule pb-12 pt-16 md:gap-10 md:pb-16 lg:min-h-[92svh] lg:flex-row lg:items-start lg:gap-16 lg:pt-20">
       <figure className={`relative self-start lg:flex-[1.08] ${figureOrderClass}`}>
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
-          <LightRays
-            raysOrigin={visualFirst ? "left" : "right"}
-            raysColor="#fff9c4"
-            raysSpeed={0.4}
-            lightSpread={0.72}
-            rayLength={1.18}
-            fadeDistance={1.12}
-            saturation={0.38}
-            followMouse={false}
-            mouseInfluence={0}
-            noiseAmount={0.05}
-            distortion={0.03}
-          />
-        </div>
-        <div className="pointer-events-none absolute left-1/2 top-0 z-10 hidden h-[72%] w-px -translate-x-1/2 bg-black/12 lg:block" />
-        <div className="relative z-10 mx-auto w-full pt-5 text-center">
+        <div className="pointer-events-none absolute left-1/2 top-0 hidden h-[72%] w-px -translate-x-1/2 bg-black/12 lg:block" />
+        <div className="relative mx-auto w-full pt-5 text-center">
           <div className="pointer-events-none absolute left-1/2 top-14 h-px w-20 -translate-x-1/2 bg-black/12 md:w-28" />
           <Image
             src={section.artwork.src}
