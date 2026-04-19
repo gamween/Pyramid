@@ -80,7 +80,10 @@ test("site content registry controls at-all-times links", () => {
   assert.deepEqual(landingSections[0].artwork, {
     src: "/landing/victoire-de-samothrace-dithered.svg",
     alt: "Victoire de Samothrace artwork",
+    caption: "Winged Victory of Samothrace",
   })
+  assert.equal(landingSections[1].artwork.caption, "Louvre Pyramid")
+  assert.equal(landingSections[2].artwork.caption, "The Seated Scribe")
   assert.deepEqual(getAtAllTimesLinks(), [
     { href: "/", label: "Landing Page" },
     { href: "/app", label: "Open App" },

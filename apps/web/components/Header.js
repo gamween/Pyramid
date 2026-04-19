@@ -11,7 +11,7 @@ export function Header({ isAppLaunched, onLaunch, onGoHome, tabsNode }) {
 
   return (
     <header className={`fixed top-0 z-50 w-full transition-all duration-700 ${isAppLaunched ? "bg-black/60 backdrop-blur-md border-b border-white/10" : "bg-transparent mix-blend-difference"}`}>
-      <div className={`container mx-auto flex items-center justify-between px-6 transition-all duration-700 ${isAppLaunched ? "h-20" : "h-24"}`}>
+      <div className={`flex w-full items-center justify-between px-4 transition-all duration-700 md:px-6 ${isAppLaunched ? "h-20" : "h-24"}`}>
         
         {/* Left Side: Logo */}
         <button onClick={onGoHome} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity outline-none text-left">

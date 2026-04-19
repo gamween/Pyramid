@@ -23,6 +23,7 @@ export const landingSections = [
     artwork: {
       src: landingArt.victory,
       alt: "Victoire de Samothrace artwork",
+      caption: "Winged Victory of Samothrace",
     },
   },
   {
@@ -36,6 +37,7 @@ export const landingSections = [
     artwork: {
       src: landingArt.pyramid,
       alt: "Pyramide du Louvre artwork",
+      caption: "Louvre Pyramid",
     },
   },
   {
@@ -49,6 +51,7 @@ export const landingSections = [
     artwork: {
       src: landingArt.scribe,
       alt: "Le Scribe accroupi artwork",
+      caption: "The Seated Scribe",
     },
   },
   {

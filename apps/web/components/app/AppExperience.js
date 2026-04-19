@@ -35,10 +35,8 @@ export function AppExperience() {
             tabsNode={tabsNode}
           />
 
-          <main className="flex-1 w-full z-20 mt-8 px-4 md:px-12 animate-in fade-in duration-700">
-            <div className="max-w-7xl mx-auto pb-12">
-              <AppPanels />
-            </div>
+          <main className="flex-1 w-full z-20 mt-8 px-4 pb-12 animate-in fade-in duration-700 md:px-6">
+            <AppPanels />
           </main>
         </Tabs>
       </div>

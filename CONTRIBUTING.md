@@ -5,7 +5,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/DVB-ESILV/Pyramid.git`
+2. Clone your fork: `git clone https://github.com/gamween/Pyramid.git`
 3. Install dependencies: `pnpm install`
 4. Create a dedicated branch from the approved working branch for your change set
 

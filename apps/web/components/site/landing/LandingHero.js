@@ -5,7 +5,7 @@ import { TermLinksRow } from "../TermLinksRow"
 
 export function LandingHero({ section }) {
   return (
-    <section className="grid items-end gap-10 border-b museum-rule pb-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14 lg:pb-16">
+    <section className="grid items-end gap-12 border-b museum-rule pb-12 lg:grid-cols-[0.94fr_1.06fr] lg:gap-8 lg:pb-16">
       <div className="max-w-3xl">
         <p className="font-ui text-[11px] uppercase tracking-[0.24em]">{section.eyebrow}</p>
         <h1 className="font-display mt-5 max-w-[8ch] text-6xl leading-[0.86] md:text-8xl">
@@ -33,19 +33,21 @@ export function LandingHero({ section }) {
         </div>
       </div>
 
-      <figure className="justify-self-end">
-        <div className="relative overflow-hidden border museum-rule bg-[rgba(255,255,255,0.24)] p-5">
+      <figure className="relative w-full justify-self-end text-center lg:-mr-4">
+        <div className="pointer-events-none absolute left-0 top-10 hidden h-[72%] w-px bg-black/12 lg:block" />
+        <div className="relative mx-auto max-w-[46rem] px-5 pt-6 md:px-8 lg:px-14">
+          <div className="pointer-events-none absolute left-1/2 top-16 h-px w-20 -translate-x-1/2 bg-black/12 md:w-28" />
           <Image
             src={section.artwork.src}
             alt={section.artwork.alt}
             width={940}
             height={1120}
-            className="h-auto w-full object-cover"
+            className="mx-auto h-auto w-full max-w-[44rem] object-contain mix-blend-multiply opacity-95"
             priority
           />
         </div>
-        <figcaption className="mt-3 font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">
-          Victoire de Samothrace
+        <figcaption className="mt-4 text-center font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">
+          {section.artwork.caption}
         </figcaption>
       </figure>
     </section>

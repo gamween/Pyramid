@@ -3,7 +3,7 @@ import Link from "next/link"
 import { ContentPageLayout } from "../../components/site/ContentPageLayout"
 import { getSupportPage } from "../../lib/site-content"
 
-const repositoryUrl = "https://github.com/DVB-ESILV/Pyramid"
+const repositoryUrl = "https://github.com/gamween/Pyramid"
 
 export default function ContactPage() {
   const page = getSupportPage("contact")
@@ -26,7 +26,7 @@ export default function ContactPage() {
               rel="noreferrer"
               className="border-b border-current pb-1"
             >
-              github.com/DVB-ESILV/Pyramid
+              github.com/gamween/Pyramid
             </Link>
             .
           </p>

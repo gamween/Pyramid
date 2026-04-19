@@ -28,7 +28,7 @@ We did not build a layer on top of XRPL. We composed the chain's own transaction
 
 ## Links
 
-- **GitHub Repository**: https://github.com/DVB-ESILV/Pyramid
+- **GitHub Repository**: https://github.com/gamween/Pyramid
 - **Live App**: https://pyramid-web.vercel.app/
 - **Video Demo**: https://youtu.be/5LYctLnQ9tI
 
@@ -194,7 +194,7 @@ Pyramid/
 ### Install
 
 ```bash
-git clone https://github.com/DVB-ESILV/Pyramid.git
+git clone https://github.com/gamween/Pyramid.git
 cd Pyramid
 pnpm install
 ```

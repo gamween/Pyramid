@@ -13,49 +13,48 @@ test("root page composes the landing scene", () => {
   assert.match(pageSource, /<LandingScene\s*\/>/)
 })
 
-test("landing scene wires the landing sections in the approved order", () => {
-  const sceneSource = readSource("../components/site/landing/LandingScene.js")
+test("active repo references point to gamween/Pyramid", () => {
+  const contactSource = readSource("../app/contact/page.js")
+  const readmeSource = readSource("../../../README.md")
+  const contributingSource = readSource("../../../CONTRIBUTING.md")
 
-  assert.match(sceneSource, /from "\.\.\/\.\.\/\.\.\/lib\/site-content"/)
-  assert.match(sceneSource, /landingSections/)
-  assert.match(sceneSource, /SiteHeader/)
-  assert.match(sceneSource, /SiteFooter/)
-  assert.match(sceneSource, /LandingHero/)
-  assert.match(sceneSource, /StorySection/)
-  assert.match(sceneSource, /LendingSection/)
-  assert.match(sceneSource, /ClosingSection/)
-  assert.doesNotMatch(sceneSource, /overflow-hidden/)
-  assert.match(
-    sceneSource,
-    /<LandingHero section=\{heroSection\} \/>\s*<StorySection[\s\S]*section=\{howItWorksSection\}[\s\S]*<StorySection[\s\S]*section=\{tradingToolsSection\}[\s\S]*<LendingSection section=\{lendingSection\} \/>\s*<ClosingSection section=\{closingSection\} \/>/
-  )
-  assert.match(sceneSource, /section=\{howItWorksSection\}[\s\S]*highlights=\{\[/)
-  assert.match(sceneSource, /section=\{tradingToolsSection\}[\s\S]*highlights=\{\[/)
+  assert.match(contactSource, /https:\/\/github\.com\/gamween\/Pyramid/)
+  assert.match(contactSource, /github\.com\/gamween\/Pyramid/)
+  assert.doesNotMatch(contactSource, /DVB-ESILV\/Pyramid/)
+
+  assert.match(readmeSource, /https:\/\/github\.com\/gamween\/Pyramid/)
+  assert.doesNotMatch(readmeSource, /DVB-ESILV\/Pyramid/)
+
+  assert.match(contributingSource, /https:\/\/github\.com\/gamween\/Pyramid\.git/)
+  assert.doesNotMatch(contributingSource, /DVB-ESILV\/Pyramid/)
 })
 
-test("story section uses the highlights prop as its only note source", () => {
+test("app experience stays edge-to-edge without a centered max-width shell", () => {
+  const appExperienceSource = readSource("../components/app/AppExperience.js")
+  const headerSource = readSource("../components/Header.js")
+  const earnYieldSource = readSource("../components/EarnYieldPage.js")
+
+  assert.match(appExperienceSource, /<main className="flex-1 w-full/)
+  assert.match(appExperienceSource, /<AppPanels \/>/)
+  assert.doesNotMatch(appExperienceSource, /max-w-7xl/)
+  assert.doesNotMatch(appExperienceSource, /mx-auto/)
+
+  assert.doesNotMatch(headerSource, /container mx-auto/)
+  assert.doesNotMatch(earnYieldSource, /max-w-4xl mx-auto/)
+})
+
+test("landing artwork is integrated with blend treatment instead of white panels", () => {
+  const heroSource = readSource("../components/site/landing/LandingHero.js")
   const storySource = readSource("../components/site/landing/StorySection.js")
 
-  assert.match(storySource, /highlights = \[\]/)
-  assert.match(storySource, /highlights\.map/)
-  assert.doesNotMatch(storySource, /sectionNotes/)
-  assert.doesNotMatch(storySource, /grid-cols-2/)
+  assert.doesNotMatch(heroSource, /bg-\[rgba\(255,255,255,0\.24\)\]/)
+  assert.match(heroSource, /mix-blend-multiply/)
+  assert.match(heroSource, /text-center/)
+  assert.doesNotMatch(heroSource, /rounded-full border border-black\/10/)
+  assert.match(heroSource, /section\.artwork\.caption/)
+
   assert.doesNotMatch(storySource, /border museum-rule bg-\[/)
-})
-
-test("lending section keeps the protocol pillars open and unboxed", () => {
-  const lendingSource = readSource("../components/site/landing/LendingSection.js")
-
-  assert.match(lendingSource, /pillars = \[/)
-  assert.doesNotMatch(lendingSource, /grid-cols-4/)
-  assert.doesNotMatch(lendingSource, /border museum-rule/)
-  assert.doesNotMatch(lendingSource, /shadow-/)
-})
-
-test("landing hero includes term links and the app launch cta", () => {
-  const heroSource = readSource("../components/site/landing/LandingHero.js")
-
-  assert.match(heroSource, /TermLinksRow/)
-  assert.match(heroSource, /href="\/app"/)
-  assert.match(heroSource, /Launch App/)
+  assert.match(storySource, /mix-blend-multiply/)
+  assert.match(storySource, /section\.artwork\.caption/)
+  assert.match(storySource, /text-center/)
 })

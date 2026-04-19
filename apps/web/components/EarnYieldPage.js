@@ -47,7 +47,7 @@ export function EarnYieldPage() {
 
   return (
     <>
-      <Card className="border-white/20 bg-black/60 backdrop-blur-md rounded-none max-w-4xl mx-auto">
+      <Card className="w-full border-white/20 bg-black/60 backdrop-blur-md rounded-none">
         <CardHeader className="border-b border-white/20 bg-white/5 pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-mono uppercase tracking-widest text-white">
