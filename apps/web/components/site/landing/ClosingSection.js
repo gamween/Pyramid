@@ -3,10 +3,12 @@ import Link from "next/link"
 export function ClosingSection({ section }) {
   return (
     <section className="grid gap-8 pt-2 md:grid-cols-[1fr_auto] md:items-end">
-      <div className="max-w-4xl">
+      <div className="max-w-none">
         <p className="font-ui text-[11px] uppercase tracking-[0.24em]">{section.eyebrow}</p>
-        <h2 className="font-display mt-4 text-4xl leading-[0.95] md:text-6xl">{section.title}</h2>
-        <div className="museum-copy mt-6 space-y-4 text-lg leading-8">
+        <h2 className="font-display mt-4 text-[2.5rem] leading-[0.98] md:text-5xl xl:whitespace-nowrap">
+          {section.title}
+        </h2>
+        <div className="museum-copy mt-6 max-w-4xl space-y-4 text-base leading-7 md:text-lg">
           {section.body.map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}

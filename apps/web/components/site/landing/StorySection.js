@@ -15,7 +15,7 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
             alt={section.artwork.alt}
             width={1400}
             height={1680}
-            className="mx-auto h-auto w-full object-contain mix-blend-multiply opacity-95"
+            className="mx-auto h-auto max-h-[68vh] w-full object-contain mix-blend-multiply opacity-95"
           />
         </div>
         <figcaption className="mt-4 text-center font-ui text-[10px] uppercase tracking-[0.18em] museum-copy">
@@ -25,9 +25,9 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
 
       <div className={`${visualFirst ? "" : "lg:order-1"} max-w-3xl flex-1 lg:max-w-none`}>
         <p className="font-ui text-[11px] uppercase tracking-[0.24em]">{section.eyebrow}</p>
-        <h2 className="font-display mt-4 text-4xl leading-[0.95] md:text-6xl">{section.title}</h2>
+        <h2 className="font-display mt-4 text-[2.5rem] leading-[0.98] md:text-5xl">{section.title}</h2>
 
-        <div className="museum-copy mt-6 space-y-4 text-lg leading-8">
+        <div className="museum-copy mt-6 space-y-4 text-base leading-7 md:text-lg">
           {section.body.map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}

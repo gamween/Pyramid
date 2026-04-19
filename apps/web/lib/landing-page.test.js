@@ -71,3 +71,21 @@ test("landing artwork is integrated with blend treatment instead of white panels
   assert.match(storySource, /section\.artwork\.caption/)
   assert.match(storySource, /text-center/)
 })
+
+test("landing typography and artwork scale stay restrained for viewport fit", () => {
+  const heroSource = readSource("../components/site/landing/LandingHero.js")
+  const storySource = readSource("../components/site/landing/StorySection.js")
+  const closingSource = readSource("../components/site/landing/ClosingSection.js")
+
+  assert.match(heroSource, /md:text-7xl/)
+  assert.doesNotMatch(heroSource, /md:text-8xl/)
+  assert.match(heroSource, /max-h-\[74vh\]/)
+
+  assert.match(storySource, /md:text-5xl/)
+  assert.doesNotMatch(storySource, /md:text-6xl/)
+  assert.match(storySource, /max-h-\[68vh\]/)
+
+  assert.match(closingSource, /md:text-5xl/)
+  assert.match(closingSource, /xl:whitespace-nowrap/)
+  assert.doesNotMatch(closingSource, /md:text-6xl/)
+})
