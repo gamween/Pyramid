@@ -5,7 +5,7 @@ export function StorySection({ section, visualPlacement = "left", highlights = [
   const figureOrderClass = visualFirst ? "lg:sticky lg:top-24" : "lg:order-2 lg:sticky lg:top-24"
 
   return (
-    <section className="flex flex-col gap-8 pb-12 md:gap-10 md:pb-16 lg:flex-row lg:items-start lg:gap-16">
+    <section className="flex flex-col gap-8 border-t museum-rule pb-12 pt-16 md:gap-10 md:pb-16 lg:min-h-[92svh] lg:flex-row lg:items-start lg:gap-16 lg:pt-20">
       <figure className={`relative self-start lg:flex-[1.08] ${figureOrderClass}`}>
         <div className="pointer-events-none absolute left-1/2 top-0 hidden h-[72%] w-px -translate-x-1/2 bg-black/12 lg:block" />
         <div className="relative mx-auto w-full pt-5 text-center">

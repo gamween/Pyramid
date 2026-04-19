@@ -89,3 +89,36 @@ test("landing typography and artwork scale stay restrained for viewport fit", ()
   assert.match(closingSource, /xl:whitespace-nowrap/)
   assert.doesNotMatch(closingSource, /md:text-6xl/)
 })
+
+test("landing screen boundaries are explicit and footer copy stays on one line", () => {
+  const sceneSource = readSource("../components/site/landing/LandingScene.js")
+  const storySource = readSource("../components/site/landing/StorySection.js")
+  const lendingSource = readSource("../components/site/landing/LendingSection.js")
+  const closingSource = readSource("../components/site/landing/ClosingSection.js")
+  const footerSource = readSource("../components/site/SiteFooter.js")
+
+  assert.match(sceneSource, /gap-0/)
+  assert.match(storySource, /border-t museum-rule/)
+  assert.match(storySource, /lg:min-h-\[92svh\]/)
+  assert.match(lendingSource, /border-t museum-rule/)
+  assert.match(lendingSource, /lg:min-h-\[82svh\]/)
+  assert.match(closingSource, /border-t museum-rule/)
+  assert.match(closingSource, /lg:min-h-\[72svh\]/)
+  assert.match(footerSource, /xl:whitespace-nowrap/)
+})
+
+test("app branding uses the samothrace mark for header logo and favicon", () => {
+  const headerSource = readSource("../components/Header.js")
+  const layoutSource = readSource("../app/layout.js")
+  const iconSource = readSource("../public/samothrace-mark.svg")
+
+  assert.match(headerSource, /src="\/samothrace-mark\.svg"/)
+  assert.doesNotMatch(headerSource, /src="\/logo\.png"/)
+
+  assert.match(layoutSource, /samothrace-mark\.svg/)
+  assert.doesNotMatch(layoutSource, /icon-light\.png/)
+  assert.doesNotMatch(layoutSource, /icon-dark\.png/)
+
+  assert.match(iconSource, /fill="#e6ed01"/i)
+  assert.match(iconSource, /viewBox="0 0 512 512"/)
+})

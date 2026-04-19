@@ -17,7 +17,7 @@ export function Header({ isAppLaunched, onLaunch, onGoHome, tabsNode }) {
         <button onClick={onGoHome} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity outline-none text-left">
           
           <Image
-            src="/logo.png"
+            src="/samothrace-mark.svg"
             alt="Pyramid Logo"
             width={48}
             height={48}

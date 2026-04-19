@@ -23,10 +23,9 @@ export const metadata = {
   title: "Pyramid",
   description: "XRPL-native lending, trading, and private execution.",
   icons: {
-    icon: [
-      { media: "(prefers-color-scheme: light)", url: "/icon-light.png" },
-      { media: "(prefers-color-scheme: dark)", url: "/icon-dark.png" },
-    ],
+    icon: "/samothrace-mark.svg",
+    shortcut: "/samothrace-mark.svg",
+    apple: "/samothrace-mark.svg",
   },
 }
 

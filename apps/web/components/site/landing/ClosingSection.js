@@ -2,7 +2,7 @@ import Link from "next/link"
 
 export function ClosingSection({ section }) {
   return (
-    <section className="grid gap-8 pt-2 md:grid-cols-[1fr_auto] md:items-end">
+    <section className="grid gap-8 border-t museum-rule pt-16 md:grid-cols-[1fr_auto] md:items-end lg:min-h-[72svh] lg:pt-20">
       <div className="max-w-none">
         <p className="font-ui text-[11px] uppercase tracking-[0.24em]">{section.eyebrow}</p>
         <h2 className="font-display mt-4 text-[2.5rem] leading-[0.98] md:text-5xl xl:whitespace-nowrap">

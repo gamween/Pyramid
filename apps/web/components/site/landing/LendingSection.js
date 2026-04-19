@@ -19,7 +19,7 @@ export function LendingSection({ section }) {
   ]
 
   return (
-    <section className="pb-12 md:pb-16">
+    <section className="border-t museum-rule pb-12 pt-16 md:pb-16 lg:min-h-[82svh] lg:pt-20">
       <div className="max-w-4xl">
         <p className="font-ui text-[11px] uppercase tracking-[0.24em]">{section.eyebrow}</p>
         <h2 className="font-display mt-4 text-4xl leading-[0.95] md:text-6xl">{section.title}</h2>
