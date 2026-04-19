@@ -24,6 +24,10 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+    --museum-bg: #e6ed01;
+    --museum-ink: #010001;
+    --museum-muted: rgba(1, 0, 1, 0.64);
+    --museum-line: rgba(1, 0, 1, 0.16);
   }
 
   .dark {
@@ -52,16 +56,62 @@
     @apply border-border;
   }
 
+  html,
+  body {
+    min-height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
     min-height: 100vh;
     overflow-x: hidden;
-    background:
-      radial-gradient(circle at top, rgba(18, 35, 62, 0.75), rgba(2, 4, 10, 0.95) 60%),
-      #02040a;
+    background: var(--museum-bg);
+    color: var(--museum-ink);
+    font-family: var(--font-ibm-plex-sans), sans-serif;
+  }
+
+  a {
+    color: inherit;
   }
 
   canvas {
     display: block;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-cormorant-garamond), serif;
+  }
+
+  .font-body {
+    font-family: var(--font-ibm-plex-sans), sans-serif;
+  }
+
+  .font-ui {
+    font-family: var(--font-ibm-plex-mono), monospace;
+  }
+
+  .museum-shell {
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(1, 0, 1, 0.05), transparent 24%),
+      var(--museum-bg);
+    color: var(--museum-ink);
+  }
+
+  .museum-rule {
+    border-color: var(--museum-line);
+  }
+
+  .museum-copy {
+    color: var(--museum-muted);
+  }
+
+  .app-shell {
+    background:
+      radial-gradient(circle at top, rgba(18, 35, 62, 0.75), rgba(2, 4, 10, 0.95) 60%),
+      #02040a;
+    color: #fff;
   }
 }
