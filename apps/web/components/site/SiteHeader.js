@@ -4,8 +4,10 @@ export function SiteHeader({ reserveAtAllTimesSpace = false }) {
   return (
     <header className="museum-shell sticky top-0 z-40 border-b museum-rule">
       <div
-        className={`mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10 ${
-          reserveAtAllTimesSpace ? "pl-36 md:pl-44" : ""
+        className={`mx-auto flex max-w-7xl items-center justify-between py-5 ${
+          reserveAtAllTimesSpace
+            ? "pr-6 pl-36 md:pr-10 md:pl-44"
+            : "px-6 md:px-10"
         }`}
       >
         <Link

@@ -19,5 +19,5 @@ test("ContentPageLayout reserves header space for the At All Times control", () 
 
   assert.match(layoutSource, /<SiteHeader reserveAtAllTimesSpace \/>/)
   assert.match(headerSource, /reserveAtAllTimesSpace = false/)
-  assert.match(headerSource, /reserveAtAllTimesSpace \?/)
+  assert.match(headerSource, /reserveAtAllTimesSpace\s*\?/)
 })
