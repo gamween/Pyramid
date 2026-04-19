@@ -1,7 +1,8 @@
 const landingArt = {
-  victory: "/landing/victoire-de-samothrace-dithered.svg",
-  pyramid: "/landing/pyramide-du-louvre-dithered.svg",
-  scribe: "/landing/le-scribe-accroupi-dithered.svg",
+  wingedVictory: "/landing/winged-victory-of-samothrace.svg",
+  louvrePyramid: "/landing/louvre-pyramid.svg",
+  seatedScribe: "/landing/seated-scribe.svg",
+  discobolus: "/landing/discobolus.svg",
 }
 
 export const footerLinks = [
@@ -21,8 +22,8 @@ export const landingSections = [
     supporting:
       "Built on the native DEX and AMM, native lending with XLS-65 and XLS-66, and privacy primitives connected to Boundless and XLS-100.",
     artwork: {
-      src: landingArt.victory,
-      alt: "Victoire de Samothrace artwork",
+      src: landingArt.wingedVictory,
+      alt: "Winged Victory of Samothrace artwork",
       caption: "Winged Victory of Samothrace",
     },
   },
@@ -35,8 +36,8 @@ export const landingSections = [
       "The page should explain DEX, AMM, vaults, and loans in that order, with the Louvre artwork carrying the section visually.",
     ],
     artwork: {
-      src: landingArt.pyramid,
-      alt: "Pyramide du Louvre artwork",
+      src: landingArt.louvrePyramid,
+      alt: "Louvre Pyramid artwork",
       caption: "Louvre Pyramid",
     },
   },
@@ -49,8 +50,8 @@ export const landingSections = [
       "The Scribe remains visually anchored while the text sequence explains the tools one by one.",
     ],
     artwork: {
-      src: landingArt.scribe,
-      alt: "Le Scribe accroupi artwork",
+      src: landingArt.seatedScribe,
+      alt: "The Seated Scribe artwork",
       caption: "The Seated Scribe",
     },
   },
@@ -59,9 +60,14 @@ export const landingSections = [
     eyebrow: "Lending pools",
     title: "XLS-65 and XLS-66 as the protocol core.",
     body: [
-      "This is the densest section on the landing page: vaults, loans, collateral flow, and yield loop.",
-      "It should stay airy, but become more diagrammatic than the previous sections.",
+      "This is the last full protocol chapter before the closing section: vaults, loans, collateral flow, and the yield loop.",
+      "Discobolus carries the lending screen so it feels deliberate and terminal, not like another repeated block before the page ends.",
     ],
+    artwork: {
+      src: landingArt.discobolus,
+      alt: "Discobolus artwork",
+      caption: "Discobolus",
+    },
   },
   {
     id: "closing",

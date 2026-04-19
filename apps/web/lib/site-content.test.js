@@ -78,12 +78,17 @@ test("site content registry controls at-all-times links", () => {
     ["hero", "how-it-works", "trading-tools", "lending-pools", "closing"]
   )
   assert.deepEqual(landingSections[0].artwork, {
-    src: "/landing/victoire-de-samothrace-dithered.svg",
-    alt: "Victoire de Samothrace artwork",
+    src: "/landing/winged-victory-of-samothrace.svg",
+    alt: "Winged Victory of Samothrace artwork",
     caption: "Winged Victory of Samothrace",
   })
   assert.equal(landingSections[1].artwork.caption, "Louvre Pyramid")
   assert.equal(landingSections[2].artwork.caption, "The Seated Scribe")
+  assert.deepEqual(landingSections[3].artwork, {
+    src: "/landing/discobolus.svg",
+    alt: "Discobolus artwork",
+    caption: "Discobolus",
+  })
   assert.deepEqual(getAtAllTimesLinks(), [
     { href: "/", label: "Landing Page" },
     { href: "/app", label: "Open App" },

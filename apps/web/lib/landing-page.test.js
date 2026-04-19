@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 
 function readSource(relativePath) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8")
@@ -110,15 +110,26 @@ test("landing screen boundaries are explicit and footer copy stays on one line",
 test("app branding uses the samothrace mark for header logo and favicon", () => {
   const headerSource = readSource("../components/Header.js")
   const layoutSource = readSource("../app/layout.js")
-  const iconSource = readSource("../public/samothrace-mark.svg")
+  const brandPath = new URL("../public/brand/winged-victory-of-samothrace.png", import.meta.url)
 
-  assert.match(headerSource, /src="\/samothrace-mark\.svg"/)
+  assert.match(headerSource, /src="\/brand\/winged-victory-of-samothrace\.png"/)
   assert.doesNotMatch(headerSource, /src="\/logo\.png"/)
+  assert.doesNotMatch(headerSource, /samothrace-mark\.svg/)
 
-  assert.match(layoutSource, /samothrace-mark\.svg/)
+  assert.match(layoutSource, /brand\/winged-victory-of-samothrace\.png/)
   assert.doesNotMatch(layoutSource, /icon-light\.png/)
   assert.doesNotMatch(layoutSource, /icon-dark\.png/)
+  assert.doesNotMatch(layoutSource, /samothrace-mark\.svg/)
 
-  assert.match(iconSource, /fill="#e6ed01"/i)
-  assert.match(iconSource, /viewBox="0 0 512 512"/)
+  assert.equal(existsSync(brandPath), true)
+})
+
+test("lending section uses the discobolus artwork with the same editorial treatment", () => {
+  const lendingSource = readSource("../components/site/landing/LendingSection.js")
+
+  assert.match(lendingSource, /section\.artwork\.src/)
+  assert.match(lendingSource, /section\.artwork\.caption/)
+  assert.match(lendingSource, /<Image/)
+  assert.match(lendingSource, /mix-blend-multiply/)
+  assert.match(lendingSource, /border-t museum-rule/)
 })

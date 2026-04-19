@@ -9,11 +9,13 @@ function readAsset(relativePath) {
 }
 
 test("landing svg assets are transparent instead of embedding white backgrounds", () => {
-  const victory = readAsset("../public/landing/victoire-de-samothrace-dithered.svg")
-  const pyramid = readAsset("../public/landing/pyramide-du-louvre-dithered.svg")
-  const scribe = readAsset("../public/landing/le-scribe-accroupi-dithered.svg")
+  const victory = readAsset("../public/landing/winged-victory-of-samothrace.svg")
+  const pyramid = readAsset("../public/landing/louvre-pyramid.svg")
+  const scribe = readAsset("../public/landing/seated-scribe.svg")
+  const discobolus = readAsset("../public/landing/discobolus.svg")
 
   assert.doesNotMatch(victory, whiteFillPattern)
   assert.doesNotMatch(pyramid, whiteFillPattern)
   assert.doesNotMatch(scribe, whiteFillPattern)
+  assert.doesNotMatch(discobolus, whiteFillPattern)
 })

@@ -23,9 +23,9 @@ export const metadata = {
   title: "Pyramid",
   description: "XRPL-native lending, trading, and private execution.",
   icons: {
-    icon: "/samothrace-mark.svg",
-    shortcut: "/samothrace-mark.svg",
-    apple: "/samothrace-mark.svg",
+    icon: "/brand/winged-victory-of-samothrace.png",
+    shortcut: "/brand/winged-victory-of-samothrace.png",
+    apple: "/brand/winged-victory-of-samothrace.png",
   },
 }
 
