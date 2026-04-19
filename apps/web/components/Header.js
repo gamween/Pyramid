@@ -2,13 +2,11 @@
 
 import Image from "next/image";
 import { WalletConnector } from "./WalletConnector";
-import { useWalletManager } from "../hooks/useWalletManager";
 import { useWallet } from "./providers/WalletProvider";
 import { Badge } from "./ui/badge";
 import { motion } from "framer-motion";
 
 export function Header({ isAppLaunched, onLaunch, onGoHome, tabsNode }) {
-  useWalletManager();
   const { statusMessage } = useWallet();
 
   return (
