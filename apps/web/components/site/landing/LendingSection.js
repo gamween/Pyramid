@@ -1,5 +1,7 @@
 import Image from "next/image"
 
+import LightRays from "../../effects/LightRays"
+
 export function LendingSection({ section }) {
   const pillars = [
     {
@@ -45,8 +47,23 @@ export function LendingSection({ section }) {
       </div>
 
       <figure className="relative mt-12 text-center lg:order-1 lg:mt-0 lg:self-start">
-        <div className="pointer-events-none absolute left-1/2 top-0 hidden h-[72%] w-px -translate-x-1/2 bg-black/12 lg:block" />
-        <div className="relative mx-auto w-full pt-5 text-center">
+        <div className="pointer-events-none absolute inset-0 z-0 opacity-75 mix-blend-screen">
+          <LightRays
+            raysOrigin="left"
+            raysColor="#fff9c4"
+            raysSpeed={0.4}
+            lightSpread={0.72}
+            rayLength={1.18}
+            fadeDistance={1.12}
+            saturation={0.38}
+            followMouse={false}
+            mouseInfluence={0}
+            noiseAmount={0.05}
+            distortion={0.03}
+          />
+        </div>
+        <div className="pointer-events-none absolute left-1/2 top-0 z-10 hidden h-[72%] w-px -translate-x-1/2 bg-black/12 lg:block" />
+        <div className="relative z-10 mx-auto w-full pt-5 text-center">
           <div className="pointer-events-none absolute left-1/2 top-14 h-px w-20 -translate-x-1/2 bg-black/12 md:w-28" />
           <Image
             src={section.artwork.src}

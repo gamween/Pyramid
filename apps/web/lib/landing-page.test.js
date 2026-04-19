@@ -65,6 +65,9 @@ test("landing artwork is integrated with blend treatment instead of white panels
   assert.match(heroSource, /text-center/)
   assert.doesNotMatch(heroSource, /rounded-full border border-black\/10/)
   assert.doesNotMatch(heroSource, /figcaption/)
+  assert.match(heroSource, /LightRays/)
+  assert.match(heroSource, /raysOrigin="right"/)
+  assert.doesNotMatch(heroSource, /raysOrigin="bottom/)
 
   assert.doesNotMatch(storySource, /border museum-rule bg-\[/)
   assert.match(storySource, /mix-blend-multiply/)
@@ -72,6 +75,9 @@ test("landing artwork is integrated with blend treatment instead of white panels
   assert.doesNotMatch(storySource, /figcaption/)
   assert.doesNotMatch(storySource, /lg:sticky/)
   assert.doesNotMatch(storySource, /lg:top-24/)
+  assert.match(storySource, /LightRays/)
+  assert.match(storySource, /raysOrigin=\{visualFirst \? "left" : "right"\}/)
+  assert.doesNotMatch(storySource, /raysOrigin="bottom/)
 })
 
 test("landing typography and artwork scale stay restrained for viewport fit", () => {
@@ -139,4 +145,19 @@ test("lending section uses the discobolus artwork with the same editorial treatm
   assert.match(lendingSource, /className="relative mt-12 text-center lg:order-1 lg:mt-0 lg:self-start"/)
   assert.match(lendingSource, /font-display text-3xl leading-none">\{String\(index \+ 1\)\.padStart\(2, "0"\)\}/)
   assert.match(lendingSource, /font-ui text-\[10px\] uppercase tracking-\[0\.18em\]">\{pillar\.label\}/)
+  assert.match(lendingSource, /LightRays/)
+  assert.match(lendingSource, /raysOrigin="left"/)
+  assert.doesNotMatch(lendingSource, /raysOrigin="bottom/)
+})
+
+test("light rays component is installed locally with ogl and non-interactive canvas styling", () => {
+  const lightRaysSource = readSource("../components/effects/LightRays.js")
+  const lightRaysCssSource = readSource("../components/effects/LightRays.module.css")
+
+  assert.match(lightRaysSource, /from "ogl"/)
+  assert.match(lightRaysSource, /IntersectionObserver/)
+  assert.match(lightRaysSource, /light-rays-container/)
+  assert.match(lightRaysCssSource, /\.light-rays-container/)
+  assert.match(lightRaysCssSource, /pointer-events:\s*none/)
+  assert.match(lightRaysCssSource, /overflow:\s*hidden/)
 })
