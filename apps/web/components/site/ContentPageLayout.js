@@ -20,22 +20,6 @@ export function ContentPageLayout({
         </h1>
         <p className="museum-copy mt-6 max-w-3xl text-lg leading-8 md:text-xl">{intro}</p>
 
-        {officialLinks.length > 0 ? (
-          <div className="mt-10 flex flex-wrap gap-3">
-            {officialLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                target="_blank"
-                rel="noreferrer"
-                className="border-b border-current pb-2 font-ui text-[11px] uppercase tracking-[0.12em] transition-opacity hover:opacity-70"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-        ) : null}
-
         <div className="mt-12 space-y-14">
           {sections.map((section) => (
             <section key={section.heading} className="border-t museum-rule pt-8">
@@ -47,6 +31,23 @@ export function ContentPageLayout({
               </div>
             </section>
           ))}
+
+          {officialLinks.length > 0 ? (
+            <div className="flex flex-wrap gap-3 border-t museum-rule pt-8">
+              {officialLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="border-b border-current pb-2 font-ui text-[11px] uppercase tracking-[0.12em] transition-opacity hover:opacity-70"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
+
           {children}
         </div>
       </main>
