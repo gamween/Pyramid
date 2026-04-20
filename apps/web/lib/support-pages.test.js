@@ -43,3 +43,10 @@ test("learn page helper resolves async params", async () => {
   assert.equal(page?.slug, "boundless")
   assert.equal(page?.title, "Boundless")
 })
+
+test("about page renders the dedicated portrait asset", () => {
+  const source = readSource("../app/about/page.js")
+
+  assert.match(source, /next\/image/)
+  assert.match(source, /\/about\/sofiane-zidane-ben-taleb\.jpg/)
+})

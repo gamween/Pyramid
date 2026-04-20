@@ -5,23 +5,18 @@ import {
   footerContact,
   footerLegalLinks,
   footerQuickLinks,
-  getAtAllTimesLinks,
   getLearnPage,
   getSupportPage,
-  landingSections,
   learnPages,
-  shouldShowAtAllTimes,
   supportPages,
 } from "./site-content.js"
 
-test("site content registry exposes footer and support content", () => {
+test("site content registry exposes authored support metadata without At All Times helpers", async () => {
+  const module = await import("./site-content.js")
+
   assert.deepEqual(
     footerQuickLinks.map((link) => link.href),
     ["/about", "/contact", "/faq", "/license"]
-  )
-  assert.deepEqual(
-    footerQuickLinks.map((link) => link.label),
-    ["About us", "Contact", "FAQ", "License"]
   )
   assert.deepEqual(
     footerLegalLinks.map((link) => link.href),
@@ -35,23 +30,16 @@ test("site content registry exposes footer and support content", () => {
     email: "sofiane.zidane.bentaleb@gmail.com",
     addressLines: ["47 boulevard de Pesaro, 92000", "Nanterre"],
   })
-  assert.equal(supportPages.length, 6)
+  assert.equal(module.shouldShowAtAllTimes, undefined)
+  assert.equal(module.getAtAllTimesLinks, undefined)
   assert.deepEqual(
     supportPages.map((page) => page.slug),
     ["about", "contact", "faq", "license", "privacy-policy", "terms-of-service"]
   )
   assert.equal(getSupportPage("about")?.title, "About us")
-  assert.equal(getSupportPage("privacy-policy")?.title, "Privacy Policy")
+  assert.equal(getSupportPage("terms-of-service")?.title, "Terms of Service")
   assert.equal(getSupportPage("missing"), null)
-})
-
-test("site content registry exposes learn pages and official links", () => {
-  assert.deepEqual(
-    learnPages.map((page) => page.slug),
-    ["xls-65-66", "dex-amm", "boundless", "xls-100"]
-  )
-  assert.equal(getLearnPage("boundless")?.title, "Boundless")
-  assert.equal(getLearnPage("missing"), null)
+  assert.equal(supportPages.length, 6)
   assert.deepEqual(
     getLearnPage("xls-65-66")?.officialLinks?.map((link) => link.href),
     [
@@ -67,6 +55,7 @@ test("site content registry exposes learn pages and official links", () => {
       "https://xrpl.org/docs/tutorials/how-tos/use-tokens/create-an-automated-market-maker/",
     ]
   )
+  assert.equal(getLearnPage("boundless")?.title, "Boundless")
   assert.deepEqual(
     getLearnPage("boundless")?.officialLinks?.map((link) => link.href),
     [
@@ -81,31 +70,6 @@ test("site content registry exposes learn pages and official links", () => {
       "https://xrpl.org/docs/tutorials/how-tos/use-specialized-payment-types/use-escrows/",
     ]
   )
-})
-
-test("site content registry controls at-all-times links", () => {
-  assert.equal(shouldShowAtAllTimes("/"), false)
-  assert.equal(shouldShowAtAllTimes("/app"), false)
-  assert.equal(shouldShowAtAllTimes("/about"), true)
-  assert.equal(shouldShowAtAllTimes("/learn/xls-100"), true)
-  assert.deepEqual(
-    landingSections.map((section) => section.id),
-    ["hero", "how-it-works", "trading-tools", "lending-pools", "closing"]
-  )
-  assert.deepEqual(landingSections[0].artwork, {
-    src: "/landing/winged-victory-of-samothrace.svg",
-    alt: "Winged Victory of Samothrace artwork",
-    caption: "Winged Victory of Samothrace",
-  })
-  assert.equal(landingSections[1].artwork.caption, "Louvre Pyramid")
-  assert.equal(landingSections[2].artwork.caption, "The Seated Scribe")
-  assert.deepEqual(landingSections[3].artwork, {
-    src: "/landing/discobolus.svg",
-    alt: "Discobolus artwork",
-    caption: "Discobolus",
-  })
-  assert.deepEqual(getAtAllTimesLinks(), [
-    { href: "/", label: "Landing Page" },
-    { href: "/app", label: "Open App" },
-  ])
+  assert.equal(getLearnPage("missing"), null)
+  assert.equal(learnPages.length, 4)
 })
