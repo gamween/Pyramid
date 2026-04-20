@@ -5,12 +5,26 @@ const landingArt = {
   discobolus: "/landing/discobolus.svg",
 }
 
-export const footerLinks = [
+export const footerOverview =
+  "Pyramid presents XRPL-native lending, trading, and privacy systems as a readable site before the live product begins."
+
+export const footerQuickLinks = [
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact" },
   { href: "/faq", label: "FAQ" },
-  { href: "/license", label: "License" },
 ]
+
+export const footerUtilityLinks = [
+  { href: "/license", label: "License" },
+  { href: "/app", label: "Launch App" },
+]
+
+export const footerContact = {
+  email: "sofiane.zidane.bentaleb@gmail.com",
+  addressLines: ["47 boulevard de Pesaro, 92000", "Nanterre"],
+}
+
+export const footerCopyright = "2026 Pyramid. All rights reserved."
 
 export const landingSections = [
   {

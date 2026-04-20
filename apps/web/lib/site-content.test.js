@@ -2,7 +2,9 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import {
-  footerLinks,
+  footerContact,
+  footerQuickLinks,
+  footerUtilityLinks,
   getAtAllTimesLinks,
   getLearnPage,
   getSupportPage,
@@ -14,13 +16,25 @@ import {
 
 test("site content registry exposes footer and support content", () => {
   assert.deepEqual(
-    footerLinks.map((link) => link.href),
-    ["/about", "/contact", "/faq", "/license"]
+    footerQuickLinks.map((link) => link.href),
+    ["/about", "/contact", "/faq"]
   )
   assert.deepEqual(
-    footerLinks.map((link) => link.label),
-    ["About us", "Contact", "FAQ", "License"]
+    footerQuickLinks.map((link) => link.label),
+    ["About us", "Contact", "FAQ"]
   )
+  assert.deepEqual(
+    footerUtilityLinks.map((link) => link.href),
+    ["/license", "/app"]
+  )
+  assert.deepEqual(
+    footerUtilityLinks.map((link) => link.label),
+    ["License", "Launch App"]
+  )
+  assert.deepEqual(footerContact, {
+    email: "sofiane.zidane.bentaleb@gmail.com",
+    addressLines: ["47 boulevard de Pesaro, 92000", "Nanterre"],
+  })
   assert.equal(supportPages.length, 4)
   assert.deepEqual(
     supportPages.map((page) => page.slug),

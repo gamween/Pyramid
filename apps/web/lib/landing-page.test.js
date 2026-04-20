@@ -92,7 +92,7 @@ test("landing typography and artwork scale stay restrained for viewport fit", ()
   assert.doesNotMatch(closingSource, /md:text-6xl/)
 })
 
-test("landing screen boundaries are explicit and footer copy stays on one line", () => {
+test("landing screen boundaries are explicit and footer uses the editorial three-part layout", () => {
   const sceneSource = readSource("../components/site/landing/LandingScene.js")
   const storySource = readSource("../components/site/landing/StorySection.js")
   const lendingSource = readSource("../components/site/landing/LendingSection.js")
@@ -106,7 +106,12 @@ test("landing screen boundaries are explicit and footer copy stays on one line",
   assert.match(lendingSource, /lg:min-h-\[82svh\]/)
   assert.match(closingSource, /border-t museum-rule/)
   assert.match(closingSource, /lg:min-h-\[72svh\]/)
-  assert.match(footerSource, /xl:whitespace-nowrap/)
+  assert.match(footerSource, /Quick links/i)
+  assert.match(footerSource, /Contact/i)
+  assert.match(footerSource, /footerContact\.email/)
+  assert.match(footerSource, /footerContact\.addressLines/)
+  assert.match(footerSource, /md:grid-cols-\[minmax\(0,1\.2fr\)_minmax\(0,0\.8fr\)_minmax\(0,0\.95fr\)\]/)
+  assert.match(footerSource, /footerUtilityLinks/)
 })
 
 test("app branding uses the samothrace mark for header logo and favicon", () => {
