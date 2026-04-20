@@ -7,6 +7,7 @@ import {
   footerQuickLinks,
   getLearnPage,
   getSupportPage,
+  landingSections,
   learnPages,
   supportPages,
 } from "./site-content.js"
@@ -17,6 +18,10 @@ test("site content registry exposes authored support metadata without At All Tim
   assert.deepEqual(
     footerQuickLinks.map((link) => link.href),
     ["/about", "/contact", "/faq", "/license"]
+  )
+  assert.deepEqual(
+    footerQuickLinks.map((link) => link.label),
+    ["About us", "Contact", "FAQ", "License"]
   )
   assert.deepEqual(
     footerLegalLinks.map((link) => link.href),
@@ -71,5 +76,21 @@ test("site content registry exposes authored support metadata without At All Tim
     ]
   )
   assert.equal(getLearnPage("missing"), null)
+  assert.deepEqual(
+    landingSections.map((section) => section.id),
+    ["hero", "how-it-works", "trading-tools", "lending-pools", "closing"]
+  )
+  assert.deepEqual(landingSections[0].artwork, {
+    src: "/landing/winged-victory-of-samothrace.svg",
+    alt: "Winged Victory of Samothrace artwork",
+    caption: "Winged Victory of Samothrace",
+  })
+  assert.equal(landingSections[1].artwork.caption, "Louvre Pyramid")
+  assert.equal(landingSections[2].artwork.caption, "The Seated Scribe")
+  assert.deepEqual(landingSections[3].artwork, {
+    src: "/landing/discobolus.svg",
+    alt: "Discobolus artwork",
+    caption: "Discobolus",
+  })
   assert.equal(learnPages.length, 4)
 })
