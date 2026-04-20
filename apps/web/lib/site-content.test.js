@@ -3,8 +3,8 @@ import assert from "node:assert/strict"
 
 import {
   footerContact,
+  footerLegalLinks,
   footerQuickLinks,
-  footerUtilityLinks,
   getAtAllTimesLinks,
   getLearnPage,
   getSupportPage,
@@ -17,30 +17,31 @@ import {
 test("site content registry exposes footer and support content", () => {
   assert.deepEqual(
     footerQuickLinks.map((link) => link.href),
-    ["/about", "/contact", "/faq"]
+    ["/about", "/contact", "/faq", "/license"]
   )
   assert.deepEqual(
     footerQuickLinks.map((link) => link.label),
-    ["About us", "Contact", "FAQ"]
+    ["About us", "Contact", "FAQ", "License"]
   )
   assert.deepEqual(
-    footerUtilityLinks.map((link) => link.href),
-    ["/license", "/app"]
+    footerLegalLinks.map((link) => link.href),
+    ["/privacy-policy", "/terms-of-service"]
   )
   assert.deepEqual(
-    footerUtilityLinks.map((link) => link.label),
-    ["License", "Launch App"]
+    footerLegalLinks.map((link) => link.label),
+    ["Privacy Policy", "Terms of Service"]
   )
   assert.deepEqual(footerContact, {
     email: "sofiane.zidane.bentaleb@gmail.com",
     addressLines: ["47 boulevard de Pesaro, 92000", "Nanterre"],
   })
-  assert.equal(supportPages.length, 4)
+  assert.equal(supportPages.length, 6)
   assert.deepEqual(
     supportPages.map((page) => page.slug),
-    ["about", "contact", "faq", "license"]
+    ["about", "contact", "faq", "license", "privacy-policy", "terms-of-service"]
   )
   assert.equal(getSupportPage("about")?.title, "About us")
+  assert.equal(getSupportPage("privacy-policy")?.title, "Privacy Policy")
   assert.equal(getSupportPage("missing"), null)
 })
 

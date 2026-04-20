@@ -108,10 +108,11 @@ test("landing screen boundaries are explicit and footer uses the editorial three
   assert.match(closingSource, /lg:min-h-\[72svh\]/)
   assert.match(footerSource, /Quick links/i)
   assert.match(footerSource, /Contact/i)
+  assert.match(footerSource, /footerLegalLinks/)
   assert.match(footerSource, /footerContact\.email/)
   assert.match(footerSource, /footerContact\.addressLines/)
-  assert.match(footerSource, /md:grid-cols-\[minmax\(0,1\.2fr\)_minmax\(0,0\.8fr\)_minmax\(0,0\.95fr\)\]/)
-  assert.match(footerSource, /footerUtilityLinks/)
+  assert.doesNotMatch(footerSource, /border-b border-current pb-1/)
+  assert.match(footerSource, /font-body/)
 })
 
 test("app branding uses the samothrace mark for header logo and favicon", () => {

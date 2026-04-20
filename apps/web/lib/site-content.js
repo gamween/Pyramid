@@ -12,11 +12,12 @@ export const footerQuickLinks = [
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact" },
   { href: "/faq", label: "FAQ" },
+  { href: "/license", label: "License" },
 ]
 
-export const footerUtilityLinks = [
-  { href: "/license", label: "License" },
-  { href: "/app", label: "Launch App" },
+export const footerLegalLinks = [
+  { href: "/privacy-policy", label: "Privacy Policy" },
+  { href: "/terms-of-service", label: "Terms of Service" },
 ]
 
 export const footerContact = {
@@ -162,6 +163,54 @@ export const supportPages = [
     intro:
       "This page renders the project license and points back to the underlying LICENSE file in the repository.",
     sections: [],
+  },
+  {
+    slug: "privacy-policy",
+    href: "/privacy-policy",
+    title: "Privacy Policy",
+    eyebrow: "Site privacy",
+    intro:
+      "This page explains what Pyramid stores, what it does not store, and how direct contact information is handled on the public site.",
+    sections: [
+      {
+        heading: "Minimal data footprint",
+        body: [
+          "The landing site is designed to stay lightweight and readable. It does not present itself as a data-harvesting surface.",
+          "If analytics, forms, or external embeds are added later, this page should be updated to describe them directly and plainly.",
+        ],
+      },
+      {
+        heading: "Direct contact handling",
+        body: [
+          "If you contact the project by email, the information you voluntarily provide is used only to respond and continue the conversation.",
+          "Pyramid should not claim privacy practices it does not actually implement. Keep this page factual and narrow.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "terms-of-service",
+    href: "/terms-of-service",
+    title: "Terms of Service",
+    eyebrow: "Site terms",
+    intro:
+      "This page clarifies the scope of the public site, the educational material it presents, and the difference between the site and the live app route.",
+    sections: [
+      {
+        heading: "Educational and product scope",
+        body: [
+          "The landing site explains XRPL-native mechanisms and points to official references, but it should not pretend that educational summaries replace primary documentation.",
+          "Where the site links to external systems, protocols, or repositories, those materials remain governed by their own terms and licenses.",
+        ],
+      },
+      {
+        heading: "Use of the app route",
+        body: [
+          "The /app route is the live product surface. Features, availability, and supported flows may evolve independently from the editorial landing content.",
+          "Nothing on this page should over-promise implementation status. The terms should stay aligned with the actual product surface.",
+        ],
+      },
+    ],
   },
 ]
 

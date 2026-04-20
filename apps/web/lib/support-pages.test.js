@@ -9,7 +9,7 @@ function readSource(relativePath) {
 }
 
 test("support pages compose ContentPageLayout with getSupportPage", () => {
-  for (const route of ["about", "contact", "faq"]) {
+  for (const route of ["about", "contact", "faq", "privacy-policy", "terms-of-service"]) {
     const source = readSource(`../app/${route}/page.js`)
 
     assert.match(source, /ContentPageLayout/)
