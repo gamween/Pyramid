@@ -117,10 +117,10 @@ test("site content registry keeps the support email link aligned with footer con
 })
 
 test("site content registry keeps At All Times helpers absent from the module namespace", async () => {
-  const module = await import("./site-content.js")
+  const siteContentModule = await import("./site-content.js")
 
-  assert.equal("shouldShowAtAllTimes" in module, false)
-  assert.equal("getAtAllTimesLinks" in module, false)
+  assert.equal("shouldShowAtAllTimes" in siteContentModule, false)
+  assert.equal("getAtAllTimesLinks" in siteContentModule, false)
 })
 
 test("site content registry preserves landing section metadata", () => {
