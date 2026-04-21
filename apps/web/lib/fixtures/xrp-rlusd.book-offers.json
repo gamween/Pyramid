@@ -1,0 +1,115 @@
+{
+  "ledger_current_index": 1981434,
+  "offers": [
+    {
+      "Account": "rhxdJE3Ejua7b2ec29HH2ub4XnjtGcoiwL",
+      "BookDirectory": "3E074AAB6D1744BE47A46D3015FB859A78CFFD0FABCE27624F0816EB60275000",
+      "BookNode": "0",
+      "Flags": 0,
+      "LedgerEntryType": "Offer",
+      "OwnerNode": "0",
+      "PreviousTxnID": "5FF18C5629A6698F568BD336A3B7F308E11527F32577C9AA70CA5A5678CE71B6",
+      "PreviousTxnLgrSeq": 1715768,
+      "Sequence": 1715742,
+      "TakerGets": "166666651",
+      "TakerPays": {
+        "currency": "USD",
+        "issuer": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+        "value": "379.499964"
+      },
+      "index": "1785A28B27F791028C0217C5D2E82FC8C4BBD34C8A5FCD42E4B8EC63412A2881",
+      "owner_funds": "877439138",
+      "quality": "0.000002277"
+    },
+    {
+      "Account": "rhxdJE3Ejua7b2ec29HH2ub4XnjtGcoiwL",
+      "BookDirectory": "3E074AAB6D1744BE47A46D3015FB859A78CFFD0FABCE27624F082BD67AFBC000",
+      "BookNode": "0",
+      "Flags": 0,
+      "LedgerEntryType": "Offer",
+      "OwnerNode": "0",
+      "PreviousTxnID": "60FC5C9C5DD9F82D63ACA799F66B5136DE5036DBDA72AB256AD1A7EA3BD76453",
+      "PreviousTxnLgrSeq": 1715769,
+      "Sequence": 1715743,
+      "TakerGets": "500000000",
+      "TakerPays": {
+        "currency": "USD",
+        "issuer": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+        "value": "1150"
+      },
+      "index": "8CC7FA256849B93969325FE32F10512180AD8F66242C7DC9D76730E42F016628",
+      "quality": "0.0000023"
+    },
+    {
+      "Account": "rhxdJE3Ejua7b2ec29HH2ub4XnjtGcoiwL",
+      "BookDirectory": "3E074AAB6D1744BE47A46D3015FB859A78CFFD0FABCE27624F0840C195D03000",
+      "BookNode": "0",
+      "Flags": 0,
+      "LedgerEntryType": "Offer",
+      "OwnerNode": "0",
+      "PreviousTxnID": "5BB1EF15436DD3760E46EAD59563F2CA790CC433951EB115A5412DFC0FCE9AAC",
+      "PreviousTxnLgrSeq": 1715771,
+      "Sequence": 1715744,
+      "TakerGets": "500000000",
+      "TakerPays": {
+        "currency": "USD",
+        "issuer": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+        "value": "1161.5"
+      },
+      "index": "ABC51832FF9CE46F7E93B0A4FEABCADCE59F84654047542165DD86C949BB645A",
+      "quality": "0.000002323",
+      "taker_gets_funded": "210772487",
+      "taker_pays_funded": {
+        "currency": "USD",
+        "issuer": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+        "value": "489.624487301"
+      }
+    },
+    {
+      "Account": "rU3vgmxNuZH5ZkNyt8qyeoPFRnJxDB7xxw",
+      "BookDirectory": "3E074AAB6D1744BE47A46D3015FB859A78CFFD0FABCE27624F085037B4C64000",
+      "BookNode": "0",
+      "Flags": 0,
+      "LedgerEntryType": "Offer",
+      "OwnerNode": "0",
+      "PreviousTxnID": "1EEEBE2E0F4492BBEF2EC41CE555B599DF57B137BE5D2BA4E584CC17094E00E4",
+      "PreviousTxnLgrSeq": 1706530,
+      "Sequence": 1706518,
+      "TakerGets": "1000000000",
+      "TakerPays": {
+        "currency": "USD",
+        "issuer": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+        "value": "2340"
+      },
+      "index": "40DE126FFB0FCAD4AAE4CD93E18D54F9D7658E1BED63FB6E70E850426EDE805D",
+      "owner_funds": "1039999880",
+      "quality": "0.00000234"
+    },
+    {
+      "Account": "rhxdJE3Ejua7b2ec29HH2ub4XnjtGcoiwL",
+      "BookDirectory": "3E074AAB6D1744BE47A46D3015FB859A78CFFD0FABCE27624F0855ACB0A4A000",
+      "BookNode": "0",
+      "Flags": 0,
+      "LedgerEntryType": "Offer",
+      "OwnerNode": "0",
+      "PreviousTxnID": "1409913850F4D1D75E8BD3C79C946455E60BD5CB30031237FCBC174CC54D903F",
+      "PreviousTxnLgrSeq": 1715773,
+      "Sequence": 1715745,
+      "TakerGets": "500000000",
+      "TakerPays": {
+        "currency": "USD",
+        "issuer": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+        "value": "1173"
+      },
+      "index": "DAA1FAE39AEFA1E8C603FAE56B73D5D5B6A1EACB2BAB1010185F596C5066FB1E",
+      "quality": "0.000002346",
+      "taker_gets_funded": "0",
+      "taker_pays_funded": {
+        "currency": "USD",
+        "issuer": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+        "value": "0"
+      }
+    }
+  ],
+  "validated": false
+}
