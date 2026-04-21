@@ -8,7 +8,7 @@ export function createAdvancedOrderDraft({ market, type, side }) {
     market,
     type,
     side,
-    status: ADVANCED_ORDER_STATUSES[0],
+    status: "draft",
     createdAt: null,
     trigger: null,
     schedule: null,

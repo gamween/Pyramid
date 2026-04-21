@@ -45,6 +45,10 @@ test("createAdvancedOrderDraft keeps market, type, side, and trigger fields toge
     trigger: null,
     schedule: null,
   })
+
+  const draftsSource = readSource("./advanced-orders/drafts.js")
+  assert.match(draftsSource, /status:\s*"draft"/)
+  assert.doesNotMatch(draftsSource, /status:\s*ADVANCED_ORDER_STATUSES\[0\]/)
 })
 
 test("trade and orders surfaces keep advanced-order wording explicit and empty", () => {
@@ -53,7 +57,7 @@ test("trade and orders surfaces keep advanced-order wording explicit and empty",
 
   assert.match(
     tradeWorkspaceSource,
-    /This tool uses the final advanced-order domain model now, but its on-chain\s+executor is not wired in this pass\./
+    /This tool is scaffolded against the advanced-order contract shape, but its\s+on-chain executor is not wired in this pass\./
   )
   assert.match(ordersWorkspaceSource, /\["advanced", "Advanced schedules"\]/)
   assert.match(

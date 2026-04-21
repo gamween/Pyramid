@@ -345,8 +345,8 @@ export function TradeSpotWorkspace({ market }) {
               <div className="border museum-rule bg-[rgba(1,0,1,0.03)] p-4 text-sm leading-7">
                 <p className="font-medium">{activeTool?.label}</p>
                 <p className="mt-2 museum-copy">
-                  This tool uses the final advanced-order domain model now, but its on-chain
-                  executor is not wired in this pass.
+                  This tool is scaffolded against the advanced-order contract shape, but its
+                  on-chain executor is not wired in this pass.
                 </p>
               </div>
             )}
