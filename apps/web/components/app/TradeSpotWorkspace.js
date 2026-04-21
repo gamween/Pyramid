@@ -3,10 +3,13 @@
 import { useMemo, useState } from "react"
 
 import { FUTURE_APP_MODULES, V1_TRADE_TOOLS } from "../../lib/app-shell"
-import { useSpotMarket } from "../../hooks/useSpotMarket"
+import { useXRPLMarketData } from "../../hooks/useXRPLMarketData"
 import { useSpotOrders } from "../../hooks/useSpotOrders"
 import { AppPageHeader } from "./AppPageHeader"
 import { AppPanel } from "./AppPanel"
+import { TradingChart } from "./TradingChart"
+
+const TIMEFRAME_OPTIONS = ["1m", "5m", "15m", "1h", "4h", "1D"]
 
 function formatPrice(value) {
   return value == null ? "—" : value.toFixed(6)
@@ -14,34 +17,6 @@ function formatPrice(value) {
 
 function formatAmount(value) {
   return Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"
-}
-
-function Sparkline({ samples }) {
-  if (samples.length < 2) {
-    return <div className="h-full min-h-56 border border-white/10 bg-white/[0.02]" />
-  }
-
-  const width = 600
-  const height = 260
-  const prices = samples.map((sample) => sample.price)
-  const min = Math.min(...prices)
-  const max = Math.max(...prices)
-  const range = max - min || 1
-
-  const path = samples
-    .map((sample, index) => {
-      const x = (index / (samples.length - 1)) * width
-      const y = height - ((sample.price - min) / range) * height
-      return `${index === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`
-    })
-    .join(" ")
-
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-full min-h-56 w-full">
-      <rect width={width} height={height} fill="rgba(255,255,255,0.02)" />
-      <path d={path} fill="none" stroke="#e6ed01" strokeWidth="3" />
-    </svg>
-  )
 }
 
 export function TradeSpotWorkspace({ market }) {
@@ -55,13 +30,16 @@ export function TradeSpotWorkspace({ market }) {
     market: liveMarket,
     asks,
     bids,
-    samples,
+    candles,
     bestBid,
     bestAsk,
     midPrice,
+    spreadBps,
+    timeframe,
+    setTimeframe,
     loading: marketLoading,
     error: marketError,
-  } = useSpotMarket()
+  } = useXRPLMarketData(market)
   const {
     hasAccount,
     openOrders,
@@ -115,11 +93,11 @@ export function TradeSpotWorkspace({ market }) {
         <AppPanel
           eyebrow="Chart"
           title={activeMarket.shortLabel}
-          description="Session price trace from the live spot book. Candlestick aggregation is the next direct-read step."
+          description="Truthful XRP / RLUSD candles seeded from captured ledger changes, with live XRPL book depth refreshing underneath."
           tone="dark"
         >
           <div className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
               <div>
                 <p className="font-ui text-[10px] uppercase tracking-[0.16em] text-[#9c9671]">Mid</p>
                 <p className="mt-2 font-display text-5xl">{formatPrice(midPrice)}</p>
@@ -132,9 +110,32 @@ export function TradeSpotWorkspace({ market }) {
                 <p className="font-ui text-[10px] uppercase tracking-[0.16em] text-[#9c9671]">Ask</p>
                 <p className="mt-2 font-display text-5xl">{formatPrice(bestAsk)}</p>
               </div>
+              <div>
+                <p className="font-ui text-[10px] uppercase tracking-[0.16em] text-[#9c9671]">Spread</p>
+                <p className="mt-2 font-display text-5xl">
+                  {spreadBps == null ? "—" : `${spreadBps.toFixed(1)} bps`}
+                </p>
+              </div>
             </div>
 
-            <Sparkline samples={samples} />
+            <div className="flex flex-wrap gap-2">
+              {TIMEFRAME_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setTimeframe(option)}
+                  className={`border px-3 py-2 font-ui text-[10px] uppercase tracking-[0.16em] ${
+                    timeframe === option
+                      ? "border-[#e6ed01] bg-[#e6ed01] text-[var(--museum-ink)]"
+                      : "border-white/15 bg-transparent text-[#cfcaa0]"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+
+            <TradingChart candles={candles} />
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="border border-white/10 p-3">

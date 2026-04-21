@@ -16,3 +16,8 @@ export async function disconnectClient() {
   if (client) await client.disconnect()
   client = null
 }
+
+export async function requestXRPL(request) {
+  const activeClient = await getClient()
+  return activeClient.request(request)
+}
