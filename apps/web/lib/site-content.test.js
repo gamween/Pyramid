@@ -12,9 +12,7 @@ import {
   supportPages,
 } from "./site-content.js"
 
-test("site content registry exposes authored support metadata without At All Times helpers", async () => {
-  const module = await import("./site-content.js")
-
+test("site content registry exposes footer metadata and authored support links", () => {
   assert.deepEqual(
     footerQuickLinks.map((link) => link.href),
     ["/about", "/contact", "/faq", "/license"]
@@ -35,8 +33,9 @@ test("site content registry exposes authored support metadata without At All Tim
     email: "sofiane.zidane.bentaleb@gmail.com",
     addressLines: ["47 boulevard de Pesaro, 92000", "Nanterre"],
   })
-  assert.equal(module.shouldShowAtAllTimes, undefined)
-  assert.equal(module.getAtAllTimesLinks, undefined)
+})
+
+test("site content registry exposes support and learn page lookups", () => {
   assert.deepEqual(
     supportPages.map((page) => page.slug),
     ["about", "contact", "faq", "license", "privacy-policy", "terms-of-service"]
@@ -76,6 +75,14 @@ test("site content registry exposes authored support metadata without At All Tim
     ]
   )
   assert.equal(getLearnPage("missing"), null)
+  assert.equal(learnPages.length, 4)
+})
+
+test("site content registry keeps At All Times helpers absent from the module namespace", async () => {
+  const module = await import("./site-content.js")
+
+  assert.equal("shouldShowAtAllTimes" in module, false)
+  assert.equal("getAtAllTimesLinks" in module, false)
   assert.deepEqual(
     landingSections.map((section) => section.id),
     ["hero", "how-it-works", "trading-tools", "lending-pools", "closing"]

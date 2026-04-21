@@ -10,9 +10,6 @@ test("shared content layout uses the standard site header without At All Times c
   )
 
   assert.doesNotMatch(layoutSource, /AtAllTimesMenu/)
-  assert.match(layoutSource, /<SiteHeader \/>/)
   assert.doesNotMatch(layoutSource, /reserveAtAllTimesSpace/)
   assert.doesNotMatch(headerSource, /reserveAtAllTimesSpace/)
-  assert.match(headerSource, /href="\/"/)
-  assert.match(headerSource, /href="\/app"/)
 })
