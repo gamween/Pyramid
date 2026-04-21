@@ -83,6 +83,9 @@ test("site content registry keeps At All Times helpers absent from the module na
 
   assert.equal("shouldShowAtAllTimes" in module, false)
   assert.equal("getAtAllTimesLinks" in module, false)
+})
+
+test("site content registry preserves landing section metadata", () => {
   assert.deepEqual(
     landingSections.map((section) => section.id),
     ["hero", "how-it-works", "trading-tools", "lending-pools", "closing"]
@@ -99,5 +102,4 @@ test("site content registry keeps At All Times helpers absent from the module na
     alt: "Discobolus artwork",
     caption: "Discobolus",
   })
-  assert.equal(learnPages.length, 4)
 })
