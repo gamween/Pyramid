@@ -20,6 +20,10 @@ function formatAmount(value) {
   return Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"
 }
 
+function formatTxResult(value) {
+  return value ?? "—"
+}
+
 export function OrdersWorkspace() {
   const [tab, setTab] = useState("open")
   const [sideFilter, setSideFilter] = useState("all")
@@ -39,6 +43,7 @@ export function OrdersWorkspace() {
         query.trim() === ""
           ? true
           : `${order.sequence ?? ""} ${order.side ?? ""} ${order.type ?? ""} ${order.status ?? ""}`
+              .concat(` ${order.txResult ?? ""}`)
               .toLowerCase()
               .includes(query.trim().toLowerCase())
 
@@ -137,6 +142,7 @@ export function OrdersWorkspace() {
                     <>
                       <th className="pb-3 pr-4 font-medium">Type</th>
                       <th className="pb-3 pr-4 font-medium">Status</th>
+                      <th className="pb-3 pr-4 font-medium">XRPL result</th>
                       <th className="pb-3 pr-4 font-medium">Sequence</th>
                       <th className="pb-3 pr-4 font-medium">Timestamp</th>
                       <th className="pb-3 font-medium">Hash</th>
@@ -148,7 +154,7 @@ export function OrdersWorkspace() {
                 {filteredRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={tab === "open" ? 8 : 5}
+                      colSpan={tab === "open" ? 8 : 6}
                       className="py-8 text-center text-sm exchange-muted"
                     >
                       {tab === "trades"
@@ -182,6 +188,7 @@ export function OrdersWorkspace() {
                     <tr key={row.id} className="border-b [border-color:rgba(1,0,1,0.08)]">
                       <td className="py-3 pr-4 font-semibold">{row.type}</td>
                       <td className="py-3 pr-4 uppercase">{row.status}</td>
+                      <td className="py-3 pr-4">{formatTxResult(row.txResult)}</td>
                       <td className="py-3 pr-4">{row.sequence ?? "—"}</td>
                       <td className="py-3 pr-4 text-sm exchange-muted">{row.timestamp}</td>
                       <td className="py-3 break-all text-xs exchange-muted">{row.hash}</td>

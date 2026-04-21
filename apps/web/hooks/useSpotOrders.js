@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { useWallet } from "../components/providers/WalletProvider"
-import { toOrderRow } from "../lib/order-lifecycle"
+import { getHistoryOrderStatus, toOrderRow } from "../lib/order-lifecycle"
 import { buildOfferCancelTx, buildSpotOfferCreateTx } from "../lib/spot-order"
 import { getClient } from "../lib/xrplClient"
 
@@ -44,22 +44,29 @@ function normalizeOpenOffer(offer) {
 
 function normalizeHistoryEntry(entry) {
   const tx = entry.tx_json ?? entry.tx ?? {}
+  const txResult = entry.meta?.TransactionResult
   const isOfferCreate = tx.TransactionType === "OfferCreate"
   const amounts =
     isOfferCreate && tx.TakerGets != null && tx.TakerPays != null
       ? getOrderAmounts(tx.TakerGets, tx.TakerPays)
       : {}
 
-  return toOrderRow({
+  return {
+    ...toOrderRow({
+      id: tx.hash ? `native:${tx.hash}` : undefined,
+      type: tx.TransactionType ?? "Unknown",
+      sequence: tx.Sequence ?? tx.OfferSequence ?? null,
+      status: getHistoryOrderStatus({
+        type: tx.TransactionType,
+        txResult,
+      }),
+      ...amounts,
+    }),
+    txResult: txResult ?? "Pending",
     id: tx.hash ? `native:${tx.hash}` : undefined,
     hash: tx.hash,
     timestamp: formatLedgerTime(tx.date),
-    result: entry.meta?.TransactionResult ?? "Pending",
-    type: tx.TransactionType ?? "Unknown",
-    sequence: tx.Sequence ?? tx.OfferSequence ?? null,
-    status: entry.meta?.TransactionResult ?? "Pending",
-    ...amounts,
-  })
+  }
 }
 
 export function useSpotOrders() {

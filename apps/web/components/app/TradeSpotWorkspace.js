@@ -182,7 +182,9 @@ export function TradeSpotWorkspace({ market }) {
                   {orderHistory.slice(0, 4).map((entry) => (
                     <div key={entry.id} className="text-sm">
                       <p className="font-semibold">{entry.type}</p>
-                      <p className="text-[#cfcaa0]">{entry.status} · {entry.timestamp}</p>
+                      <p className="text-[#cfcaa0]">
+                        {entry.status} · {entry.txResult ?? "Pending"} · {entry.timestamp}
+                      </p>
                     </div>
                   ))}
                   {orderHistory.length === 0 ? <p className="text-sm text-[#9c9671]">No recent offer transactions yet.</p> : null}

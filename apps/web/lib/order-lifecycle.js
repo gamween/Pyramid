@@ -2,8 +2,28 @@ export function getOpenOrderStatus() {
   return "open"
 }
 
+export function getHistoryOrderStatus({ type, txResult }) {
+  if (!txResult) {
+    return "pending"
+  }
+
+  if (txResult !== "tesSUCCESS") {
+    return "failed"
+  }
+
+  if (type === "OfferCancel") {
+    return "cancelled"
+  }
+
+  if (type === "OfferCreate") {
+    return "submitted"
+  }
+
+  return "submitted"
+}
+
 export function toOrderRow(order) {
-  const row = {
+  return {
     id: order.id ?? `native:${order.sequence ?? order.hash ?? "row"}`,
     sequence: order.sequence ?? null,
     side: order.side ?? null,
@@ -13,18 +33,4 @@ export function toOrderRow(order) {
     baseAmount: order.baseAmount ?? null,
     quoteAmount: order.quoteAmount ?? null,
   }
-
-  if (order.hash) {
-    row.hash = order.hash
-  }
-
-  if (order.timestamp) {
-    row.timestamp = order.timestamp
-  }
-
-  if (order.result) {
-    row.result = order.result
-  }
-
-  return row
 }
