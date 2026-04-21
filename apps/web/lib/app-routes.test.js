@@ -17,6 +17,7 @@ test("app route tree includes assets, markets, trade spot, and orders pages", ()
   assert.equal(existsSync(new URL("../app/app/assets/page.js", import.meta.url)), true)
   assert.equal(existsSync(new URL("../app/app/markets/page.js", import.meta.url)), true)
   assert.equal(existsSync(new URL("../app/app/trade/spot/page.js", import.meta.url)), true)
+  assert.equal(existsSync(new URL("../app/app/trade/spot/[market]/page.js", import.meta.url)), true)
   assert.equal(existsSync(new URL("../app/app/orders/page.js", import.meta.url)), true)
 })
 

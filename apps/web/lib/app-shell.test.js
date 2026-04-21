@@ -24,7 +24,7 @@ test("APP_PRIMARY_NAV exposes the exchange-style top-level areas", () => {
 })
 
 test("LIVE_TRADE_ROUTE keeps spot as the active trading surface", () => {
-  assert.equal(LIVE_TRADE_ROUTE.href, "/app/trade/spot")
+  assert.equal(LIVE_TRADE_ROUTE.href, "/app/trade/spot/xrp-rlusd")
   assert.equal(LIVE_TRADE_ROUTE.label, "Spot")
   assert.equal(LIVE_TRADE_ROUTE.stage, "live")
 })

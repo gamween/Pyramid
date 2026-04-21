@@ -44,7 +44,7 @@ function Sparkline({ samples }) {
   )
 }
 
-export function TradeSpotWorkspace() {
+export function TradeSpotWorkspace({ market }) {
   const [side, setSide] = useState("buy")
   const [tool, setTool] = useState("limit")
   const [amount, setAmount] = useState("25")
@@ -52,7 +52,7 @@ export function TradeSpotWorkspace() {
   const [actionMessage, setActionMessage] = useState("")
 
   const {
-    market,
+    market: liveMarket,
     asks,
     bids,
     samples,
@@ -71,6 +71,7 @@ export function TradeSpotWorkspace() {
     loading: orderLoading,
     error: orderError,
   } = useSpotOrders()
+  const activeMarket = market ?? liveMarket
 
   const activeTool = useMemo(
     () => [...V1_TRADE_TOOLS, ...FUTURE_APP_MODULES].find((entry) => entry.key === tool),
@@ -105,7 +106,7 @@ export function TradeSpotWorkspace() {
     <div className="space-y-6">
       <AppPageHeader
         eyebrow="Trade / Spot"
-        title="XRPL spot terminal"
+        title={activeMarket.symbol}
         description="Live direct-read order book plus a route structure that keeps V1 tools primary and future modules visible without pretending they already execute on-chain."
         meta={["Spot", "Place / cancel live", "SL / TP / OCO scaffolded"]}
       />
@@ -113,7 +114,7 @@ export function TradeSpotWorkspace() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,0.85fr)_minmax(0,0.95fr)]">
         <AppPanel
           eyebrow="Chart"
-          title={market.shortLabel}
+          title={activeMarket.shortLabel}
           description="Session price trace from the live spot book. Candlestick aggregation is the next direct-read step."
           tone="dark"
         >

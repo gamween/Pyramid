@@ -1,9 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { Search } from "lucide-react"
 
-import { MARKET_WATCHLIST } from "../../lib/market-registry"
+import { LIVE_MARKETS } from "../../lib/market-registry"
 import { useSpotMarket } from "../../hooks/useSpotMarket"
 import { AppPageHeader } from "./AppPageHeader"
 import { AppPanel } from "./AppPanel"
@@ -17,38 +18,20 @@ export function MarketsWorkspace() {
   const { market, midPrice, bestBid, bestAsk, spreadBps, samples, loading, error } = useSpotMarket()
 
   const rows = useMemo(() => {
-    return MARKET_WATCHLIST.filter((entry) =>
+    return LIVE_MARKETS.filter((entry) =>
       entry.symbol.toLowerCase().includes(query.trim().toLowerCase())
-    ).map((entry) => {
-      if (entry.id === market.id) {
-        return {
-          ...entry,
-          price: formatPrice(midPrice),
-          bidAsk:
-            bestBid != null && bestAsk != null
-              ? `${formatPrice(bestBid)} / ${formatPrice(bestAsk)}`
-              : "—",
-          stats: spreadBps != null ? `${spreadBps.toFixed(2)} bps spread` : "Direct feed warming",
-        }
-      }
-
-      if (entry.stage === "derived" && midPrice != null) {
-        const inverted = midPrice > 0 ? 1 / midPrice : null
-        return {
-          ...entry,
-          price: formatPrice(inverted),
-          bidAsk: "Derived display",
-          stats: "No separate book yet",
-        }
-      }
-
-      return {
-        ...entry,
-        price: "—",
-        bidAsk: "Issuer wiring next",
-        stats: "Placeholder",
-      }
-    })
+    ).map((entry) => ({
+      ...entry,
+      price: entry.id === market.id ? formatPrice(midPrice) : "—",
+      bidAsk:
+        entry.id === market.id && bestBid != null && bestAsk != null
+          ? `${formatPrice(bestBid)} / ${formatPrice(bestAsk)}`
+          : "—",
+      stats:
+        entry.id === market.id && spreadBps != null
+          ? `${spreadBps.toFixed(2)} bps spread`
+          : "Direct feed warming",
+    }))
   }, [bestAsk, bestBid, market.id, midPrice, query, spreadBps])
 
   return (
@@ -56,7 +39,7 @@ export function MarketsWorkspace() {
       <AppPageHeader
         eyebrow="Markets"
         title="Spot discovery"
-        description="XRPL devnet market discovery with one live tracked spot book and honest placeholders for the broader watchlist."
+        description="XRPL devnet market discovery with one live tracked spot book."
         meta={["Pairs", "Search", "Direct reads"]}
       />
 
@@ -118,7 +101,7 @@ export function MarketsWorkspace() {
         <AppPanel
           eyebrow="Watchlist"
           title="Pairs"
-          description="The page structure is real now. Pair coverage expands as each market gets a direct-read data path."
+          description="The live shell only exposes the single XRP / RLUSD market."
         >
           <label className="mb-4 flex items-center gap-3 border museum-rule bg-[rgba(1,0,1,0.03)] px-3 py-3">
             <Search className="size-4 text-[color:var(--museum-muted)]" />
@@ -144,7 +127,11 @@ export function MarketsWorkspace() {
               <tbody>
                 {rows.map((entry) => (
                   <tr key={entry.id} className="border-b [border-color:rgba(1,0,1,0.08)]">
-                    <td className="py-3 pr-4 font-semibold">{entry.symbol}</td>
+                    <td className="py-3 pr-4 font-semibold">
+                      <Link href={`/app/trade/spot/${entry.slug}`} className="block">
+                        <span className="font-semibold">{entry.symbol}</span>
+                      </Link>
+                    </td>
                     <td className="py-3 pr-4">
                       <span className="exchange-chip px-2 py-1 font-ui text-[10px] uppercase tracking-[0.12em]">
                         {entry.stage}

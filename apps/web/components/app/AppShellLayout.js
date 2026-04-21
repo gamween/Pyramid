@@ -11,7 +11,7 @@ import { WalletConnector } from "../WalletConnector"
 
 function isActiveLink(pathname, href) {
   if (href === "/app/trade/spot") {
-    return pathname.startsWith("/app/trade")
+    return pathname.startsWith("/app/trade/spot")
   }
 
   return pathname === href || pathname.startsWith(`${href}/`)

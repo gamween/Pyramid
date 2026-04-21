@@ -1,5 +1,5 @@
-import { TradeSpotWorkspace } from "../../../../components/app/TradeSpotWorkspace"
+import { redirect } from "next/navigation"
 
-export default function SpotTradePage() {
-  return <TradeSpotWorkspace />
+export default function SpotRedirectPage() {
+  redirect("/app/trade/spot/xrp-rlusd")
 }
