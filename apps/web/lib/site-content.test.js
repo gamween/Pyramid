@@ -105,17 +105,14 @@ test("site content registry exposes support and learn page lookups", () => {
   assert.equal(learnPages.length, 4)
 })
 
-test("site content registry derives the support email link from footer contact metadata", () => {
-  const originalEmail = footerContact.email
-
-  footerContact.email = "review-check@example.com"
-
-  assert.equal(supportContactLinks[0]?.href, "mailto:review-check@example.com")
-
-  footerContact.email = originalEmail
+test("site content registry keeps the support email link aligned with footer contact metadata", () => {
   assert.equal(
     supportContactLinks[0]?.href,
     `mailto:${footerContact.email}`
+  )
+  assert.equal(
+    Object.getOwnPropertyDescriptor(supportContactLinks[0], "href")?.get,
+    undefined
   )
 })
 

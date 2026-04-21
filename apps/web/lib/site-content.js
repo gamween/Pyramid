@@ -5,6 +5,8 @@ const landingArt = {
   discobolus: "/landing/discobolus.svg",
 }
 
+const supportContactEmail = "sofiane.zidane.bentaleb@gmail.com"
+
 export const footerOverview =
   "Pyramid presents XRPL-native lending, trading, and privacy systems as a readable site before the live product begins."
 
@@ -21,7 +23,7 @@ export const footerLegalLinks = [
 ]
 
 export const footerContact = {
-  email: "sofiane.zidane.bentaleb@gmail.com",
+  email: supportContactEmail,
   addressLines: ["47 boulevard de Pesaro, 92000", "Nanterre"],
 }
 
@@ -30,9 +32,7 @@ export const footerCopyright = "2026 Pyramid. All rights reserved."
 export const supportContactLinks = [
   {
     label: "Email",
-    get href() {
-      return `mailto:${footerContact.email}`
-    },
+    href: `mailto:${supportContactEmail}`,
   },
   {
     label: "LinkedIn",
