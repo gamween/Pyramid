@@ -10,7 +10,7 @@ Pyramid should not try to ship every idea at once. The roadmap is intentionally 
 - architecture: frontend-only, on-chain-first
 - deployment: Vercel for the frontend
 - persistence target: on-chain logic and smart contracts
-- excluded from active V1: watcher bot, centralized backend, database
+- excluded from active V1: watcher bot, centralized backend, database, server-managed loan signing
 
 ## Phase 1: Frontend V1 Foundation
 
@@ -24,7 +24,7 @@ Includes:
 - `/app/orders`
 - consistent app chrome and navigation
 - honest placeholders for not-yet-implemented modules
-- removal of watcher-era assumptions from the active user experience
+- no watcher-era assumptions in the active user experience
 
 ## Phase 2: Trading V1
 
@@ -52,19 +52,7 @@ Candidates:
 - stronger order-management workflows
 - direct-read devnet hardening and polish
 
-## Phase 4: Lending
-
-Goal: reintroduce vault / lending flows only when they fit the active on-chain-first system cleanly.
-
-Candidates:
-
-- vault surfaces
-- lending overview
-- borrowing and collateral management
-
-These belong after the trading V1 product is stable.
-
-## Phase 5: Privacy
+## Phase 4: Privacy
 
 Goal: integrate privacy-oriented flows only when they can be represented honestly inside the same architecture.
 
@@ -79,6 +67,7 @@ Candidates:
 - backend watcher orchestration
 - database-managed order state
 - fake off-chain persistence disguised as product logic
+- server-managed loan signing
 - building every roadmap item at once
 
 ## Delivery Rule

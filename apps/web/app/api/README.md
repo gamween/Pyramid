@@ -1,8 +1,8 @@
 # Legacy API Proxy Surface
 
-These API routes proxy watcher-era hackathon flows.
+The active Pyramid V1 app is frontend-only and does not use watcher proxy routes, loan endpoints, or server-managed write flows.
 
-They remain in the repo as legacy reference only and are not the active architectural target for Pyramid V1.
+If new API routes are added, they should support direct user-facing product needs without reintroducing centralized backend assumptions.
 
 The current product direction is:
 

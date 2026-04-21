@@ -8,10 +8,11 @@ The current direction is deliberately narrow:
 - active architecture: frontend-only, deployed on Vercel
 - wallet signing in the browser
 - direct network reads from the frontend
-- persistence and automation logic intended to live on-chain through smart contracts / XRPL-native primitives
+- persistence and automation logic intended to live on-chain through XRPL-native primitives
 - no database
 - no centralized backend
-- no watcher bot in the active V1 architecture
+- no watcher bot
+- no server-managed loan signing
 
 ## Product Direction
 
@@ -24,7 +25,7 @@ The core experience is organized around four areas:
 3. Trade -> Spot
 4. Orders
 
-This repo still contains hackathon-era lending, watcher, and proxy code. That code is retained as legacy reference only and is not the canonical architecture for the current V1 direction.
+The active repo is trading-only. Watcher, loan, and proxy architecture have been removed from the current V1 direction.
 
 ## V1 Scope
 
@@ -44,10 +45,9 @@ The frontend may already expose placeholders for later capabilities so the full 
 Later phases expand the product surface without changing the architectural stance:
 
 - trailing stop
-- vault / lending
 - privacy
 
-Those features should only move forward when they can fit the same on-chain-first model without reintroducing centralized watcher assumptions.
+Those features should only move forward when they can fit the same on-chain-first model without introducing centralized backend assumptions.
 
 ## Active Architecture
 
@@ -95,23 +95,12 @@ The landing page already established the Pyramid visual system:
 
 The app should feel inspired by exchange products such as Binance or Bybit in structure and usability, while still remaining consistent with Pyramid's brand and landing-page language.
 
-## Legacy Code Status
-
-The repository currently includes:
-
-- `apps/watcher`
-- watcher proxy API routes under `apps/web/app/api`
-- hackathon-era lending and watcher-oriented components
-
-These are not the active V1 target architecture. They should be treated as legacy and should not define the product narrative or the main UI flow going forward.
-
 ## Repository Structure
 
 ```text
 Pyramid/
 ├── apps/
-│   ├── web/          # Active Next.js frontend
-│   └── watcher/      # Legacy hackathon watcher code, not active V1 architecture
+│   └── web/          # Active Next.js frontend
 ├── docs/
 │   ├── architecture.md
 │   ├── roadmap.md

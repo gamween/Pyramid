@@ -24,7 +24,8 @@ browser wallet
 - direct network reads from the frontend
 - no database
 - no off-chain backend
-- no watcher bot in the active V1 product architecture
+- no watcher bot
+- no server-managed loan signing
 - any state that must persist belongs on-chain
 
 ### Consequences
@@ -33,15 +34,16 @@ browser wallet
 - features that are not yet on-chain-ready should be placeholders, not fake backend flows
 - the app shell should communicate what is live, what is scaffolded, and what is future
 
-## Legacy Inventory
+## Removed Architecture
 
-This repo still contains hackathon-era watcher and proxy code:
+Watcher-era backend code and loan flows have been removed from the active repo.
+
+The active product no longer includes:
 
 - `apps/watcher`
 - watcher proxy API routes in `apps/web/app/api`
-- components and flows built around watcher-managed execution
-
-These are legacy artifacts. They remain in the repo as historical reference, but they are no longer the active V1 architecture and should not drive the current frontend UX or product messaging.
+- server-managed loan signing
+- loan-specific components and hooks
 
 ## Frontend Information Architecture
 
@@ -182,14 +184,12 @@ The point is to make it possible to replace placeholder sections with real direc
 ### Placeholder, but visible now
 
 - trailing stop panels
-- lending modules
 - privacy modules
 - any direct-read section not yet wired to live XRPL data
 
 ### Later phases
 
 - full trailing stop logic
-- vault and lending product flows
 - privacy flows
 
 ## Design Constraints
@@ -210,4 +210,4 @@ But it should still remain a Pyramid product:
 
 ## Documentation Rule
 
-When docs or UI text describe the active architecture, they must describe the front-only, on-chain-first direction. Legacy watcher code can be mentioned, but only as deprecated historical context.
+When docs or UI text describe the active architecture, they must describe the front-only, on-chain-first direction with no watcher, no database, no centralized backend, and no server-managed loan signing.
