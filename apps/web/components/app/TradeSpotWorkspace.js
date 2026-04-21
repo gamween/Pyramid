@@ -37,6 +37,8 @@ export function TradeSpotWorkspace({ market }) {
     spreadBps,
     timeframe,
     setTimeframe,
+    timeframeLocked,
+    seedNote,
     loading: marketLoading,
     error: marketError,
   } = useXRPLMarketData(market)
@@ -124,16 +126,24 @@ export function TradeSpotWorkspace({ market }) {
                   key={option}
                   type="button"
                   onClick={() => setTimeframe(option)}
+                  disabled={timeframeLocked && timeframe !== option}
                   className={`border px-3 py-2 font-ui text-[10px] uppercase tracking-[0.16em] ${
                     timeframe === option
                       ? "border-[#e6ed01] bg-[#e6ed01] text-[var(--museum-ink)]"
-                      : "border-white/15 bg-transparent text-[#cfcaa0]"
+                      : "border-white/15 bg-transparent text-[#cfcaa0] disabled:cursor-not-allowed disabled:opacity-45"
                   }`}
                 >
                   {option}
                 </button>
               ))}
             </div>
+
+            <p className="text-xs text-[#9c9671]">
+              <span className="font-ui uppercase tracking-[0.14em] text-[#cfcaa0]">
+                Seeded ledger snapshot
+              </span>{" "}
+              {seedNote}
+            </p>
 
             <TradingChart candles={candles} />
 

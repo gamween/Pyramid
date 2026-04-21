@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import ledgerChangesFixture from "../lib/fixtures/xrp-rlusd.book-changes.json" with { type: "json" }
 import { ACTIVE_SPOT_MARKET } from "../lib/market-registry.js"
-import { aggregateLedgerChangesToCandles } from "../lib/market-data/candle-aggregation.js"
-import { fetchXRPLMarketFeed } from "../lib/market-data/xrpl-market-feed.js"
-
-const DEFAULT_TIMEFRAME = "15m"
+import {
+  DEFAULT_TIMEFRAME,
+  buildSeededChartState,
+  fetchXRPLMarketFeed,
+} from "../lib/market-data/xrpl-market-feed.js"
 
 export function useXRPLMarketData(market = ACTIVE_SPOT_MARKET) {
   const [timeframe, setTimeframe] = useState(DEFAULT_TIMEFRAME)
@@ -53,7 +53,10 @@ export function useXRPLMarketData(market = ACTIVE_SPOT_MARKET) {
     }
   }, [refresh])
 
-  const candles = useMemo(() => aggregateLedgerChangesToCandles([ledgerChangesFixture], timeframe), [timeframe])
+  const { candles, timeframeLocked, seedNote } = useMemo(
+    () => buildSeededChartState({ timeframe }),
+    [timeframe]
+  )
   const spreadBps = useMemo(() => {
     if (!marketState.spread || !marketState.midPrice) return null
     return (marketState.spread / marketState.midPrice) * 10_000
@@ -64,6 +67,8 @@ export function useXRPLMarketData(market = ACTIVE_SPOT_MARKET) {
     candles,
     timeframe,
     setTimeframe,
+    timeframeLocked,
+    seedNote,
     spreadBps,
     loading,
     error,

@@ -1,5 +1,5 @@
 import { Client } from "xrpl"
-import { DEFAULT_NETWORK } from "./networks"
+import { DEFAULT_NETWORK } from "./networks.js"
 
 let client = null
 
