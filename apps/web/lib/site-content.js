@@ -312,14 +312,3 @@ export function getSupportPage(slug) {
 export function getLearnPage(slug) {
   return learnPages.find((page) => page.slug === slug) ?? null
 }
-
-export function shouldShowAtAllTimes(pathname) {
-  return pathname !== "/" && pathname !== "/app"
-}
-
-export function getAtAllTimesLinks() {
-  return [
-    { href: "/", label: "Landing Page" },
-    { href: "/app", label: "Open App" },
-  ]
-}
