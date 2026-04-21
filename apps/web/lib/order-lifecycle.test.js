@@ -1,7 +1,12 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 
-import { getHistoryOrderStatus, getOpenOrderStatus, toOrderRow } from "./order-lifecycle.js"
+import {
+  getHistoryOrderStatus,
+  getOpenOrderStatus,
+  normalizeHistoryOrderRow,
+  toOrderRow,
+} from "./order-lifecycle.js"
 
 test("open offers normalize to the open status", () => {
   assert.equal(getOpenOrderStatus({ sequence: 7 }), "open")
@@ -62,4 +67,23 @@ test("toOrderRow does not include transaction-specific metadata", () => {
   assert.equal("hash" in row, false)
   assert.equal("timestamp" in row, false)
   assert.equal("txResult" in row, false)
+})
+
+test("normalizeHistoryOrderRow preserves side when an offer create entry includes order amounts", () => {
+  const row = normalizeHistoryOrderRow({
+    tx_json: {
+      hash: "ABC123",
+      TransactionType: "OfferCreate",
+      Sequence: 17,
+      TakerGets: "5000000",
+      TakerPays: { currency: "USD", issuer: "issuer", value: "3.25" },
+    },
+    meta: {
+      TransactionResult: "tesSUCCESS",
+    },
+  })
+
+  assert.equal(row.side, "sell")
+  assert.equal(row.status, "submitted")
+  assert.equal(row.txResult, "tesSUCCESS")
 })

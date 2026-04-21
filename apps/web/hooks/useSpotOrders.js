@@ -3,70 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { useWallet } from "../components/providers/WalletProvider"
-import { getHistoryOrderStatus, toOrderRow } from "../lib/order-lifecycle"
+import { getLedgerOrderAmounts, normalizeHistoryOrderRow, toOrderRow } from "../lib/order-lifecycle"
 import { buildOfferCancelTx, buildSpotOfferCreateTx } from "../lib/spot-order"
 import { getClient } from "../lib/xrplClient"
-
-function dropsToXrp(drops) {
-  return Number(drops) / 1_000_000
-}
-
-function readIssuedValue(amount) {
-  return Number(amount?.value ?? 0)
-}
-
-function getOrderAmounts(takerGets, takerPays) {
-  const isSell = typeof takerGets === "string"
-  const baseAmount = isSell ? dropsToXrp(takerGets) : dropsToXrp(takerPays)
-  const quoteAmount = isSell ? readIssuedValue(takerPays) : readIssuedValue(takerGets)
-  const price = baseAmount > 0 ? quoteAmount / baseAmount : 0
-
-  return {
-    side: isSell ? "sell" : "buy",
-    baseAmount,
-    quoteAmount,
-    price,
-  }
-}
-
-function formatLedgerTime(xrplTime) {
-  if (!xrplTime) return "Pending"
-  return new Date((xrplTime + 946684800) * 1000).toLocaleString()
-}
 
 function normalizeOpenOffer(offer) {
   return toOrderRow({
     sequence: offer.seq,
-    ...getOrderAmounts(offer.TakerGets, offer.TakerPays),
+    ...getLedgerOrderAmounts(offer.TakerGets, offer.TakerPays),
     type: "limit",
   })
-}
-
-function normalizeHistoryEntry(entry) {
-  const tx = entry.tx_json ?? entry.tx ?? {}
-  const txResult = entry.meta?.TransactionResult
-  const isOfferCreate = tx.TransactionType === "OfferCreate"
-  const amounts =
-    isOfferCreate && tx.TakerGets != null && tx.TakerPays != null
-      ? getOrderAmounts(tx.TakerGets, tx.TakerPays)
-      : {}
-
-  return {
-    ...toOrderRow({
-      id: tx.hash ? `native:${tx.hash}` : undefined,
-      type: tx.TransactionType ?? "Unknown",
-      sequence: tx.Sequence ?? tx.OfferSequence ?? null,
-      status: getHistoryOrderStatus({
-        type: tx.TransactionType,
-        txResult,
-      }),
-      ...amounts,
-    }),
-    txResult: txResult ?? "Pending",
-    id: tx.hash ? `native:${tx.hash}` : undefined,
-    hash: tx.hash,
-    timestamp: formatLedgerTime(tx.date),
-  }
 }
 
 export function useSpotOrders() {
@@ -120,7 +66,7 @@ export function useSpotOrders() {
       })
 
       setOpenOrders((offersResponse.result.offers ?? []).map(normalizeOpenOffer))
-      setOrderHistory(offerEntries.map(normalizeHistoryEntry))
+      setOrderHistory(offerEntries.map(normalizeHistoryOrderRow))
       setTradeHistory([])
       setError("")
     } catch (nextError) {
