@@ -27,6 +27,13 @@ test("license page reads the repository LICENSE file", () => {
   assert.match(source, /Read this first/)
 })
 
+test("repository license credits Sofiane instead of DeVinci Blockchain", () => {
+  const licenseSource = readSource("../../../LICENSE")
+
+  assert.match(licenseSource, /Copyright \(c\) 2026 Sofiane Zidane Ben Taleb/)
+  assert.doesNotMatch(licenseSource, /DeVinci Blockchain/)
+})
+
 test("learn pages use the registry, static params, and notFound", () => {
   const source = readSource("../app/learn/[slug]/page.js")
 
@@ -44,6 +51,10 @@ test("about page renders the dedicated portrait asset", () => {
   assert.match(source, /next\/image/)
   assert.match(source, /\/about\/sofiane-zidane-ben-taleb\.jpg/)
   assert.match(source, /ContentPageLayout/)
+  assert.match(source, /https:\/\/github\.com\/DVB-ESILV\/Pyramid/)
+  assert.doesNotMatch(source, /XRPL-Commons\/2026-PBW-Hackathon/)
+  assert.doesNotMatch(source, /figcaption/)
+  assert.doesNotMatch(source, /The portrait sits here/)
 })
 
 test("contact page renders the registry contact links", () => {

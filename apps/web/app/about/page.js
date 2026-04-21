@@ -5,14 +5,35 @@ import { getSupportPage } from "../../lib/site-content"
 
 export default function AboutPage() {
   const page = getSupportPage("about")
+  const originNote = page.sections.find((section) => section.heading === "Origin note")
+  const sections = page.sections.filter((section) => section.heading !== "Origin note")
 
   return (
     <ContentPageLayout
       eyebrow={page.eyebrow}
       title={page.title}
       intro={page.intro}
-      sections={page.sections}
+      sections={sections}
     >
+      <section className="border-t museum-rule pt-8">
+        <h2 className="font-display text-3xl md:text-5xl">Origin note</h2>
+        <div className="museum-copy mt-4 max-w-3xl space-y-4 text-lg leading-8">
+          <p>
+            This repository descends from{" "}
+            <a
+              href="https://github.com/DVB-ESILV/Pyramid"
+              target="_blank"
+              rel="noreferrer"
+              className="border-b border-current pb-1 transition-opacity hover:opacity-70"
+            >
+              https://github.com/DVB-ESILV/Pyramid
+            </a>
+            , a project built with Florian Gallot and Mehdi Mateo Tazi for Hack the Block 2026.
+          </p>
+          {originNote?.body[1] ? <p>{originNote.body[1]}</p> : null}
+        </div>
+      </section>
+
       <section className="border-t museum-rule pt-8">
         <div className="grid gap-8 md:grid-cols-[minmax(0,0.82fr)_minmax(0,1fr)] md:items-end">
           <div className="space-y-4">
@@ -21,12 +42,11 @@ export default function AboutPage() {
             </p>
             <h2 className="font-display text-3xl md:text-5xl">Sofiane Zidane Ben Taleb</h2>
             <p className="museum-copy max-w-prose text-lg leading-8">
-              The portrait sits here as an editorial plate, giving the page a quieter, more
-              archival read alongside the registry copy that follows.
+              Solo builder of Pyramid, from protocol framing to implementation.
             </p>
           </div>
 
-          <figure className="space-y-3 md:justify-self-end">
+          <div className="md:justify-self-end">
             <div className="overflow-hidden border border-[color:var(--museum-rule)] bg-[color:var(--museum-paper)] shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
               <Image
                 src="/about/sofiane-zidane-ben-taleb.jpg"
@@ -37,10 +57,7 @@ export default function AboutPage() {
                 priority
               />
             </div>
-            <figcaption className="font-ui text-[11px] uppercase tracking-[0.18em] text-[color:var(--museum-muted)]">
-              Sofiane Zidane Ben Taleb
-            </figcaption>
-          </figure>
+          </div>
         </div>
       </section>
     </ContentPageLayout>

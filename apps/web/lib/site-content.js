@@ -146,7 +146,7 @@ export const supportPages = [
       {
         heading: "Origin note",
         body: [
-          "This repository descends from https://github.com/DVB-ESILV/Pyramid, a project built with Florian Gallot and Mehdi Mateo Tazi for Hack the Block 2026: https://github.com/XRPL-Commons/2026-PBW-Hackathon.",
+          "This repository descends from https://github.com/DVB-ESILV/Pyramid, a project built with Florian Gallot and Mehdi Mateo Tazi for Hack the Block 2026.",
           "That history matters, but the current app and this repository are maintained by me alone. The present-day product direction, editorial layer, and implementation work here are mine.",
         ],
       },
