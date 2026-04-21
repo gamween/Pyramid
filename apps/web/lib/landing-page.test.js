@@ -40,18 +40,21 @@ test("active repo references point to gamween/Pyramid", () => {
   assert.doesNotMatch(contributingSource, /DVB-ESILV\/Pyramid/)
 })
 
-test("app experience stays edge-to-edge without a centered max-width shell", () => {
-  const appExperienceSource = readSource("../components/app/AppExperience.js")
+test("app shell stays route-driven and no longer references the deleted tabbed dashboard shell", () => {
+  const appLayoutSource = readSource("../app/app/layout.js")
+  const shellLayoutSource = readSource("../components/app/AppShellLayout.js")
   const headerSource = readSource("../components/Header.js")
-  const earnYieldSource = readSource("../components/EarnYieldPage.js")
 
-  assert.match(appExperienceSource, /<main className="flex-1 w-full/)
-  assert.match(appExperienceSource, /<AppPanels \/>/)
-  assert.doesNotMatch(appExperienceSource, /max-w-7xl/)
-  assert.doesNotMatch(appExperienceSource, /mx-auto/)
+  assert.match(appLayoutSource, /AppShellLayout/)
+  assert.doesNotMatch(appLayoutSource, /AppExperience/)
+  assert.doesNotMatch(appLayoutSource, /AppPanels/)
+
+  assert.match(shellLayoutSource, /APP_PRIMARY_NAV/)
+  assert.match(shellLayoutSource, /WalletConnector/)
+  assert.doesNotMatch(shellLayoutSource, /AppTabsNav/)
+  assert.doesNotMatch(shellLayoutSource, /ProtocolStats/)
 
   assert.doesNotMatch(headerSource, /container mx-auto/)
-  assert.doesNotMatch(earnYieldSource, /max-w-4xl mx-auto/)
 })
 
 test("landing artwork is integrated with blend treatment instead of white panels", () => {
