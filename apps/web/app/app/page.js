@@ -1,5 +1,5 @@
-import { AppExperience } from "../../components/app/AppExperience"
+import { redirect } from "next/navigation"
 
 export default function AppPage() {
-  return <AppExperience />
+  redirect("/app/assets")
 }

@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test app/api/*.test.js hooks/*.test.js lib/*.test.js"
+    "test": "node --test app/api/*.test.js hooks/*.test.js lib/*.test.js lib/*/*.test.js"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -22,6 +22,7 @@
     "five-bells-condition": "^5.0.1",
     "framer-motion": "^12.38.0",
     "gsap": "^3.14.2",
+    "lightweight-charts": "^5.1.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.6",
     "ogl": "^1.0.11",

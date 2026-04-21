@@ -21,7 +21,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata = {
   title: "Pyramid",
-  description: "XRPL-native lending, trading, and private execution.",
+  description: "XRPL-native trading product for devnet spot execution.",
   icons: {
     icon: "/brand/winged-victory-of-samothrace.png",
     shortcut: "/brand/winged-victory-of-samothrace.png",

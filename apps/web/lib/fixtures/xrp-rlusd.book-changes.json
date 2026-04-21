@@ -1,0 +1,19 @@
+{
+  "changes": [
+    {
+      "close": "426257.5",
+      "currency_a": "XRP_drops",
+      "currency_b": "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs/USD",
+      "high": "426257.5",
+      "low": "426257.5",
+      "open": "426257.5",
+      "volume_a": "852515",
+      "volume_b": "2"
+    }
+  ],
+  "ledger_hash": "25C1F95578B296BD374AFB8B9984AD620BF8DFE66AE094A18C18223F0E2B119C",
+  "ledger_index": 1981337,
+  "ledger_time": 830094040,
+  "type": "bookChanges",
+  "validated": true
+}

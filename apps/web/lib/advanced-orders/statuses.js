@@ -1,0 +1,17 @@
+export const ADVANCED_ORDER_STATUSES = [
+  "draft",
+  "awaiting signature",
+  "submitted",
+  "pending confirmation",
+  "active",
+  "tracking",
+  "triggered",
+  "executing",
+  "open",
+  "partially filled",
+  "filled",
+  "completed",
+  "cancelled",
+  "failed",
+  "expired",
+]

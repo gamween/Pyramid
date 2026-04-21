@@ -1,5 +1,5 @@
 import { Client } from "xrpl"
-import { DEFAULT_NETWORK } from "./networks"
+import { DEFAULT_NETWORK } from "./networks.js"
 
 let client = null
 
@@ -15,4 +15,9 @@ export async function getClient() {
 export async function disconnectClient() {
   if (client) await client.disconnect()
   client = null
+}
+
+export async function requestXRPL(request) {
+  const activeClient = await getClient()
+  return activeClient.request(request)
 }
