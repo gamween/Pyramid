@@ -27,6 +27,29 @@ export const footerContact = {
 
 export const footerCopyright = "2026 Pyramid. All rights reserved."
 
+export const supportContactLinks = [
+  {
+    label: "Email",
+    href: "mailto:sofiane.zidane.bentaleb@gmail.com",
+  },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/sofiane-ben-taleb/",
+  },
+  {
+    label: "GitHub",
+    href: "https://github.com/gamween",
+  },
+  {
+    label: "X",
+    href: "https://x.com/dvb_fianso",
+  },
+  {
+    label: "Telegram",
+    href: "https://t.me/dvb_fianso",
+  },
+]
+
 export const landingSections = [
   {
     id: "hero",
@@ -102,20 +125,27 @@ export const supportPages = [
     title: "About us",
     eyebrow: "Builder and project",
     intro:
-      "Pyramid is the result of an XRPL-native product thesis: use the ledger’s own primitives as the product, not as a backend detail.",
+      "Pyramid is my attempt to present XRPL-native lending, trading, and privacy as one readable product surface instead of a pile of disconnected protocol notes.",
     sections: [
       {
-        heading: "Who is behind it",
+        heading: "Who I am",
         body: [
-          "This page introduces the builder in a more personal way than the landing page does.",
-          "Keep the voice concise, direct, and tied to the product rather than sounding like a startup bio.",
+          "I am Sofiane Zidane Ben Taleb, the sole maintainer of this app and repository today. I work from a product and protocol angle: understand the primitive, then make it legible enough that people can decide whether it is useful.",
+          "That bias shapes Pyramid. I care less about adding a glossy DeFi wrapper and more about showing what XRPL already makes possible when the mechanics are explained clearly.",
         ],
       },
       {
-        heading: "Why Pyramid exists",
+        heading: "Why I built Pyramid",
         body: [
-          "Explain why native XRPL lending, trading, and private execution belong together.",
-          "Anchor the story in Hack the Block 2026 and the XRPL-native thesis.",
+          "I built Pyramid around a simple thesis: XRPL primitives should be the product story, not hidden implementation details. If native lending, DEX routing, AMM liquidity, and privacy layers belong together, the interface should teach that relationship instead of flattening it.",
+          "The goal is not to simulate sophistication with dashboard noise. The goal is to reveal how XRPL-native systems fit together, where Boundless enters the picture, and what is live versus still exploratory.",
+        ],
+      },
+      {
+        heading: "Origin note",
+        body: [
+          "This repository descends from https://github.com/DVB-ESILV/Pyramid, a project built with Florian Gallot and Mehdi Mateo Tazi for Hack the Block 2026: https://github.com/XRPL-Commons/2026-PBW-Hackathon.",
+          "That history matters, but the current app and this repository are maintained by me alone. The present-day product direction, editorial layer, and implementation work here are mine.",
         ],
       },
     ],
@@ -124,14 +154,15 @@ export const supportPages = [
     slug: "contact",
     href: "/contact",
     title: "Contact",
-    eyebrow: "Reach the project",
+    eyebrow: "Reach the builder",
     intro:
-      "This page exposes direct contact methods in a clean, minimal layout. It can launch with a short list, but the route itself is not optional.",
+      "If you want to discuss the product, the protocol thesis, the repo, or a concrete issue, contact me directly.",
     sections: [
       {
-        heading: "Primary contact methods",
+        heading: "What to contact me about",
         body: [
-          "Reserve slots for email, GitHub, X, LinkedIn, or any other outbound destination the user decides to provide.",
+          "I welcome messages about XRPL-native lending and trading flows, Boundless and privacy questions, implementation bugs, repo feedback, research leads, and serious partnership or collaboration ideas.",
+          "If you are reaching out about something specific, include the page, feature, or document you are referring to so I can respond with useful context instead of generic back-and-forth.",
         ],
       },
     ],
@@ -142,15 +173,54 @@ export const supportPages = [
     title: "FAQ",
     eyebrow: "Common questions",
     intro:
-      "This page clarifies what Pyramid is, what is native to XRPL, what is educational content, and what still belongs to the current app surface.",
+      "Short answers to the questions that come up most often when people land on Pyramid for the first time.",
     sections: [
       {
-        heading: "Suggested questions",
+        heading: "What is Pyramid?",
         body: [
-          "What is Pyramid?",
-          "What do XLS-65 and XLS-66 add to XRPL?",
-          "Why does the site link to official docs?",
-          "What is already live in the app today?",
+          "Pyramid is a product thesis and app surface for XRPL-native lending, trading, and privacy-oriented execution. It treats those systems as one readable stack instead of separate protocol footnotes.",
+        ],
+      },
+      {
+        heading: "Is Pyramid built by one person or a team?",
+        body: [
+          "The current app and repository are maintained by Sofiane Zidane Ben Taleb alone. The project originated from an earlier hackathon collaboration, but this codebase is now single-author maintained.",
+        ],
+      },
+      {
+        heading: "What is live today?",
+        body: [
+          "The public site is live as an editorial and product layer. The /app route is the live product surface, but features and availability can evolve independently from the support pages.",
+        ],
+      },
+      {
+        heading: "What counts as educational content here?",
+        body: [
+          "The site explains XRPL concepts in plain language, but those summaries are not substitutes for the primary docs, amendment specs, or source repositories. They exist to make the stack easier to parse before you go deeper.",
+        ],
+      },
+      {
+        heading: "What do XLS-65 and XLS-66 add to XRPL?",
+        body: [
+          "They add native lending primitives, including the vault and loan structure that make XRPL-native lending flows possible without inventing a separate smart-contract wrapper for the core mechanism.",
+        ],
+      },
+      {
+        heading: "Why does the site link to XRPL and Boundless documentation?",
+        body: [
+          "Because Pyramid should point readers back to the source material. When I summarize a primitive or dependency, I also link to the official docs or repos so the explanation stays auditable.",
+        ],
+      },
+      {
+        heading: "Is Boundless part of XRPL?",
+        body: [
+          "No. Boundless is an external proving and execution system that appears in Pyramid’s privacy story, but it is not part of XRPL itself. The site keeps that distinction explicit on purpose.",
+        ],
+      },
+      {
+        heading: "How does this repo relate to the earlier hackathon project?",
+        body: [
+          "This repository descends from the Hack the Block 2026 project at https://github.com/DVB-ESILV/Pyramid. It keeps the lineage visible while reflecting a separate, current direction maintained by Sofiane alone.",
         ],
       },
     ],
@@ -170,20 +240,26 @@ export const supportPages = [
     title: "Privacy Policy",
     eyebrow: "Site privacy",
     intro:
-      "This page explains what Pyramid stores, what it does not store, and how direct contact information is handled on the public site.",
+      "This policy stays narrow on purpose: it describes the public site as it exists today, not a larger data posture that is not actually implemented.",
     sections: [
       {
-        heading: "Minimal data footprint",
+        heading: "What this site currently collects",
         body: [
-          "The landing site is designed to stay lightweight and readable. It does not present itself as a data-harvesting surface.",
-          "If analytics, forms, or external embeds are added later, this page should be updated to describe them directly and plainly.",
+          "The public site is primarily informational. It does not ask you to create an account on these support pages, and it does not claim to collect more data than is necessary to serve the site and linked destinations.",
+          "If analytics, embedded tools, or new forms are added later, this policy should be updated to describe them directly.",
         ],
       },
       {
         heading: "Direct contact handling",
         body: [
-          "If you contact the project by email, the information you voluntarily provide is used only to respond and continue the conversation.",
-          "Pyramid should not claim privacy practices it does not actually implement. Keep this page factual and narrow.",
+          "If you contact me by email or through another linked channel, I only receive the information you choose to send. I use it to reply, continue the conversation, or evaluate the issue or proposal you raised.",
+          "I do not present direct contact as a hidden data funnel. If that changes, this page should change with it.",
+        ],
+      },
+      {
+        heading: "Third-party destinations",
+        body: [
+          "This site links to third-party services such as GitHub, LinkedIn, X, Telegram, XRPL documentation, and Boundless documentation. Once you leave Pyramid, those services handle your data under their own policies.",
         ],
       },
     ],
@@ -194,20 +270,24 @@ export const supportPages = [
     title: "Terms of Service",
     eyebrow: "Site terms",
     intro:
-      "This page clarifies the scope of the public site, the educational material it presents, and the difference between the site and the live app route.",
+      "These terms describe the narrow scope of the public Pyramid site and the current relationship between the editorial pages and the live app surface.",
     sections: [
       {
-        heading: "Educational and product scope",
+        heading: "Informational nature of the site",
         body: [
-          "The landing site explains XRPL-native mechanisms and points to official references, but it should not pretend that educational summaries replace primary documentation.",
-          "Where the site links to external systems, protocols, or repositories, those materials remain governed by their own terms and licenses.",
+          "The support pages and landing content are informational. They explain product ideas, protocol primitives, and references, but they do not replace primary documentation, legal terms, or technical verification.",
         ],
       },
       {
-        heading: "Use of the app route",
+        heading: "App route and feature availability",
         body: [
-          "The /app route is the live product surface. Features, availability, and supported flows may evolve independently from the editorial landing content.",
-          "Nothing on this page should over-promise implementation status. The terms should stay aligned with the actual product surface.",
+          "The /app route is the live product surface. Features, supported flows, and availability may change without the support pages updating in lockstep, so nothing here should be read as a permanent guarantee of implementation status.",
+        ],
+      },
+      {
+        heading: "External links and third-party systems",
+        body: [
+          "Pyramid links to external documentation, repositories, and services. Those destinations are governed by their own terms, licenses, and operational practices, and I am not responsible for how they behave once you leave this site.",
         ],
       },
     ],

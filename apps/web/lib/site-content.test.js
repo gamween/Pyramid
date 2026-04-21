@@ -9,6 +9,7 @@ import {
   getSupportPage,
   landingSections,
   learnPages,
+  supportContactLinks,
   supportPages,
 } from "./site-content.js"
 
@@ -41,9 +42,35 @@ test("site content registry exposes support and learn page lookups", () => {
     ["about", "contact", "faq", "license", "privacy-policy", "terms-of-service"]
   )
   assert.equal(getSupportPage("about")?.title, "About us")
+  assert.equal(getSupportPage("about")?.sections[0].heading, "Who I am")
+  assert.equal(getSupportPage("about")?.sections[1].heading, "Why I built Pyramid")
+  assert.equal(getSupportPage("about")?.sections[2].heading, "Origin note")
+  assert.equal(getSupportPage("contact")?.eyebrow, "Reach the builder")
+  assert.match(
+    getSupportPage("contact")?.sections[0].body[0] ?? "",
+    /research|product|protocol|repo|partnership|bug/i
+  )
+  assert.equal(getSupportPage("faq")?.sections.length >= 1, true)
+  assert.equal(getSupportPage("faq")?.sections[0].heading, "What is Pyramid?")
+  assert.equal(getSupportPage("privacy-policy")?.sections.length, 3)
+  assert.equal(getSupportPage("terms-of-service")?.sections.length, 3)
   assert.equal(getSupportPage("terms-of-service")?.title, "Terms of Service")
   assert.equal(getSupportPage("missing"), null)
   assert.equal(supportPages.length, 6)
+  assert.deepEqual(
+    supportContactLinks.map((link) => link.label),
+    ["Email", "LinkedIn", "GitHub", "X", "Telegram"]
+  )
+  assert.deepEqual(
+    supportContactLinks.map((link) => link.href),
+    [
+      "mailto:sofiane.zidane.bentaleb@gmail.com",
+      "https://www.linkedin.com/in/sofiane-ben-taleb/",
+      "https://github.com/gamween",
+      "https://x.com/dvb_fianso",
+      "https://t.me/dvb_fianso",
+    ]
+  )
   assert.deepEqual(
     getLearnPage("xls-65-66")?.officialLinks?.map((link) => link.href),
     [
