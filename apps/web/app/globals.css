@@ -114,4 +114,36 @@
       #02040a;
     color: #fff;
   }
+
+  .exchange-shell {
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 26%),
+      radial-gradient(circle at bottom left, rgba(1, 0, 1, 0.06), transparent 22%),
+      var(--museum-bg);
+    color: var(--museum-ink);
+  }
+
+  .exchange-panel {
+    border: 1px solid var(--museum-line);
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(20px);
+  }
+
+  .exchange-panel-dark {
+    border: 1px solid rgba(230, 237, 1, 0.12);
+    background:
+      linear-gradient(180deg, rgba(8, 8, 8, 0.98), rgba(18, 18, 14, 0.96)),
+      #080808;
+    color: #f5f2bb;
+  }
+
+  .exchange-muted {
+    color: rgba(1, 0, 1, 0.58);
+  }
+
+  .exchange-chip {
+    border: 1px solid var(--museum-line);
+    background: rgba(1, 0, 1, 0.04);
+    color: var(--museum-ink);
+  }
 }
