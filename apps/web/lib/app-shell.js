@@ -25,6 +25,8 @@ export const V1_TRADE_TOOLS = [
 
 export const FUTURE_APP_MODULES = [
   { key: "trailing-stop", label: "Trailing stop", stage: "placeholder" },
+  { key: "dca", label: "DCA", stage: "placeholder" },
+  { key: "twap", label: "TWAP", stage: "placeholder" },
   { key: "lending", label: "Lending", stage: "later" },
   { key: "privacy", label: "Privacy", stage: "later" },
 ]

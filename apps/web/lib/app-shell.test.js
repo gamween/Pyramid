@@ -34,6 +34,8 @@ test("FUTURE_APP_MODULES keeps future product areas explicit", () => {
     FUTURE_APP_MODULES.map((item) => [item.key, item.stage]),
     [
       ["trailing-stop", "placeholder"],
+      ["dca", "placeholder"],
+      ["twap", "placeholder"],
       ["lending", "later"],
       ["privacy", "later"],
     ]
