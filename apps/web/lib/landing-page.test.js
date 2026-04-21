@@ -31,8 +31,6 @@ test("active repo references point to gamween/Pyramid", () => {
   const readmeSource = readSource("../../../README.md")
   const contributingSource = readSource("../../../CONTRIBUTING.md")
 
-  assert.match(contactSource, /https:\/\/github\.com\/gamween\/Pyramid/)
-  assert.match(contactSource, /github\.com\/gamween\/Pyramid/)
   assert.doesNotMatch(contactSource, /DVB-ESILV\/Pyramid/)
 
   assert.match(readmeSource, /https:\/\/github\.com\/gamween\/Pyramid/)

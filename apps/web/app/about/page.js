@@ -22,7 +22,7 @@ export default function AboutPage() {
             <h2 className="font-display text-3xl md:text-5xl">Sofiane Zidane Ben Taleb</h2>
             <p className="museum-copy max-w-prose text-lg leading-8">
               The portrait sits here as an editorial plate, giving the page a quieter, more
-              archival read before the registry copy continues below.
+              archival read alongside the registry copy that follows.
             </p>
           </div>
 

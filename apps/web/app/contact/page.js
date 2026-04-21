@@ -23,8 +23,9 @@ export default function ContactPage() {
             <a
               key={link.href}
               href={link.href}
-              target="_blank"
-              rel="noreferrer"
+              {...(link.href.startsWith("mailto:")
+                ? {}
+                : { target: "_blank", rel: "noreferrer" })}
               className="border-b border-current pb-2 font-ui text-[11px] uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
             >
               {link.label}
