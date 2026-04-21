@@ -1,5 +1,6 @@
 {
-  "ledger_current_index": 1981434,
+  "ledger_hash": "25C1F95578B296BD374AFB8B9984AD620BF8DFE66AE094A18C18223F0E2B119C",
+  "ledger_index": 1981337,
   "offers": [
     {
       "Account": "rhxdJE3Ejua7b2ec29HH2ub4XnjtGcoiwL",
@@ -111,5 +112,5 @@
       }
     }
   ],
-  "validated": false
+  "validated": true
 }

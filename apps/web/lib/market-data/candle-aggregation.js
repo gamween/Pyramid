@@ -19,6 +19,15 @@ function changePriceToRlusdPerXrp(changePrice) {
   return xrpPerRlusdToRlusdPerXrp(xrpPerRlusd)
 }
 
+function normalizeChangeToQuoteScale(change) {
+  return {
+    open: changePriceToRlusdPerXrp(change.open),
+    high: changePriceToRlusdPerXrp(change.low),
+    low: changePriceToRlusdPerXrp(change.high),
+    close: changePriceToRlusdPerXrp(change.close),
+  }
+}
+
 function ledgerTimeToUnixMs(ledgerTime) {
   return (Number(ledgerTime) + RIPPLE_EPOCH_TO_UNIX_SECONDS) * 1000
 }
@@ -40,26 +49,20 @@ export function aggregateLedgerChangesToCandles(results, timeframe) {
     if (!change) continue
 
     const bucket = bucketTimestamp(ledgerTimeToUnixMs(result.ledger_time), timeframe)
-    const open = changePriceToRlusdPerXrp(change.open)
-    const high = changePriceToRlusdPerXrp(change.high)
-    const low = changePriceToRlusdPerXrp(change.low)
-    const close = changePriceToRlusdPerXrp(change.close)
+    const normalizedChange = normalizeChangeToQuoteScale(change)
 
     const existing = buckets.get(bucket)
     if (!existing) {
       buckets.set(bucket, {
         time: bucket / 1000,
-        open,
-        high,
-        low,
-        close,
+        ...normalizedChange,
       })
       continue
     }
 
-    existing.high = Math.max(existing.high, high)
-    existing.low = Math.min(existing.low, low)
-    existing.close = close
+    existing.high = Math.max(existing.high, normalizedChange.high)
+    existing.low = Math.min(existing.low, normalizedChange.low)
+    existing.close = normalizedChange.close
   }
 
   return [...buckets.values()].sort((left, right) => left.time - right.time)

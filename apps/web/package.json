@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test app/api/*.test.js hooks/*.test.js lib/*.test.js"
+    "test": "node --test app/api/*.test.js hooks/*.test.js lib/*.test.js lib/*/*.test.js"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

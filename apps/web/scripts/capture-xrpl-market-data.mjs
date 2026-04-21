@@ -35,30 +35,34 @@ async function findMostRecentBookChanges() {
 
 async function main() {
   await client.connect()
+  try {
+    const bookChanges = await findMostRecentBookChanges()
 
-  const bookChanges = await findMostRecentBookChanges()
+    const bookOffers = await client.request({
+      command: "book_offers",
+      taker_pays: {
+        currency: "USD",
+        issuer: "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
+      },
+      taker_gets: { currency: "XRP" },
+      ledger_index: bookChanges.ledger_index,
+      limit: 20,
+    })
 
-  const bookOffers = await client.request({
-    command: "book_offers",
-    taker_pays: {
-      currency: "USD",
-      issuer: "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs",
-    },
-    taker_gets: { currency: "XRP" },
-    limit: 20,
-  })
+    await writeFile(
+      new URL("../lib/fixtures/xrp-rlusd.book-changes.json", import.meta.url),
+      JSON.stringify(bookChanges, null, 2)
+    )
 
-  await writeFile(
-    new URL("../lib/fixtures/xrp-rlusd.book-changes.json", import.meta.url),
-    JSON.stringify(bookChanges, null, 2)
-  )
-
-  await writeFile(
-    new URL("../lib/fixtures/xrp-rlusd.book-offers.json", import.meta.url),
-    JSON.stringify(bookOffers.result, null, 2)
-  )
-
-  await client.disconnect()
+    await writeFile(
+      new URL("../lib/fixtures/xrp-rlusd.book-offers.json", import.meta.url),
+      JSON.stringify(bookOffers.result, null, 2)
+    )
+  } finally {
+    if (client.isConnected()) {
+      await client.disconnect()
+    }
+  }
 }
 
 void main()

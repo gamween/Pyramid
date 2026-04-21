@@ -36,3 +36,34 @@ test("aggregateLedgerChangesToCandles normalizes XRP-drops price into RLUSD per 
     },
   ])
 })
+
+test("aggregateLedgerChangesToCandles swaps candle extrema when normalizing reciprocal prices", () => {
+  const candles = aggregateLedgerChangesToCandles(
+    [
+      {
+        changes: [
+          {
+            open: "400000",
+            high: "500000",
+            low: "250000",
+            close: "500000",
+            currency_a: "XRP_drops",
+            currency_b: "rEG2pq6HguMSyU7rZC44fWuw75o4J5VQZs/USD",
+          },
+        ],
+        ledger_time: 830094040,
+      },
+    ],
+    "1m"
+  )
+
+  assert.deepEqual(candles, [
+    {
+      time: 1776778800,
+      open: 2.5,
+      high: 4,
+      low: 2,
+      close: 2,
+    },
+  ])
+})
