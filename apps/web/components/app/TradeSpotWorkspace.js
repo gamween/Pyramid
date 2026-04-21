@@ -154,10 +154,12 @@ export function TradeSpotWorkspace({ market }) {
                 </p>
                 <div className="mt-3 space-y-2">
                   {openOrders.slice(0, 4).map((order) => (
-                    <div key={order.sequence} className="flex items-center justify-between text-sm">
+                    <div key={order.id} className="flex items-center justify-between text-sm">
                       <div>
                         <p className="font-semibold uppercase">{order.side}</p>
-                        <p className="text-[#cfcaa0]">{formatAmount(order.baseAmount)} XRP @ {formatPrice(order.price)}</p>
+                        <p className="text-[#cfcaa0]">
+                          {order.status} · {formatAmount(order.baseAmount)} XRP @ {formatPrice(order.price)}
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -178,9 +180,9 @@ export function TradeSpotWorkspace({ market }) {
                 </p>
                 <div className="mt-3 space-y-2">
                   {orderHistory.slice(0, 4).map((entry) => (
-                    <div key={entry.hash} className="text-sm">
+                    <div key={entry.id} className="text-sm">
                       <p className="font-semibold">{entry.type}</p>
-                      <p className="text-[#cfcaa0]">{entry.result} · {entry.timestamp}</p>
+                      <p className="text-[#cfcaa0]">{entry.status} · {entry.timestamp}</p>
                     </div>
                   ))}
                   {orderHistory.length === 0 ? <p className="text-sm text-[#9c9671]">No recent offer transactions yet.</p> : null}

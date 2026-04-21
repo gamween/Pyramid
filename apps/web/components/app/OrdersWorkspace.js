@@ -6,6 +6,12 @@ import { useSpotOrders } from "../../hooks/useSpotOrders"
 import { AppPageHeader } from "./AppPageHeader"
 import { AppPanel } from "./AppPanel"
 
+const TABS = [
+  ["open", "Open orders"],
+  ["history", "Order history"],
+  ["trades", "Trade history"],
+]
+
 function formatPrice(value) {
   return value == null ? "—" : value.toFixed(6)
 }
@@ -22,17 +28,23 @@ export function OrdersWorkspace() {
 
   const { hasAccount, openOrders, orderHistory, tradeHistory, cancelOrder, loading, error } = useSpotOrders()
 
-  const filteredOpenOrders = useMemo(() => {
-    return openOrders.filter((order) => {
+  const rows = useMemo(() => {
+    return tab === "open" ? openOrders : tab === "history" ? orderHistory : tradeHistory
+  }, [openOrders, orderHistory, tab, tradeHistory])
+
+  const filteredRows = useMemo(() => {
+    return rows.filter((order) => {
       const sideMatches = sideFilter === "all" ? true : order.side === sideFilter
       const queryMatches =
         query.trim() === ""
           ? true
-          : `${order.sequence} ${order.side} ${order.type}`.toLowerCase().includes(query.trim().toLowerCase())
+          : `${order.sequence ?? ""} ${order.side ?? ""} ${order.type ?? ""} ${order.status ?? ""}`
+              .toLowerCase()
+              .includes(query.trim().toLowerCase())
 
       return sideMatches && queryMatches
     })
-  }, [openOrders, query, sideFilter])
+  }, [query, rows, sideFilter])
 
   async function handleCancel(sequence) {
     try {
@@ -42,8 +54,6 @@ export function OrdersWorkspace() {
       setMessage(nextError instanceof Error ? nextError.message : "Unable to cancel order")
     }
   }
-
-  const rows = tab === "open" ? filteredOpenOrders : tab === "history" ? orderHistory : tradeHistory
 
   return (
     <div className="space-y-6">
@@ -62,11 +72,7 @@ export function OrdersWorkspace() {
         <div className="space-y-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap gap-2">
-              {[
-                ["open", "Open orders"],
-                ["history", "Order history"],
-                ["trades", "Trade history"],
-              ].map(([value, label]) => (
+              {TABS.map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
@@ -121,6 +127,7 @@ export function OrdersWorkspace() {
                       <th className="pb-3 pr-4 font-medium">Sequence</th>
                       <th className="pb-3 pr-4 font-medium">Side</th>
                       <th className="pb-3 pr-4 font-medium">Type</th>
+                      <th className="pb-3 pr-4 font-medium">Status</th>
                       <th className="pb-3 pr-4 font-medium">Price</th>
                       <th className="pb-3 pr-4 font-medium">Amount</th>
                       <th className="pb-3 pr-4 font-medium">Quote</th>
@@ -129,8 +136,8 @@ export function OrdersWorkspace() {
                   ) : (
                     <>
                       <th className="pb-3 pr-4 font-medium">Type</th>
+                      <th className="pb-3 pr-4 font-medium">Status</th>
                       <th className="pb-3 pr-4 font-medium">Sequence</th>
-                      <th className="pb-3 pr-4 font-medium">Result</th>
                       <th className="pb-3 pr-4 font-medium">Timestamp</th>
                       <th className="pb-3 font-medium">Hash</th>
                     </>
@@ -138,10 +145,10 @@ export function OrdersWorkspace() {
                 </tr>
               </thead>
               <tbody>
-                {rows.length === 0 ? (
+                {filteredRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={tab === "open" ? 7 : 5}
+                      colSpan={tab === "open" ? 8 : 5}
                       className="py-8 text-center text-sm exchange-muted"
                     >
                       {tab === "trades"
@@ -150,11 +157,12 @@ export function OrdersWorkspace() {
                     </td>
                   </tr>
                 ) : tab === "open" ? (
-                  rows.map((row) => (
-                    <tr key={row.sequence} className="border-b [border-color:rgba(1,0,1,0.08)]">
+                  filteredRows.map((row) => (
+                    <tr key={row.id} className="border-b [border-color:rgba(1,0,1,0.08)]">
                       <td className="py-3 pr-4 font-semibold">{row.sequence}</td>
                       <td className="py-3 pr-4 uppercase">{row.side}</td>
                       <td className="py-3 pr-4">{row.type}</td>
+                      <td className="py-3 pr-4 uppercase">{row.status}</td>
                       <td className="py-3 pr-4">{formatPrice(row.price)}</td>
                       <td className="py-3 pr-4">{formatAmount(row.baseAmount)} XRP</td>
                       <td className="py-3 pr-4">{formatAmount(row.quoteAmount)} RLUSD</td>
@@ -170,11 +178,11 @@ export function OrdersWorkspace() {
                     </tr>
                   ))
                 ) : (
-                  rows.map((row) => (
-                    <tr key={row.hash} className="border-b [border-color:rgba(1,0,1,0.08)]">
+                  filteredRows.map((row) => (
+                    <tr key={row.id} className="border-b [border-color:rgba(1,0,1,0.08)]">
                       <td className="py-3 pr-4 font-semibold">{row.type}</td>
+                      <td className="py-3 pr-4 uppercase">{row.status}</td>
                       <td className="py-3 pr-4">{row.sequence ?? "—"}</td>
-                      <td className="py-3 pr-4">{row.result}</td>
                       <td className="py-3 pr-4 text-sm exchange-muted">{row.timestamp}</td>
                       <td className="py-3 break-all text-xs exchange-muted">{row.hash}</td>
                     </tr>

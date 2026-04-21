@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { useWallet } from "../components/providers/WalletProvider"
+import { toOrderRow } from "../lib/order-lifecycle"
 import { buildOfferCancelTx, buildSpotOfferCreateTx } from "../lib/spot-order"
 import { getClient } from "../lib/xrplClient"
 
@@ -14,37 +15,51 @@ function readIssuedValue(amount) {
   return Number(amount?.value ?? 0)
 }
 
+function getOrderAmounts(takerGets, takerPays) {
+  const isSell = typeof takerGets === "string"
+  const baseAmount = isSell ? dropsToXrp(takerGets) : dropsToXrp(takerPays)
+  const quoteAmount = isSell ? readIssuedValue(takerPays) : readIssuedValue(takerGets)
+  const price = baseAmount > 0 ? quoteAmount / baseAmount : 0
+
+  return {
+    side: isSell ? "sell" : "buy",
+    baseAmount,
+    quoteAmount,
+    price,
+  }
+}
+
 function formatLedgerTime(xrplTime) {
   if (!xrplTime) return "Pending"
   return new Date((xrplTime + 946684800) * 1000).toLocaleString()
 }
 
 function normalizeOpenOffer(offer) {
-  const isSell = typeof offer.TakerGets === "string"
-  const baseAmount = isSell ? dropsToXrp(offer.TakerGets) : dropsToXrp(offer.TakerPays)
-  const quoteAmount = isSell ? readIssuedValue(offer.TakerPays) : readIssuedValue(offer.TakerGets)
-  const price = baseAmount > 0 ? quoteAmount / baseAmount : 0
-
-  return {
+  return toOrderRow({
     sequence: offer.seq,
-    side: isSell ? "sell" : "buy",
+    ...getOrderAmounts(offer.TakerGets, offer.TakerPays),
     type: "limit",
-    price,
-    baseAmount,
-    quoteAmount,
-    quality: offer.quality ?? null,
-  }
+  })
 }
 
 function normalizeHistoryEntry(entry) {
   const tx = entry.tx_json ?? entry.tx ?? {}
-  return {
+  const isOfferCreate = tx.TransactionType === "OfferCreate"
+  const amounts =
+    isOfferCreate && tx.TakerGets != null && tx.TakerPays != null
+      ? getOrderAmounts(tx.TakerGets, tx.TakerPays)
+      : {}
+
+  return toOrderRow({
+    id: tx.hash ? `native:${tx.hash}` : undefined,
     hash: tx.hash,
+    timestamp: formatLedgerTime(tx.date),
+    result: entry.meta?.TransactionResult ?? "Pending",
     type: tx.TransactionType ?? "Unknown",
     sequence: tx.Sequence ?? tx.OfferSequence ?? null,
-    result: entry.meta?.TransactionResult ?? "Pending",
-    timestamp: formatLedgerTime(tx.date),
-  }
+    status: entry.meta?.TransactionResult ?? "Pending",
+    ...amounts,
+  })
 }
 
 export function useSpotOrders() {

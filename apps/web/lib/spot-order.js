@@ -16,11 +16,20 @@ function trimIssuedValue(value) {
   return Number(value.toFixed(6)).toString()
 }
 
+function parseOrderSide(side) {
+  if (side !== "buy" && side !== "sell") {
+    throw new Error("Invalid side")
+  }
+
+  return side
+}
+
 export function buildSpotOfferCreateTx({ account, side, baseAmount, limitPrice }) {
   if (!account) {
     throw new Error("Missing account")
   }
 
+  const parsedSide = parseOrderSide(side)
   const parsedAmount = parsePositiveNumber(baseAmount, "baseAmount")
   const parsedPrice = parsePositiveNumber(limitPrice, "limitPrice")
   const quoteValue = trimIssuedValue(parsedAmount * parsedPrice)
@@ -31,7 +40,7 @@ export function buildSpotOfferCreateTx({ account, side, baseAmount, limitPrice }
     value: quoteValue,
   }
 
-  if (side === "sell") {
+  if (parsedSide === "sell") {
     return {
       TransactionType: "OfferCreate",
       Account: account,
@@ -40,16 +49,12 @@ export function buildSpotOfferCreateTx({ account, side, baseAmount, limitPrice }
     }
   }
 
-  if (side === "buy") {
-    return {
-      TransactionType: "OfferCreate",
-      Account: account,
-      TakerGets: issuedAmount,
-      TakerPays: xrpToDrops(parsedAmount),
-    }
+  return {
+    TransactionType: "OfferCreate",
+    Account: account,
+    TakerGets: issuedAmount,
+    TakerPays: xrpToDrops(parsedAmount),
   }
-
-  throw new Error("Invalid side")
 }
 
 export function buildOfferCancelTx({ account, offerSequence }) {
