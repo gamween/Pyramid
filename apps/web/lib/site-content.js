@@ -30,7 +30,9 @@ export const footerCopyright = "2026 Pyramid. All rights reserved."
 export const supportContactLinks = [
   {
     label: "Email",
-    href: "mailto:sofiane.zidane.bentaleb@gmail.com",
+    get href() {
+      return `mailto:${footerContact.email}`
+    },
   },
   {
     label: "LinkedIn",
