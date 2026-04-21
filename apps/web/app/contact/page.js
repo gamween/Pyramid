@@ -1,9 +1,5 @@
-import Link from "next/link"
-
 import { ContentPageLayout } from "../../components/site/ContentPageLayout"
-import { getSupportPage } from "../../lib/site-content"
-
-const repositoryUrl = "https://github.com/gamween/Pyramid"
+import { getSupportPage, supportContactLinks } from "../../lib/site-content"
 
 export default function ContactPage() {
   const page = getSupportPage("contact")
@@ -16,20 +12,24 @@ export default function ContactPage() {
       sections={page.sections}
     >
       <section className="border-t museum-rule pt-8">
-        <h2 className="font-display text-3xl md:text-5xl">Direct repository contact</h2>
-        <div className="museum-copy mt-4 space-y-4 text-lg leading-8">
-          <p>
-            The canonical project repository is{" "}
-            <Link
-              href={repositoryUrl}
+        <h2 className="font-display text-3xl md:text-5xl">Direct contact</h2>
+        <p className="museum-copy mt-4 max-w-3xl text-lg leading-8">
+          These are the direct channels I actually use. Pick the one that fits the context and
+          include enough detail for me to answer without guessing.
+        </p>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          {supportContactLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
               target="_blank"
               rel="noreferrer"
-              className="border-b border-current pb-1"
+              className="border-b border-current pb-2 font-ui text-[11px] uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
             >
-              github.com/gamween/Pyramid
-            </Link>
-            .
-          </p>
+              {link.label}
+            </a>
+          ))}
         </div>
       </section>
     </ContentPageLayout>
