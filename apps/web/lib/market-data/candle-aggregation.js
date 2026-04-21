@@ -9,6 +9,16 @@ function dropsToXrp(value) {
   return Number(value) / XRP_DROPS_PER_XRP
 }
 
+function xrpPerRlusdToRlusdPerXrp(xrpPerRlusd) {
+  if (xrpPerRlusd <= 0) return 0
+  return 1 / xrpPerRlusd
+}
+
+function changePriceToRlusdPerXrp(changePrice) {
+  const xrpPerRlusd = dropsToXrp(changePrice)
+  return xrpPerRlusdToRlusdPerXrp(xrpPerRlusd)
+}
+
 function ledgerTimeToUnixMs(ledgerTime) {
   return (Number(ledgerTime) + RIPPLE_EPOCH_TO_UNIX_SECONDS) * 1000
 }
@@ -30,10 +40,10 @@ export function aggregateLedgerChangesToCandles(results, timeframe) {
     if (!change) continue
 
     const bucket = bucketTimestamp(ledgerTimeToUnixMs(result.ledger_time), timeframe)
-    const open = dropsToXrp(change.open)
-    const high = dropsToXrp(change.high)
-    const low = dropsToXrp(change.low)
-    const close = dropsToXrp(change.close)
+    const open = changePriceToRlusdPerXrp(change.open)
+    const high = changePriceToRlusdPerXrp(change.high)
+    const low = changePriceToRlusdPerXrp(change.low)
+    const close = changePriceToRlusdPerXrp(change.close)
 
     const existing = buckets.get(bucket)
     if (!existing) {

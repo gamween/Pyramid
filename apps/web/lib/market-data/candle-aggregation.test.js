@@ -23,16 +23,16 @@ test("extractMarketLedgerChange selects the XRP / RLUSD ledger change", () => {
   })
 })
 
-test("aggregateLedgerChangesToCandles converts XRP drops to XRP OHLC rows", () => {
+test("aggregateLedgerChangesToCandles normalizes XRP-drops price into RLUSD per XRP candles", () => {
   const candles = aggregateLedgerChangesToCandles([fixture], "1m")
 
   assert.deepEqual(candles, [
     {
       time: 1776778800,
-      open: 0.4262575,
-      high: 0.4262575,
-      low: 0.4262575,
-      close: 0.4262575,
+      open: 2.345999777130021,
+      high: 2.345999777130021,
+      low: 2.345999777130021,
+      close: 2.345999777130021,
     },
   ])
 })
